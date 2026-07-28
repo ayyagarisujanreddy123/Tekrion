@@ -8,6 +8,7 @@ import {
   type DaemonPaths,
   type DaemonStatus,
 } from "@blackbox/daemon";
+import { IdentifierSchema } from "@blackbox/protocol";
 
 const MAX_CONTROL_RESPONSE_BYTES = 1024 * 1024;
 
@@ -167,4 +168,34 @@ export async function requestDaemonShutdown(
     "POST",
     timeoutMilliseconds,
   );
+}
+
+export async function requestDaemonSessionSettlement(
+  record: DaemonLockRecord,
+  paths: DaemonPaths,
+  sessionId: string,
+  timeoutMilliseconds = 10_000,
+): Promise<readonly string[]> {
+  const validatedSessionId = IdentifierSchema.parse(sessionId);
+  const result = await controlRequest(
+    record,
+    paths,
+    `/v1/control/sessions/${encodeURIComponent(validatedSessionId)}/settle`,
+    "POST",
+    timeoutMilliseconds,
+  );
+  if (
+    typeof result !== "object" ||
+    result === null ||
+    !("sessionId" in result) ||
+    result.sessionId !== validatedSessionId ||
+    !("settledExchangeIds" in result) ||
+    !Array.isArray(result.settledExchangeIds) ||
+    !result.settledExchangeIds.every(
+      (exchangeId) => typeof exchangeId === "string" && exchangeId.length > 0,
+    )
+  ) {
+    throw new ControlRequestError("Session settlement response was invalid.");
+  }
+  return result.settledExchangeIds;
 }

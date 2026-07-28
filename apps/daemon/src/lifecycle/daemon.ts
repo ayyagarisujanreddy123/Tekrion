@@ -190,6 +190,8 @@ export class BlackBoxDaemon {
         token,
         status: () => this.status(),
         shutdown: () => this.stop(),
+        settleSession: (sessionId) =>
+          this.proxyValue?.settleSession(sessionId) ?? [],
         query: new EvidenceQueryService(this.storageValue, {
           ...(this.options.aiReportProvider === undefined
             ? {}

@@ -57,6 +57,7 @@ import {
   type ResolvedStartConfiguration,
 } from "./configuration.js";
 import {
+  requestDaemonSessionSettlement,
   requestDaemonShutdown,
   requestDaemonStatus,
 } from "./control-client.js";
@@ -664,6 +665,25 @@ async function commandRun(
         `blackbox: failed to spawn ${executable}: ${errorMessage(result.error)}\n`,
       );
       return 127;
+    }
+
+    try {
+      const daemonRecord = await readDaemonLockRecord(
+        configuration.paths.lockPath,
+      );
+      if (daemonRecord === undefined) {
+        throw new Error(
+          "Daemon stopped before the wrapped session could be settled.",
+        );
+      }
+      await requestDaemonSessionSettlement(
+        daemonRecord,
+        configuration.paths,
+        sessionId,
+        journal.identity.configuration.cleanupGraceMilliseconds,
+      );
+    } catch (error: unknown) {
+      recordingFailure ??= error;
     }
 
     if (workspaceObserver !== undefined) {

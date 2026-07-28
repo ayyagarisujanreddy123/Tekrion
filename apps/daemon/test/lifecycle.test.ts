@@ -301,12 +301,17 @@ describe("authenticated loopback control API", () => {
   it("requires bearer auth, a loopback Host, and a trusted browser Origin", async () => {
     const token = "a".repeat(43);
     let shutdowns = 0;
+    const settledSessions: string[] = [];
     const control = new ControlServer({
       token,
       listenPort: 0,
       status: fixtureStatus,
       shutdown: () => {
         shutdowns += 1;
+      },
+      settleSession: (sessionId) => {
+        settledSessions.push(sessionId);
+        return ["exchange-settled"];
       },
     });
     const address = await control.start();
@@ -342,6 +347,36 @@ describe("authenticated loopback control API", () => {
     });
     expect(status.body).not.toContain(token);
     expect(status.headers["cache-control"]).toBe("no-store");
+
+    expect(
+      (
+        await controlRequest(
+          address.origin,
+          "/v1/control/sessions/session-run-fixture/settle",
+          { method: "POST" },
+        )
+      ).status,
+    ).toBe(401);
+    const wrongSettlementMethod = await controlRequest(
+      address.origin,
+      "/v1/control/sessions/session-run-fixture/settle",
+      { token },
+    );
+    expect(wrongSettlementMethod.status).toBe(405);
+    expect(wrongSettlementMethod.headers.allow).toBe("POST");
+    expect(settledSessions).toEqual([]);
+
+    const settlement = await controlRequest(
+      address.origin,
+      "/v1/control/sessions/session-run-fixture/settle",
+      { method: "POST", token },
+    );
+    expect(settlement.status).toBe(200);
+    expect(JSON.parse(settlement.body)).toEqual({
+      sessionId: "session-run-fixture",
+      settledExchangeIds: ["exchange-settled"],
+    });
+    expect(settledSessions).toEqual(["session-run-fixture"]);
 
     expect(
       (

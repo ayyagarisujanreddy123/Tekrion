@@ -1,6 +1,7 @@
 import {
   createServer,
   request as httpRequest,
+  type ClientRequest,
   type IncomingHttpHeaders,
   type Server,
 } from "node:http";
@@ -19,6 +20,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   DurableNormalizationRunner,
   RecorderProxy,
+  exportBbxArchive,
   sessionScopedProxyBaseUrl,
 } from "../src/index.js";
 
@@ -224,6 +226,30 @@ async function requestBytes(
     request.write(body.subarray(0, midpoint));
     request.end(body.subarray(midpoint));
   });
+}
+
+function startHangingRequest(
+  origin: string,
+  path: string,
+  body: Buffer,
+  headers: Record<string, string> = {},
+): ClientRequest {
+  const destination = new URL(origin);
+  const request = httpRequest({
+    protocol: destination.protocol,
+    hostname: destination.hostname,
+    port: destination.port,
+    path,
+    method: "POST",
+    headers: {
+      "content-length": body.length,
+      ...headers,
+    },
+  });
+  request.on("response", (response) => response.resume());
+  request.on("error", () => undefined);
+  request.end(body);
+  return request;
 }
 
 function latestRawExchange(storage: BlackBoxStorage) {
@@ -918,6 +944,60 @@ describe("byte-faithful recorder proxy", () => {
 });
 
 describe("transport failure evidence", () => {
+  it("settles and exports an in-flight terminal session during shutdown", async () => {
+    const upstream = await makeUpstream();
+    const { storage } = await makeStorage();
+    const proxy = await makeProxy(upstream.origin, storage);
+    const request = startHangingRequest(
+      proxy.address()?.origin as string,
+      "/never",
+      Buffer.from('{"model":"fixture","input":"shutdown"}'),
+      {
+        "content-type": "application/json",
+        "x-blackbox-session": "session-shutdown-settlement",
+      },
+    );
+    await eventually(() => proxy.health().activeRequests === 1);
+    const session = storage.sessions.getRequired("session-shutdown-settlement");
+    storage.sessions.replace({
+      ...session,
+      status: "completed",
+      endedAt: new Date().toISOString(),
+    });
+
+    await proxy.close(25);
+    await eventually(() => request.destroyed);
+
+    const raw = latestRawExchange(storage);
+    expect(raw).toMatchObject({
+      sessionId: "session-shutdown-settlement",
+      outcome: "client-disconnected",
+      capture: { responseComplete: false },
+    });
+    expect(raw.parseStatus).not.toBe("pending");
+    expect(raw.endedAt).toBeDefined();
+    expect(storage.rawExchanges.getJournalState(raw.id)).toBe("complete");
+    expect(proxy.health()).toMatchObject({
+      activeRequests: 0,
+      requestsStarted: 1,
+      requestsCompleted: 1,
+      clientDisconnects: 1,
+    });
+    await expect(
+      exportBbxArchive(storage, {
+        sessionId: "session-shutdown-settlement",
+        profile: "share",
+      }),
+    ).resolves.toMatchObject({
+      archive: {
+        manifest: {
+          sourceSessionId: "session-shutdown-settlement",
+          profile: "share",
+        },
+      },
+    });
+  });
+
   it("records upstream connection failures separately", async () => {
     const upstream = await makeUpstream();
     const { storage } = await makeStorage();

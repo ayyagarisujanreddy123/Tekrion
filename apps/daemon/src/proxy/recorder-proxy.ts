@@ -114,6 +114,11 @@ interface EvidenceState {
   rawStarted: boolean;
 }
 
+interface ActiveExchangeController {
+  readonly sessionId: string;
+  settle(outcome: RawExchangeOutcome): Promise<void>;
+}
+
 export const CODEX_API_UPSTREAM_ORIGIN = "https://api.openai.com";
 export const CODEX_CHATGPT_UPSTREAM_ORIGIN = "https://chatgpt.com";
 
@@ -190,6 +195,10 @@ export class RecorderProxy {
   private readonly codexApiUpstream: URL;
   private readonly codexChatGptUpstream: URL;
   private readonly pendingJournals = new Set<Promise<void>>();
+  private readonly activeExchanges = new Map<
+    string,
+    ActiveExchangeController
+  >();
   private readonly defaultSessionId = `session-proxy-${randomUUID()}`;
   private readonly healthState: MutableProxyHealth = {
     activeRequests: 0,
@@ -392,7 +401,30 @@ export class RecorderProxy {
   }
 
   async flush(): Promise<void> {
-    await Promise.all([...this.pendingJournals]);
+    while (this.pendingJournals.size > 0) {
+      await Promise.all([...this.pendingJournals]);
+    }
+  }
+
+  async settleSession(sessionId: string): Promise<readonly string[]> {
+    const exchanges = [...this.activeExchanges.entries()].filter(
+      ([, controller]) => controller.sessionId === sessionId,
+    );
+    await Promise.all(
+      exchanges.map(([, controller]) =>
+        controller.settle("client-disconnected"),
+      ),
+    );
+    await this.flush();
+    return exchanges.map(([exchangeId]) => exchangeId);
+  }
+
+  private async settleAllActiveExchanges(): Promise<void> {
+    await Promise.all(
+      [...this.activeExchanges.values()].map((controller) =>
+        controller.settle("client-disconnected"),
+      ),
+    );
   }
 
   async close(graceMilliseconds = 5_000): Promise<void> {
@@ -407,6 +439,9 @@ export class RecorderProxy {
         });
       });
       const timer = setTimeout(() => {
+        void this.settleAllActiveExchanges().catch((error: unknown) => {
+          this.recordCaptureFailure(error);
+        });
         this.server.closeAllConnections();
       }, graceMilliseconds);
       timer.unref();
@@ -416,6 +451,7 @@ export class RecorderProxy {
         clearTimeout(timer);
       }
     }
+    await this.settleAllActiveExchanges();
     delete this.addressValue;
     await this.flush();
   }
@@ -665,13 +701,15 @@ export class RecorderProxy {
     }
 
     let terminal = false;
+    let terminalJournal: Promise<void> | undefined;
     let upstreamResponse: IncomingMessage | undefined;
 
-    const finish = (transportOutcome: RawExchangeOutcome) => {
+    const finish = (transportOutcome: RawExchangeOutcome): Promise<void> => {
       if (terminal) {
-        return;
+        return terminalJournal ?? Promise.resolve();
       }
       terminal = true;
+      this.activeExchanges.delete(state.id);
       this.healthState.activeRequests -= 1;
       this.healthState.requestsCompleted += 1;
       if (transportOutcome === "client-disconnected") {
@@ -688,8 +726,22 @@ export class RecorderProxy {
           this.pendingJournals.delete(journal);
         },
       );
+      terminalJournal = journal;
       this.pendingJournals.add(journal);
+      return journal;
     };
+    const settle = (transportOutcome: RawExchangeOutcome): Promise<void> => {
+      const journal = finish(transportOutcome);
+      request.destroy();
+      upstreamRequest?.destroy();
+      upstreamResponse?.destroy();
+      response.destroy();
+      return journal;
+    };
+    this.activeExchanges.set(state.id, {
+      sessionId: state.sessionId,
+      settle,
+    });
 
     const requestTee = new Transform({
       transform: (chunk: Buffer, _encoding, callback) => {
@@ -705,15 +757,11 @@ export class RecorderProxy {
       state.requestEnded = true;
     });
     request.on("aborted", () => {
-      finish("client-disconnected");
-      upstreamRequest?.destroy();
-      upstreamResponse?.destroy();
+      void settle("client-disconnected");
     });
     response.on("close", () => {
       if (!response.writableEnded) {
-        finish("client-disconnected");
-        upstreamRequest?.destroy();
-        upstreamResponse?.destroy();
+        void settle("client-disconnected");
       }
     });
 
@@ -755,15 +803,13 @@ export class RecorderProxy {
           state.responseEnded = true;
         });
         receivedResponse.on("aborted", () => {
-          finish("upstream-disconnected");
-          response.destroy();
+          void settle("upstream-disconnected");
         });
         receivedResponse.on("error", () => {
-          finish("upstream-disconnected");
-          response.destroy();
+          void settle("upstream-disconnected");
         });
         response.on("finish", () => {
-          finish("completed");
+          void finish("completed");
         });
         receivedResponse.pipe(responseTee).pipe(response);
       },
@@ -790,7 +836,7 @@ export class RecorderProxy {
         } else {
           response.destroy(error);
         }
-        finish(upstreamTimedOut ? "timeout" : "upstream-error");
+        void finish(upstreamTimedOut ? "timeout" : "upstream-error");
       }
     });
     request.pipe(requestTee).pipe(upstreamRequest);

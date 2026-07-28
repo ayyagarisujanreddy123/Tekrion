@@ -453,6 +453,129 @@ describe("CLI daemon lifecycle", () => {
     }
   }, 15_000);
 
+  it("settles abandoned session traffic before completing and exporting a run", async () => {
+    const root = await temporaryRoot();
+    const workspace = await temporaryRoot();
+    const upstreamOrigin = await listen(
+      createServer((request) => {
+        request.resume();
+      }),
+    );
+    const stdout = new CapturedOutput();
+    const stderr = new CapturedOutput();
+    const launch = async (configuration: ResolvedStartConfiguration) => {
+      const daemon = new BlackBoxDaemon({
+        homeDirectory: configuration.paths.homeDirectory,
+        proxy: {
+          ...configuration.proxy,
+          upstream: configuration.proxy.upstream,
+        },
+        control: {
+          listenHost: configuration.controlHost,
+          listenPort: configuration.controlPort,
+        },
+        shutdownGraceMilliseconds: 100,
+      });
+      daemons.push(daemon);
+      await daemon.start();
+      return process.pid;
+    };
+    const cliRuntime = runtime(stdout, stderr, launch);
+    const script = `
+      const http = require("node:http");
+      const body = Buffer.from(JSON.stringify({ model: "fixture", input: "abandoned" }));
+      const request = http.request(process.env.OPENAI_BASE_URL + "/responses", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "content-length": body.length
+        }
+      });
+      request.on("error", () => undefined);
+      request.end(body);
+      process.stdout.write(process.env.BLACKBOX_SESSION_ID);
+      setTimeout(() => process.exit(0), 100);
+    `;
+
+    expect(
+      await runCli(
+        [
+          "run",
+          "--home",
+          root,
+          "--upstream",
+          upstreamOrigin,
+          "--proxy-port",
+          "0",
+          "--control-port",
+          "0",
+          "--cwd",
+          workspace,
+          "--",
+          process.execPath,
+          "-e",
+          script,
+        ],
+        cliRuntime,
+      ),
+    ).toBe(0);
+
+    const sessionId = stdout.value;
+    expect(sessionId).toMatch(/^session-run-/u);
+    expect(stderr.value).toBe("");
+    const paths = resolveDaemonPaths(root);
+    const storage = await openBlackBoxStorage({
+      databasePath: paths.databasePath,
+      dataDirectory: paths.dataDirectory,
+      recoverIncompleteExchanges: false,
+    });
+    try {
+      expect(storage.sessions.getRequired(sessionId).status).toBe("completed");
+      const rows = storage.unsafeDatabase
+        .prepare(
+          "SELECT id, journal_state FROM raw_exchanges WHERE session_id = ?",
+        )
+        .all(sessionId) as Array<{
+        id: string;
+        journal_state: string;
+      }>;
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.journal_state).toBe("complete");
+      expect(
+        storage.rawExchanges.getRequired(rows[0]?.id as string),
+      ).toMatchObject({
+        outcome: "client-disconnected",
+        capture: { responseComplete: false },
+      });
+      expect(
+        storage.rawExchanges.getRequired(rows[0]?.id as string).parseStatus,
+      ).not.toBe("pending");
+    } finally {
+      storage.close();
+    }
+
+    stdout.clear();
+    const archivePath = join(root, "settled-run.bbx");
+    expect(
+      await runCli(
+        [
+          "export",
+          sessionId,
+          "--home",
+          root,
+          "--output",
+          archivePath,
+          "--profile",
+          "share",
+        ],
+        cliRuntime,
+      ),
+    ).toBe(0);
+    expect(stdout.value).toContain("Exported share archive");
+    expect((await stat(archivePath)).size).toBeGreaterThan(0);
+    expect(stderr.value).toBe("");
+  }, 15_000);
+
   it("routes a Claude session to its own upstream through an existing daemon", async () => {
     const root = await temporaryRoot();
     const workspace = await temporaryRoot();

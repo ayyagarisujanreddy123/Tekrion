@@ -7,6 +7,7 @@ import {
 } from "node:http";
 import type { AddressInfo } from "node:net";
 
+import { IdentifierSchema } from "@blackbox/protocol";
 import { z } from "zod";
 
 import { isLoopbackHost } from "../proxy/config.js";
@@ -24,6 +25,9 @@ export interface ControlServerOptions {
   readonly token: string;
   readonly status: () => DaemonStatus | Promise<DaemonStatus>;
   readonly shutdown: () => void | Promise<void>;
+  readonly settleSession?: (
+    sessionId: string,
+  ) => readonly string[] | Promise<readonly string[]>;
   readonly listenHost?: string;
   readonly listenPort?: number;
   readonly allowedOrigins?: readonly string[];
@@ -267,6 +271,37 @@ export class ControlServer {
         return;
       }
       sendJson(response, 200, await this.options.status());
+      return;
+    }
+    const sessionSettlement = path.match(
+      /^\/v1\/control\/sessions\/([^/]+)\/settle$/u,
+    );
+    if (sessionSettlement !== null) {
+      request.resume();
+      if (request.method !== "POST") {
+        sendJson(
+          response,
+          405,
+          { error: "method_not_allowed" },
+          { allow: "POST" },
+        );
+        return;
+      }
+      let sessionId: string;
+      try {
+        sessionId = IdentifierSchema.parse(
+          decodeURIComponent(sessionSettlement[1] as string),
+        );
+      } catch {
+        sendJson(response, 400, { error: "invalid_session_id" });
+        return;
+      }
+      if (this.options.settleSession === undefined) {
+        sendJson(response, 503, { error: "session_settlement_unavailable" });
+        return;
+      }
+      const settledExchangeIds = await this.options.settleSession(sessionId);
+      sendJson(response, 200, { sessionId, settledExchangeIds });
       return;
     }
     if (path === "/v1/control/shutdown") {
