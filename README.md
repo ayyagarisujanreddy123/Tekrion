@@ -98,7 +98,9 @@ npm run blackbox -- run -- claude
 
 Direct `codex` and `claude` executables are detected automatically. Use
 `--agent codex`, `--agent claude`, or `--agent openai-compatible` when the
-agent is launched through another executable such as a package runner or shell.
+agent is launched through a package runner. Common npm, pnpm, Yarn, and Bun
+runners are recognized; prefer a direct agent command over an opaque shell
+command string.
 
 Open the local evidence cockpit:
 
@@ -114,9 +116,18 @@ npm run blackbox -- inspect <session-id> --json
 npm run blackbox -- report <session-id>
 ```
 
-`blackbox run` starts or reuses the daemon, creates one explicit session, selects a provider integration, mirrors the child process, observes its workspace, and preserves the child's exit status. Codex receives a one-run `openai_base_url` override plus `OPENAI_BASE_URL`; Claude receives a session-scoped `ANTHROPIC_BASE_URL`. Black Box does not edit either agent's global configuration.
+`blackbox run` starts or reuses the daemon, creates one explicit session, selects a provider integration, mirrors the child process, observes its workspace, and preserves the child's exit status. Codex receives a temporary HTTP-only model-provider override plus `OPENAI_BASE_URL`; the provider reuses Codex's active OpenAI authentication. Claude receives a session-scoped `ANTHROPIC_BASE_URL` and keeps using Claude's native credential selection. Black Box does not edit either agent's global configuration.
 
-The child must honor the selected base URL for Black Box to capture its provider traffic. Process and workspace evidence still works through the wrapper; `blackbox doctor` reports known transport and configuration limitations before a real run. Each wrapped session pins its own validated upstream, so Codex and Claude sessions can safely reuse one daemon.
+The child must honor the selected base URL for Black Box to capture its provider traffic. Process and workspace evidence still works through the wrapper; `blackbox doctor` reports known transport and configuration limitations before a real run. Each wrapped session pins its own validated routing mode, so Codex and Claude sessions can safely reuse one daemon.
+
+No separate Black Box API key is required for local first-party sessions:
+
+| Agent session                                            | Native authentication reused by the wrapper                                | Provider route                   |
+| -------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------- |
+| Codex interactive, `exec`, `resume`, `fork`, or `review` | ChatGPT sign-in or Codex API-key sign-in                                   | Selected automatically in memory |
+| Claude interactive, print mode, or resumed session       | Claude subscription OAuth, OAuth token, bearer token, or Anthropic API key | Anthropic Messages API           |
+
+Authorization values and the Codex account-routing identifier are forwarded only in memory and are forbidden in durable header evidence. An explicit `--upstream` or `BLACKBOX_UPSTREAM_URL` always selects direct gateway routing. Hosted Codex/Claude web sessions, IDE sessions not launched by the wrapper, and Bedrock/Vertex/Foundry transports do not pass through this localhost recorder.
 
 All examples below use the installed `blackbox` command for readability. When running from source, replace `blackbox` with `npm run blackbox --`.
 
@@ -417,28 +428,29 @@ On 2026-07-21, the reproducible 100-sample loopback benchmark measured 6.031 ms 
 
 ## Supported today
 
-| Capability                                  | Status                             |
-| ------------------------------------------- | ---------------------------------- |
-| OpenAI Responses over HTTP JSON/SSE         | Supported                          |
-| OpenAI Chat Completions over HTTP JSON/SSE  | Supported                          |
-| Anthropic Messages over HTTP JSON/SSE       | Supported                          |
-| Direct Codex CLI launch integration         | Supported                          |
-| Direct Claude Code launch integration       | Supported                          |
-| Byte-faithful response forwarding           | Supported and fixture-tested       |
-| Wrapped process and workspace observation   | Supported                          |
-| Live authenticated browser cockpit          | Supported                          |
-| Client-visible context reconstruction       | Supported with completeness labels |
-| Offline deterministic blame and anomalies   | Supported                          |
-| Deterministic Markdown/JSON incident report | Supported                          |
-| Explicit opt-in AI report explanation       | Supported through Responses JSON   |
-| Redacted and full-fidelity `.bbx` archives  | Supported with verified import     |
-| Read-only imported investigations           | Supported and database-enforced    |
-| Dry-run deletion and retention pruning      | Supported                          |
-| Responses WebSocket / Realtime              | Not supported; rejected explicitly |
-| Bedrock, Vertex, and other provider schemas | Not yet supported                  |
-| Provider-hidden context or chain-of-thought | Not observable and never claimed   |
-| Active replay of recorded actions           | Not supported                      |
-| Cloud sync or multi-user server             | Not supported                      |
+| Capability                                  | Status                                 |
+| ------------------------------------------- | -------------------------------------- |
+| OpenAI Responses over HTTP JSON/SSE         | Supported                              |
+| OpenAI Chat Completions over HTTP JSON/SSE  | Supported                              |
+| Anthropic Messages over HTTP JSON/SSE       | Supported                              |
+| Codex CLI with ChatGPT or API-key auth      | Supported                              |
+| Claude Code with OAuth or API-key auth      | Supported                              |
+| Byte-faithful response forwarding           | Supported and fixture-tested           |
+| Wrapped process and workspace observation   | Supported                              |
+| Live authenticated browser cockpit          | Supported                              |
+| Client-visible context reconstruction       | Supported with completeness labels     |
+| Offline deterministic blame and anomalies   | Supported                              |
+| Deterministic Markdown/JSON incident report | Supported                              |
+| Explicit opt-in AI report explanation       | Supported through Responses JSON       |
+| Redacted and full-fidelity `.bbx` archives  | Supported with verified import         |
+| Read-only imported investigations           | Supported and database-enforced        |
+| Dry-run deletion and retention pruning      | Supported                              |
+| Wrapped Codex HTTP fallback                 | Supported; WebSockets disabled per run |
+| Standalone Responses WebSocket / Realtime   | Not supported; rejected explicitly     |
+| Bedrock, Vertex, and other provider schemas | Not yet supported                      |
+| Provider-hidden context or chain-of-thought | Not observable and never claimed       |
+| Active replay of recorded actions           | Not supported                          |
+| Cloud sync or multi-user server             | Not supported                          |
 
 ## CLI reference
 

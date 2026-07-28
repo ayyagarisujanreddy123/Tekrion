@@ -12,7 +12,7 @@ import { SseReplayDetector } from "./duplicates.js";
 import { materializeCanonicalEvents } from "./events.js";
 import { decodeSseChunks, type SseFrame } from "./sse.js";
 
-export const RESPONSES_NORMALIZER_VERSION = "1.1.0";
+export const RESPONSES_NORMALIZER_VERSION = "1.2.0";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -78,6 +78,21 @@ function contentType(exchange: NormalizationExchange): string {
     }
   }
   return "";
+}
+
+function looksLikeSse(bytes: Uint8Array | undefined): boolean {
+  if (bytes === undefined || bytes.length === 0) {
+    return false;
+  }
+  const prefix = new TextDecoder("utf-8").decode(bytes.subarray(0, 4096));
+  const firstLine = prefix.trimStart().split(/\r?\n/u, 1)[0] ?? "";
+  return (
+    firstLine.startsWith(":") ||
+    firstLine.startsWith("event:") ||
+    firstLine.startsWith("data:") ||
+    firstLine.startsWith("id:") ||
+    firstLine.startsWith("retry:")
+  );
 }
 
 function parserErrorDraft(
@@ -834,7 +849,8 @@ export class ResponsesNormalizer implements ExchangeNormalizer {
         diagnostics: [],
       });
     }
-    return contentType(exchange).toLowerCase().includes("text/event-stream")
+    return contentType(exchange).toLowerCase().includes("text/event-stream") ||
+      looksLikeSse(exchange.responseBody)
       ? normalizeSse(exchange, options)
       : normalizeJson(exchange, options);
   }

@@ -14,6 +14,7 @@ const STANDARD_HOP_BY_HOP_HEADERS = new Set([
 
 const NEVER_PERSIST_HEADERS = new Set([
   "authorization",
+  "chatgpt-account-id",
   "cookie",
   "proxy-authenticate",
   "proxy-authorization",

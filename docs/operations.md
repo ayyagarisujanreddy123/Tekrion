@@ -87,18 +87,30 @@ blackbox run --cwd /path/to/workspace -- claude
 ```
 
 Direct Codex and Claude executables are detected automatically. Use
-`--agent codex`, `--agent claude`, or `--agent openai-compatible` when another
-launcher hides the executable. Codex receives a one-run OpenAI base-URL override;
-Claude receives `ANTHROPIC_BASE_URL`. Each session pins its validated upstream,
-so one daemon can safely serve concurrent or sequential OpenAI and Anthropic
-sessions. The default Claude upstream is `https://api.anthropic.com`; an explicit
-`--upstream` always wins.
+`--agent codex`, `--agent claude`, or `--agent openai-compatible` when a common
+npm, pnpm, Yarn, or Bun package runner hides the executable. Prefer a direct
+agent command over an opaque shell command string, which cannot be rewritten
+safely. Codex receives a temporary HTTP-only recorder provider that reuses its
+active ChatGPT or API-key authentication. Black Box selects the matching OpenAI
+backend from the request in memory. Claude receives `ANTHROPIC_BASE_URL` and
+keeps its native OAuth/API-key credential precedence. Each session pins its
+validated routing mode, so one daemon can safely serve concurrent or sequential
+Codex and Claude sessions. An explicit `--upstream` always wins and disables
+automatic first-party routing for that session.
+
+Black Box never needs the Codex or Claude credential itself. Verify the native
+login before a valuable capture with `codex login status` or
+`claude auth status`; do not paste the result into Black Box. For a Codex
+`CODEX_API_KEY` one-shot run, set that variable only on the wrapped `codex exec`
+invocation, following Codex's own credential-handling guidance.
 
 The child must honor its selected base URL for provider-traffic capture. If it
 ignores that setting, process and workspace evidence can still exist while API
-evidence is absent. Native Bedrock and Vertex transports, OpenAI WebSocket/
-Realtime, and gateways that require a path-bearing upstream URL are outside the
-supported production boundary.
+evidence is absent. Native Bedrock, Vertex, and Foundry transports, hosted
+web/cloud sessions, IDE sessions not launched by the wrapper, standalone OpenAI
+WebSocket/Realtime, and gateways that require a path-bearing upstream URL are
+outside the supported production boundary. The Codex wrapper disables
+WebSockets for that run and uses the supported HTTP transport.
 
 ## Health and readiness
 
@@ -210,11 +222,12 @@ Application rollback is unsafe after a schema migration. Restore the stopped
 whole-home snapshot with the matching older version instead. Preserve the failed
 upgrade copy for investigation.
 
-The provider-support migration removes historically retained `x-api-key` fields
-from active raw-exchange header records. Its private pre-migration database backup
-can still contain the earlier bytes. Protect or retire that backup according to
-your credential-retention policy, and rotate an Anthropic key if it was previously
-routed through an older Black Box build.
+Provider-support migrations remove historically retained `x-api-key` and
+`ChatGPT-Account-ID` fields from active raw-exchange header records. A private
+pre-migration database backup can still contain the earlier bytes. Protect or
+retire that backup according to your credential and personal-data retention
+policy, and rotate an Anthropic key if it was previously routed through an older
+Black Box build.
 
 ## Operational logs
 

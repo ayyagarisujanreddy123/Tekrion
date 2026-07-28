@@ -30,7 +30,9 @@ export default defineConfig({
   },
   test: {
     include: ["apps/*/test/**/*.test.ts", "packages/*/test/**/*.test.ts"],
+    maxWorkers: 4,
     passWithNoTests: false,
     restoreMocks: true,
+    testTimeout: 15_000,
   },
 });

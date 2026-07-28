@@ -39,18 +39,26 @@ afterEach(async () => {
 describe("durable process event journal", () => {
   it("serializes bounded output frames and completes a wrapped session", async () => {
     const storage = await testStorage();
-    const journal = new RunEventJournal(storage, {
-      schemaVersion: 1,
-      sessionId: "session-run-journal",
-      executable: process.execPath,
-      arguments: ["fixture.js"],
-      cwd: process.cwd(),
-      startedAt: STARTED_AT,
-      configuration: {
-        ...DEFAULT_PROCESS_RUN_CONFIGURATION,
-        maxOutputFrameBytes: 4,
+    const journal = new RunEventJournal(
+      storage,
+      {
+        schemaVersion: 1,
+        sessionId: "session-run-journal",
+        executable: process.execPath,
+        arguments: ["fixture.js"],
+        cwd: process.cwd(),
+        startedAt: STARTED_AT,
+        configuration: {
+          ...DEFAULT_PROCESS_RUN_CONFIGURATION,
+          maxOutputFrameBytes: 4,
+        },
       },
-    });
+      {
+        agentName: "codex",
+        upstreamOrigin: "https://api.openai.com",
+        upstreamRoute: "codex-auth",
+      },
+    );
 
     void journal.recordStarted(1234, STARTED_AT);
     void journal.appendOutput("stdout", Buffer.from("hello world"), STARTED_AT);
@@ -103,6 +111,9 @@ describe("durable process event journal", () => {
       status: "completed",
       endedAt: ENDED_AT,
       captureLevel: "wrapped-process",
+      agentName: "codex",
+      upstreamOrigin: "https://api.openai.com",
+      upstreamRoute: "codex-auth",
       command: {
         executable: process.execPath,
         arguments: ["fixture.js"],

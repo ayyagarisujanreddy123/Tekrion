@@ -9,6 +9,7 @@ import {
 
 const FORBIDDEN_PERSISTED_HEADERS = new Set([
   "authorization",
+  "chatgpt-account-id",
   "cookie",
   "proxy-authorization",
   "proxy-authenticate",

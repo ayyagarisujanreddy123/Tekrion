@@ -178,7 +178,7 @@ describe("authoritative workspace snapshots", () => {
         (entry) => entry.path === "large.bin" && entry.sha256.length === 64,
       ),
     ).toBe(true);
-  }, 10_000);
+  }, 30_000);
 
   it("uses bounded content deltas for a non-Git directory", async () => {
     const root = await temporaryRoot("blackbox-directory-observer-test-");

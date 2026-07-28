@@ -17,6 +17,8 @@ export const SessionStatusSchema = z.enum([
   "imported-readonly",
 ]);
 
+export const SessionUpstreamRouteSchema = z.enum(["direct", "codex-auth"]);
+
 export const SessionCommandSchema = z
   .object({
     executable: z.string().min(1),
@@ -38,6 +40,7 @@ export const SessionSchema = z
     agentName: z.string().trim().min(1).optional(),
     models: z.array(z.string().trim().min(1)),
     upstreamOrigin: z.url().optional(),
+    upstreamRoute: SessionUpstreamRouteSchema.optional(),
     tags: z.array(z.string().trim().min(1)),
     counts: z
       .object({
@@ -63,3 +66,4 @@ export const SessionSchema = z
 export type Session = z.infer<typeof SessionSchema>;
 export type SessionCommand = z.infer<typeof SessionCommandSchema>;
 export type SessionStatus = z.infer<typeof SessionStatusSchema>;
+export type SessionUpstreamRoute = z.infer<typeof SessionUpstreamRouteSchema>;

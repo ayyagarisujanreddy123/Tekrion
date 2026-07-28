@@ -16,6 +16,7 @@ import {
   type EvidenceSource,
   type ProcessObservationIdentity,
   type ProcessOutputStream,
+  type SessionUpstreamRoute,
   type WorkspaceFileChangeSummary,
   type WorkspaceManifest,
   type WorkspaceSnapshotSummary,
@@ -67,6 +68,7 @@ export interface WorkspaceFileChangeEvidence {
 export interface RunSessionOptions {
   readonly agentName?: string;
   readonly upstreamOrigin?: string;
+  readonly upstreamRoute?: SessionUpstreamRoute;
 }
 
 interface EventOptions {
@@ -129,6 +131,9 @@ export class RunEventJournal {
           ...(sessionOptions.upstreamOrigin === undefined
             ? {}
             : { upstreamOrigin: sessionOptions.upstreamOrigin }),
+          ...(sessionOptions.upstreamRoute === undefined
+            ? {}
+            : { upstreamRoute: sessionOptions.upstreamRoute }),
           models: [],
           tags: [],
           counts: {

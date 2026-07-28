@@ -202,8 +202,8 @@ can preserve:
 - parser diagnostics and unsupported items without discarding the raw record;
 - whether the client, upstream, timeout, disconnect, or capture failure ended an exchange.
 
-Authorization, `x-api-key`, and cookie header values are forwarded in memory
-when necessary but excluded from persisted header evidence.
+Authorization, `x-api-key`, `ChatGPT-Account-ID`, and cookie header values are
+forwarded in memory when necessary but excluded from persisted header evidence.
 
 ### Process evidence
 
@@ -261,10 +261,13 @@ Internally, one run follows this lifecycle.
 
 The CLI resolves the Black Box home, listener addresses, upstream provider origin, capture bounds, and timeouts. It creates private directories and a random local control token if needed.
 
-The upstream defaults to `https://api.openai.com` for Codex and other
-OpenAI-compatible clients, or `https://api.anthropic.com` when a direct Claude
-command is selected. `--upstream` or `BLACKBOX_UPSTREAM_URL` can select another
-credential-free HTTP(S) origin.
+Codex defaults to authentication-aware first-party routing:
+`https://api.openai.com` for API-key requests or
+`https://chatgpt.com/backend-api/codex` for ChatGPT-account requests. Claude
+defaults to `https://api.anthropic.com`; generic OpenAI-compatible clients use
+the daemon's selected upstream. `--upstream` or `BLACKBOX_UPSTREAM_URL` can
+select another credential-free HTTP(S) origin and disables automatic
+first-party routing for that wrapped session.
 
 Black Box deliberately does not use an existing `OPENAI_BASE_URL` or
 `ANTHROPIC_BASE_URL` as its upstream. Those variables are reserved for pointing
@@ -295,13 +298,15 @@ The child receives environment values including:
 - `BLACKBOX_SESSION_ID`;
 - `BLACKBOX_CAPTURE_LEVEL=wrapped-process`.
 
-Direct Codex and Claude executables are auto-detected. Codex also receives a
-one-run `openai_base_url` CLI override, while Claude receives
-`ANTHROPIC_BASE_URL`; global agent configuration is not edited. The child must
-honor the selected base URL for API traffic to be captured. Process and workspace
-evidence still works if the child ignores it, but provider traffic will be absent.
-Each wrapped session pins its validated upstream so one daemon can route OpenAI
-and Anthropic sessions independently.
+Direct Codex and Claude executables are auto-detected. Codex receives a
+temporary `blackbox_recorder` provider that reuses the active ChatGPT or API-key
+login and disables WebSockets for recordable HTTP transport. Claude receives
+`ANTHROPIC_BASE_URL` and retains its native OAuth/API-key selection; global
+agent configuration and credential stores are not edited. The child must honor
+the selected base URL for API traffic to be captured. Process and workspace
+evidence still works if the child ignores it, but provider traffic will be
+absent. Each wrapped session pins its validated routing mode so one daemon can
+route OpenAI and Anthropic sessions independently.
 
 ### Step 4: Capture the workspace baseline
 
@@ -491,17 +496,18 @@ Selected event text is indexed through SQLite FTS5. Search results remain linked
 
 ### Supported surfaces
 
-| Surface                               | Forwarded     | Normalized               |
-| ------------------------------------- | ------------- | ------------------------ |
-| `/v1/responses` JSON                  | Yes           | Yes                      |
-| `/v1/responses` SSE                   | Yes           | Yes                      |
-| `/v1/chat/completions` JSON           | Yes           | Yes                      |
-| `/v1/chat/completions` SSE            | Yes           | Yes                      |
-| `/v1/messages` JSON                   | Yes           | Yes                      |
-| `/v1/messages` SSE                    | Yes           | Yes                      |
-| Other compatible HTTP `/v1/*` routes  | When possible | Preserved as raw/unknown |
-| Responses WebSocket/Realtime          | No            | No                       |
-| Bedrock, Vertex, other native schemas | Not claimed   | No                       |
+| Surface                                 | Forwarded     | Normalized               |
+| --------------------------------------- | ------------- | ------------------------ |
+| `/v1/responses` JSON                    | Yes           | Yes                      |
+| `/v1/responses` SSE                     | Yes           | Yes                      |
+| `/v1/chat/completions` JSON             | Yes           | Yes                      |
+| `/v1/chat/completions` SSE              | Yes           | Yes                      |
+| `/v1/messages` JSON                     | Yes           | Yes                      |
+| `/v1/messages` SSE                      | Yes           | Yes                      |
+| Other compatible HTTP `/v1/*` routes    | When possible | Preserved as raw/unknown |
+| Wrapped Codex Responses over HTTP       | Yes           | Yes                      |
+| Standalone Responses WebSocket/Realtime | No            | No                       |
+| Bedrock, Vertex, other native schemas   | Not claimed   | No                       |
 
 ### Byte fidelity
 
@@ -517,10 +523,11 @@ Golden tests compare direct upstream bytes with bytes received through Black Box
 
 Black Box removes hop-by-hop headers that must be regenerated by the HTTP stack. It preserves useful response metadata such as provider request identifiers and content type.
 
-Sensitive headers—including authorization, `x-api-key`, proxy authorization,
-cookies, and set-cookie values—are excluded from persisted header evidence. This
-does not guarantee that a credential cannot appear inside a body, source file,
-tool result, or terminal frame.
+Sensitive headers—including authorization, `x-api-key`,
+`ChatGPT-Account-ID`, proxy authorization, cookies, and set-cookie values—are
+excluded from persisted header evidence. This does not guarantee that a
+credential cannot appear inside a body, source file, tool result, or terminal
+frame.
 
 ### Bounds and failure behavior
 
@@ -1313,7 +1320,7 @@ BlackBox/
 │   └── test-fixtures/      Golden protocol and seeded-incident fixtures
 ├── demo/                   Disposable rogue repository and rehearsal scripts
 ├── docs/
-│   ├── decisions/          Ten architecture decision records
+│   ├── decisions/          Twelve architecture decision records
 │   ├── archive-format.md
 │   ├── capture-model.md
 │   ├── demo-script.md
@@ -1339,7 +1346,7 @@ BlackBox/
 
 ### Architecture decision records
 
-The ten ADRs explain why the implementation chose:
+The twelve ADRs explain why the implementation chose:
 
 1. strict versioned contracts and runtime/viewer boundaries;
 2. a crash-safe SQLite evidence journal;
@@ -1360,7 +1367,7 @@ The ten ADRs explain why the implementation chose:
 | Process/file evidence exists but API evidence does not | The child probably ignored or replaced the injected base URL                                               |
 | Port or daemon conflict                                | Run `status`, then `stop`; use `doctor` to inspect occupied listeners/stale state                          |
 | Cockpit does not open                                  | Run `open` again and use the authenticated local URL produced by the CLI                                   |
-| WebSocket client fails                                 | Responses WebSocket/Realtime is intentionally unsupported in 0.1.0                                         |
+| Standalone WebSocket client fails                      | Responses WebSocket/Realtime is unsupported; wrapped Codex is forced to HTTP                               |
 | Export says the session is unsettled                   | Let capture finish or stop it; active evidence cannot be archived safely                                   |
 | Import integrity failure                               | Treat the archive as corrupt/modified and obtain a new copy                                                |
 | Storage ceiling reached                                | Preview `prune`, inspect the proposed plan, then apply with `--yes` if correct                             |
@@ -1386,7 +1393,8 @@ The ten ADRs explain why the implementation chose:
 
 - OpenAI Responses, OpenAI Chat Completions, and Anthropic Messages HTTP
   JSON/SSE behavior is normalized.
-- Responses WebSocket and Realtime are explicitly unsupported.
+- Wrapped Codex is forced to HTTP; standalone Responses WebSocket and Realtime
+  are explicitly unsupported.
 - Bedrock, Vertex, and other provider-native semantics are not claimed.
 - No completed agent-specific adapter is bundled.
 - Provider-hidden context and private model reasoning are unavailable.
@@ -1403,7 +1411,8 @@ The ten ADRs explain why the implementation chose:
 
 The long-term design proposes:
 
-1. Responses WebSocket proxy support and richer hosted/multi-agent visualization;
+1. Standalone Responses WebSocket proxy support and richer hosted/multi-agent
+   visualization;
 2. explicit agent adapters/hooks;
 3. OpenTelemetry/OpenInference import and export;
 4. active replay only inside disposable worktrees/containers with mocked mutation tools and confirmation;

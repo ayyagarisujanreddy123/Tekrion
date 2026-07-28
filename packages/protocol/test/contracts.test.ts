@@ -60,6 +60,7 @@ describe("versioned evidence contracts", () => {
       agentName: "fixture-agent",
       models: ["gpt-5.2"],
       upstreamOrigin: "https://api.openai.com",
+      upstreamRoute: "codex-auth",
       tags: ["golden"],
       counts: {
         events: 1,
@@ -178,6 +179,8 @@ describe("privacy and inference constraints", () => {
   it.each([
     "authorization",
     "Authorization",
+    "chatgpt-account-id",
+    "ChatGPT-Account-ID",
     "cookie",
     "set-cookie",
     "x-api-key",

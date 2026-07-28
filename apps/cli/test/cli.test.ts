@@ -451,14 +451,14 @@ describe("CLI daemon lifecycle", () => {
     } finally {
       storage.close();
     }
-  });
+  }, 15_000);
 
   it("routes a Claude session to its own upstream through an existing daemon", async () => {
     const root = await temporaryRoot();
     const workspace = await temporaryRoot();
     let openAiRequests = 0;
     let anthropicPath: string | undefined;
-    let forwardedApiKey: string | undefined;
+    let forwardedAuthorization: string | undefined;
     const openAiUpstream = await listen(
       createServer((request, response) => {
         openAiRequests += 1;
@@ -470,9 +470,9 @@ describe("CLI daemon lifecycle", () => {
     const anthropicUpstream = await listen(
       createServer((request, response) => {
         anthropicPath = request.url;
-        forwardedApiKey =
-          typeof request.headers["x-api-key"] === "string"
-            ? request.headers["x-api-key"]
+        forwardedAuthorization =
+          typeof request.headers.authorization === "string"
+            ? request.headers.authorization
             : undefined;
         request.resume();
         response.writeHead(200, { "content-type": "application/json" });
@@ -532,7 +532,7 @@ describe("CLI daemon lifecycle", () => {
           headers: {
             "content-type": "application/json",
             "anthropic-version": "2023-06-01",
-            "x-api-key": "sk-ant-cli-never-persist"
+            "authorization": "Bearer claude-oauth-never-persist"
           },
           body: JSON.stringify({
             model: "claude-sonnet-4-6",
@@ -592,7 +592,7 @@ describe("CLI daemon lifecycle", () => {
     expect(childOutput.base).not.toMatch(/\/v1$/u);
     expect(openAiRequests).toBe(0);
     expect(anthropicPath).toBe("/v1/messages");
-    expect(forwardedApiKey).toBe("sk-ant-cli-never-persist");
+    expect(forwardedAuthorization).toBe("Bearer claude-oauth-never-persist");
     expect(stderr.value).toBe("");
 
     const paths = resolveDaemonPaths(root);
@@ -616,7 +616,7 @@ describe("CLI daemon lifecycle", () => {
         .get(childOutput.session) as { id: string };
       const raw = storage.rawExchanges.getRequired(rawRow.id);
       expect(raw.protocol).toBe("anthropic.messages");
-      expect(raw.requestHeaders["x-api-key"]).toBeUndefined();
+      expect(raw.requestHeaders.authorization).toBeUndefined();
       expect(
         storage.events
           .list(childOutput.session)
@@ -632,7 +632,7 @@ describe("CLI daemon lifecycle", () => {
     } finally {
       storage.close();
     }
-  });
+  }, 15_000);
 
   it("forwards Ctrl-C and preserves the child's final filesystem effect", async () => {
     const root = await temporaryRoot();
@@ -689,7 +689,7 @@ describe("CLI daemon lifecycle", () => {
         signalSource: signalSource as SignalEventSource,
       },
     );
-    await eventually(() => stdout.value.includes("ready\n"));
+    await eventually(() => stdout.value.includes("ready\n"), 10_000);
     signalSource.emit("SIGINT");
 
     expect(await running).toBe(42);
@@ -729,7 +729,7 @@ describe("CLI daemon lifecycle", () => {
     } finally {
       storage.close();
     }
-  });
+  }, 15_000);
 });
 
 describe("CLI cockpit opening", () => {

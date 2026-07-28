@@ -304,7 +304,7 @@ describe("database lifecycle and migrations", () => {
     backup.close();
   });
 
-  it("scrubs previously persisted Anthropic API key headers", async () => {
+  it("scrubs previously persisted provider credential and account headers", async () => {
     const root = await makeRoot();
     const databasePath = join(root, "headers-v3.sqlite");
     const legacy = new Database(databasePath);
@@ -336,6 +336,7 @@ describe("database lifecycle and migrations", () => {
         TIME,
       );
     const secret = "sk-ant-legacy-header-secret";
+    const accountId = "chatgpt-legacy-account-id";
     const legacyExchange = {
       schemaVersion: 1,
       id: "exchange-legacy-headers",
@@ -347,10 +348,12 @@ describe("database lifecycle and migrations", () => {
       query: {},
       requestHeaders: {
         "X-API-Key": [secret],
+        "ChatGPT-Account-ID": [accountId],
         "content-type": ["application/json"],
       },
       responseStatus: 200,
       responseHeaders: {
+        "chatgpt-account-id": ["response-account-id"],
         "x-api-key": ["response-secret"],
         "request-id": ["req_fixture"],
       },
@@ -417,6 +420,12 @@ describe("database lifecycle and migrations", () => {
         .pluck()
         .get(legacyExchange.id),
     ).not.toContain("api-key");
+    expect(
+      storage.unsafeDatabase
+        .prepare("SELECT record_json FROM raw_exchanges WHERE id = ?")
+        .pluck()
+        .get(legacyExchange.id),
+    ).not.toContain(accountId);
   });
 
   it("rejects a newer schema unless query-only access is explicit", async () => {

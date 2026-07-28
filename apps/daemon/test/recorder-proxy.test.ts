@@ -238,6 +238,35 @@ function latestRawExchange(storage: BlackBoxStorage) {
   return storage.rawExchanges.getRequired(row.id);
 }
 
+function createCodexSession(
+  storage: BlackBoxStorage,
+  id: string,
+  upstreamOrigin: string,
+): void {
+  storage.sessions.create({
+    schemaVersion: 1,
+    id,
+    startedAt: new Date().toISOString(),
+    status: "active",
+    captureLevel: "wrapped-process",
+    agentName: "codex",
+    models: [],
+    upstreamOrigin,
+    upstreamRoute: "codex-auth",
+    tags: [],
+    counts: {
+      events: 0,
+      errors: 0,
+      inputTokens: null,
+      outputTokens: null,
+    },
+    metadata: {
+      internalAnalysis: false,
+      sessionization: { source: "explicit-wrapper" },
+    },
+  });
+}
+
 async function eventually(
   predicate: () => boolean,
   timeoutMilliseconds = 2_000,
@@ -395,7 +424,7 @@ describe("byte-faithful recorder proxy", () => {
         transports: ["http-json", "http-sse"],
       },
       normalizerVersions: {
-        "openai.responses": "1.1.0",
+        "openai.responses": "1.2.0",
         "openai.chat-completions": "1.1.0",
         "unknown-openai-compatible": "1.0.0",
       },
@@ -722,6 +751,87 @@ describe("byte-faithful recorder proxy", () => {
       path: "/v1/future-operation",
       query: { mode: ["wrapper"] },
     });
+  });
+
+  it("routes Codex account and API-key sessions without persisting identity headers", async () => {
+    const apiUpstream = await makeUpstream();
+    const chatGptUpstream = await makeUpstream();
+    const { storage } = await makeStorage();
+    const proxy = await makeProxy(apiUpstream.origin, storage, {
+      codexApiUpstreamOrigin: apiUpstream.origin,
+      codexChatGptUpstreamOrigin: chatGptUpstream.origin,
+    });
+    const proxyOrigin = proxy.address()?.origin as string;
+
+    createCodexSession(storage, "session-codex-account", apiUpstream.origin);
+    const accountBase = new URL(
+      sessionScopedProxyBaseUrl(proxyOrigin, "session-codex-account"),
+    );
+    await requestBytes(
+      accountBase.origin,
+      `${accountBase.pathname}/responses?mode=account`,
+      Buffer.from('{"model":"fixture","input":"account"}'),
+      {
+        authorization: "Bearer account-token-never-persist",
+        "chatgpt-account-id": "account-id-never-persist",
+        "content-type": "application/json",
+      },
+    );
+
+    createCodexSession(storage, "session-codex-api-key", apiUpstream.origin);
+    const apiBase = new URL(
+      sessionScopedProxyBaseUrl(proxyOrigin, "session-codex-api-key"),
+    );
+    await requestBytes(
+      apiBase.origin,
+      `${apiBase.pathname}/responses?mode=api-key`,
+      Buffer.from('{"model":"fixture","input":"api"}'),
+      {
+        authorization: "Bearer sk-api-never-persist",
+        "content-type": "application/json",
+      },
+    );
+    await proxy.flush();
+
+    expect(chatGptUpstream.observations).toHaveLength(1);
+    expect(chatGptUpstream.observations[0]?.path).toBe(
+      "/backend-api/codex/responses?mode=account",
+    );
+    expect(chatGptUpstream.observations[0]?.headers["chatgpt-account-id"]).toBe(
+      "account-id-never-persist",
+    );
+    expect(apiUpstream.observations).toHaveLength(1);
+    expect(apiUpstream.observations[0]?.path).toBe(
+      "/v1/responses?mode=api-key",
+    );
+
+    expect(storage.sessions.getRequired("session-codex-account")).toMatchObject(
+      {
+        upstreamOrigin: chatGptUpstream.origin,
+        upstreamRoute: "codex-auth",
+        metadata: { providerAuthentication: "chatgpt-account" },
+      },
+    );
+    expect(storage.sessions.getRequired("session-codex-api-key")).toMatchObject(
+      {
+        upstreamOrigin: apiUpstream.origin,
+        upstreamRoute: "codex-auth",
+        metadata: { providerAuthentication: "api-key" },
+      },
+    );
+    const recorded = storage.unsafeDatabase
+      .prepare(
+        "SELECT id FROM raw_exchanges WHERE session_id = ? ORDER BY sequence DESC LIMIT 1",
+      )
+      .get("session-codex-account") as { id: string };
+    const raw = storage.rawExchanges.getRequired(recorded.id);
+    expect(raw.requestHeaders.authorization).toBeUndefined();
+    expect(raw.requestHeaders["chatgpt-account-id"]).toBeUndefined();
+    storage.checkpoint("TRUNCATE");
+    const databaseBytes = await readFile(storage.databasePath);
+    expect(
+      databaseBytes.includes(Buffer.from("account-id-never-persist")),
+    ).toBe(false);
   });
 
   it("rejects unsupported WebSocket upgrades explicitly", async () => {

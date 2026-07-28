@@ -159,6 +159,31 @@ describe("OpenAI Responses normalization", () => {
     expect(result).toMatchObject({ status: "unsupported", events: [] });
   });
 
+  it("recognizes an SSE response when an upstream omits content-type", () => {
+    const fixture = fixtures.find(
+      (candidate) => candidate.id === "responses-sse-text-function",
+    ) as ProtocolFixture;
+    const result = normalizer.normalize(
+      NormalizationExchangeSchema.parse({
+        ...exchangeFromFixture(fixture),
+        id: "responses-sse-without-content-type",
+        responseHeaders: {},
+      }),
+    );
+
+    expect(result).toMatchObject({
+      parserId: "openai.responses.sse",
+      status: "parsed",
+    });
+    expect(result.events.map((event) => event.type)).not.toContain(
+      "parser.error",
+    );
+    expect(
+      result.events.find((event) => event.type === "message.assistant")
+        ?.summary,
+    ).toMatchObject({ text: "I will check." });
+  });
+
   it("ignores identical identified SSE replays with visible evidence", () => {
     const fixture = fixtures.find(
       (candidate) => candidate.id === "responses-sse-text-function",

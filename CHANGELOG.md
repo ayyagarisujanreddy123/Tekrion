@@ -11,6 +11,9 @@ This file records user-visible changes to Black Box. Version 0.1.0 remains an un
 - Native `blackbox run` launch integration for Codex and Claude Code, including
   auto-detection, explicit `--agent` selection, one-run client configuration,
   and validated per-session upstream routing through a shared daemon.
+- Account-aware local sessions: Codex reuses ChatGPT or API-key authentication
+  through an HTTP-only recorder provider, while Claude reuses its native
+  OAuth/API-key selection without a separate Black Box credential.
 - Crash-safe SQLite evidence journal, content-addressed blob storage, recovery, migrations, quotas, retention, and explicit garbage collection.
 - `blackbox run` process capture with bounded output, signal forwarding, workspace baselines, live observations, and authoritative final file evidence.
 - Authenticated local browser cockpit with session navigation, virtualized timeline, evidence inspection, context reconstruction, search, and live updates.
@@ -22,9 +25,10 @@ This file records user-visible changes to Black Box. Version 0.1.0 remains an un
 
 ### Security and privacy
 
-- Sensitive authorization, `x-api-key`, and cookie headers are excluded from
-  persisted evidence; existing stores are migrated to scrub historically
-  retained Anthropic API-key header fields.
+- Sensitive authorization, `x-api-key`, ChatGPT account-routing, and cookie
+  headers are excluded from persisted evidence; existing stores are migrated to
+  scrub historically retained Anthropic API-key and ChatGPT account-identifier
+  fields.
 - Control and cockpit services default to loopback with token and origin checks.
 - Recorded markup remains inert, optional external analysis is disabled by default, and imported evidence cannot trigger analysis or replay.
 - Apache-2.0 licensing and generated third-party notices are included in future runtime package contents.
@@ -36,14 +40,17 @@ This file records user-visible changes to Black Box. Version 0.1.0 remains an un
 
 ### Fixed
 
+- Recognize OpenAI Responses SSE bodies when an upstream omits the
+  `Content-Type` header, including account-authenticated Codex traffic.
 - Corrected the minimum Node.js requirement to 22.15.0, the first 22.x release with the Zstandard APIs required by the evidence blob store, and added an explicit `doctor` runtime check.
 - Made `blackbox doctor` report unsupported POSIX permission-mode verification as a warning on Windows instead of failing an otherwise healthy installation.
 - Made package smoke testing and release preflight invoke JavaScript entrypoints directly so Windows does not attempt to execute npm-generated `.cmd` shims through `execFile`.
 
 ### Known limitations
 
-- Responses WebSocket/Realtime, native Bedrock and Vertex transports, and
-  path-bearing upstream gateways are not supported.
+- Standalone Responses WebSocket/Realtime, native Bedrock, Vertex, and Foundry
+  transports, and path-bearing upstream gateways are not supported. Wrapped
+  Codex sessions use HTTP.
 - Agent-specific adapters are not bundled.
 - Black Box observes configured API, wrapped-process, and repository boundaries; it is not an operating-system sandbox or universal activity monitor.
 - npm publication, signed tagging, and registry installation verification are deferred.

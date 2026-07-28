@@ -591,6 +591,73 @@ WHERE response_headers_json IS NOT NULL
   );
 `;
 
+const REMOVE_CHATGPT_ACCOUNT_ID_HEADER_SQL = String.raw`
+PRAGMA secure_delete = ON;
+
+UPDATE raw_exchanges
+SET request_headers_json = COALESCE(
+      (
+        SELECT json_group_object(key, json(value))
+        FROM json_each(raw_exchanges.request_headers_json)
+        WHERE lower(key) <> 'chatgpt-account-id'
+      ),
+      '{}'
+    ),
+    record_json = json_set(
+      record_json,
+      '$.requestHeaders',
+      json(
+        COALESCE(
+          (
+            SELECT json_group_object(key, json(value))
+            FROM json_each(
+              json_extract(raw_exchanges.record_json, '$.requestHeaders')
+            )
+            WHERE lower(key) <> 'chatgpt-account-id'
+          ),
+          '{}'
+        )
+      )
+    )
+WHERE EXISTS (
+  SELECT 1
+  FROM json_each(raw_exchanges.request_headers_json)
+  WHERE lower(key) = 'chatgpt-account-id'
+);
+
+UPDATE raw_exchanges
+SET response_headers_json = COALESCE(
+      (
+        SELECT json_group_object(key, json(value))
+        FROM json_each(raw_exchanges.response_headers_json)
+        WHERE lower(key) <> 'chatgpt-account-id'
+      ),
+      '{}'
+    ),
+    record_json = json_set(
+      record_json,
+      '$.responseHeaders',
+      json(
+        COALESCE(
+          (
+            SELECT json_group_object(key, json(value))
+            FROM json_each(
+              json_extract(raw_exchanges.record_json, '$.responseHeaders')
+            )
+            WHERE lower(key) <> 'chatgpt-account-id'
+          ),
+          '{}'
+        )
+      )
+    )
+WHERE response_headers_json IS NOT NULL
+  AND EXISTS (
+    SELECT 1
+    FROM json_each(raw_exchanges.response_headers_json)
+    WHERE lower(key) = 'chatgpt-account-id'
+  );
+`;
+
 export const MIGRATIONS: readonly Migration[] = [
   defineMigration(1, "initial-evidence-schema", INITIAL_SCHEMA_SQL),
   defineMigration(
@@ -607,6 +674,11 @@ export const MIGRATIONS: readonly Migration[] = [
     4,
     "remove-forbidden-header-fields",
     REMOVE_FORBIDDEN_HEADER_FIELDS_SQL,
+  ),
+  defineMigration(
+    5,
+    "remove-chatgpt-account-id-header",
+    REMOVE_CHATGPT_ACCOUNT_ID_HEADER_SQL,
   ),
 ];
 

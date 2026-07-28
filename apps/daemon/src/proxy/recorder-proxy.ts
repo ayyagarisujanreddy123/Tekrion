@@ -22,6 +22,7 @@ import {
   SessionSchema,
   type RawExchangeOutcome,
   type SafeHeaders,
+  type Session,
 } from "@blackbox/protocol";
 import { ChunkManifestBuilder, type BlackBoxStorage } from "@blackbox/storage";
 
@@ -52,6 +53,8 @@ export interface RecorderProxyOptions extends ProxyConfigurationInput {
   readonly sensitiveHeaderNames?: readonly string[];
   readonly normalizationRunner?: ExchangeNormalizationRunner;
   readonly sessionizer?: Sessionizer;
+  readonly codexApiUpstreamOrigin?: string;
+  readonly codexChatGptUpstreamOrigin?: string;
 }
 
 export interface ProxyAddress {
@@ -111,6 +114,12 @@ interface EvidenceState {
   rawStarted: boolean;
 }
 
+export const CODEX_API_UPSTREAM_ORIGIN = "https://api.openai.com";
+export const CODEX_CHATGPT_UPSTREAM_ORIGIN = "https://chatgpt.com";
+
+const CODEX_CHATGPT_PATH_PREFIX = "/backend-api/codex";
+const CHATGPT_ACCOUNT_ID_HEADER = "chatgpt-account-id";
+
 function protocolForPath(path: string) {
   if (path === "/v1/responses") {
     return "openai.responses" as const;
@@ -167,12 +176,19 @@ function headerValue(
   return Array.isArray(value) ? value[0] : value;
 }
 
+function codexChatGptPath(path: string): string {
+  const suffix = path === "/v1" ? "" : path.slice("/v1".length);
+  return `${CODEX_CHATGPT_PATH_PREFIX}${suffix}`;
+}
+
 export class RecorderProxy {
   readonly configuration: ProxyConfiguration;
   private readonly server: Server;
   private readonly budget: CaptureMemoryBudget;
   private readonly normalizationRunner: ExchangeNormalizationRunner;
   private readonly sessionizer: Sessionizer;
+  private readonly codexApiUpstream: URL;
+  private readonly codexChatGptUpstream: URL;
   private readonly pendingJournals = new Set<Promise<void>>();
   private readonly defaultSessionId = `session-proxy-${randomUUID()}`;
   private readonly healthState: MutableProxyHealth = {
@@ -190,6 +206,12 @@ export class RecorderProxy {
 
   constructor(private readonly options: RecorderProxyOptions) {
     this.configuration = resolveProxyConfiguration(options);
+    this.codexApiUpstream = validateUpstreamOrigin(
+      options.codexApiUpstreamOrigin ?? CODEX_API_UPSTREAM_ORIGIN,
+    );
+    this.codexChatGptUpstream = validateUpstreamOrigin(
+      options.codexChatGptUpstreamOrigin ?? CODEX_CHATGPT_UPSTREAM_ORIGIN,
+    );
     this.budget = new CaptureMemoryBudget(
       this.configuration.captureQueueMaxBytes,
     );
@@ -297,12 +319,7 @@ export class RecorderProxy {
     };
   }
 
-  private upstreamForSession(sessionId: string): URL {
-    const session = this.options.storage.sessions.get(sessionId);
-    if (session?.status !== "active" || session.upstreamOrigin === undefined) {
-      return this.configuration.upstream;
-    }
-    const upstream = validateUpstreamOrigin(session.upstreamOrigin);
+  private assertUsableUpstream(upstream: URL): URL {
     assertNoProxyLoop(
       this.addressValue?.host ?? this.configuration.listenHost,
       this.addressValue?.port ?? this.configuration.listenPort,
@@ -311,17 +328,66 @@ export class RecorderProxy {
     return upstream;
   }
 
+  private recordCodexAuthentication(
+    session: Session,
+    authentication: "api-key" | "chatgpt-account",
+    upstream: URL,
+  ): void {
+    if (
+      session.upstreamOrigin === upstream.origin &&
+      session.metadata.providerAuthentication === authentication
+    ) {
+      return;
+    }
+    try {
+      this.options.storage.sessions.replace(
+        SessionSchema.parse({
+          ...session,
+          upstreamOrigin: upstream.origin,
+          metadata: {
+            ...session.metadata,
+            providerAuthentication: authentication,
+          },
+        }),
+      );
+    } catch (error: unknown) {
+      this.recordCaptureFailure(error);
+    }
+  }
+
   private routeTargetForSession(
     target: RequestTarget,
     sessionId: string,
+    requestHeaders: IncomingHttpHeaders,
   ): RequestTarget {
-    const upstream = this.upstreamForSession(sessionId);
+    const session = this.options.storage.sessions.get(sessionId);
+    if (session?.status !== "active") {
+      return target;
+    }
+
+    let upstream =
+      session.upstreamOrigin === undefined
+        ? this.configuration.upstream
+        : validateUpstreamOrigin(session.upstreamOrigin);
+    let path = target.path;
+    let codexAuthentication: "api-key" | "chatgpt-account" | undefined;
+    if (session.upstreamRoute === "codex-auth") {
+      const usesChatGptAccount =
+        (headerValue(requestHeaders, CHATGPT_ACCOUNT_ID_HEADER)?.trim()
+          .length ?? 0) > 0;
+      upstream = usesChatGptAccount
+        ? this.codexChatGptUpstream
+        : this.codexApiUpstream;
+      path = usesChatGptAccount ? codexChatGptPath(target.path) : target.path;
+      codexAuthentication = usesChatGptAccount ? "chatgpt-account" : "api-key";
+    }
+    this.assertUsableUpstream(upstream);
+    if (codexAuthentication !== undefined) {
+      this.recordCodexAuthentication(session, codexAuthentication, upstream);
+    }
     return {
       ...target,
-      upstreamUrl: new URL(
-        `${target.upstreamUrl.pathname}${target.upstreamUrl.search}`,
-        upstream,
-      ),
+      upstreamUrl: new URL(`${path}${target.upstreamUrl.search}`, upstream),
     };
   }
 
@@ -551,7 +617,11 @@ export class RecorderProxy {
     try {
       target = parseRequestTarget(request.url, this.configuration.upstream);
       if (target.sessionId !== undefined) {
-        target = this.routeTargetForSession(target, target.sessionId);
+        target = this.routeTargetForSession(
+          target,
+          target.sessionId,
+          request.headers,
+        );
       }
     } catch {
       this.healthState.activeRequests -= 1;

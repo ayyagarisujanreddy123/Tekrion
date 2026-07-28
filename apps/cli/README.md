@@ -20,9 +20,12 @@ blackbox run -- claude
 blackbox open
 ```
 
-Direct Codex and Claude executables are auto-detected. Use `--agent` when another
-launcher hides the executable. Codex is routed through a one-run OpenAI
-configuration override, while Claude receives `ANTHROPIC_BASE_URL`; neither
+Direct Codex and Claude executables are auto-detected. Use `--agent` when a
+common npm, pnpm, Yarn, or Bun package runner hides the executable; prefer a
+direct agent command over an opaque shell command string. Codex is routed
+through a temporary HTTP-only provider that reuses its ChatGPT or API-key login.
+Claude receives `ANTHROPIC_BASE_URL` and retains its native OAuth/API-key
+selection. Black Box does not need a separate provider credential, and neither
 agent's global configuration is edited.
 
 You can also run Black Box as a standalone localhost proxy with `blackbox start`

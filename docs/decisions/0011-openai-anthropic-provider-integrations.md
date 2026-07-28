@@ -1,6 +1,7 @@
 # ADR 0011: First-class OpenAI and Anthropic provider integrations
 
-- Status: Accepted
+- Status: Accepted; authentication routing extended by
+  [ADR 0012](0012-account-authenticated-agent-sessions.md)
 - Date: 2026-07-23
 - Milestone: Production provider interoperability
 
@@ -55,5 +56,6 @@ one session's request to another session's upstream. Anthropic commonly uses the
 - An older database may create a private migration backup containing an
   `x-api-key` value that the active store has scrubbed. Operators must protect or
   retire that backup and rotate affected credentials when appropriate.
-- Subscription-specific private backends and unsupported cloud-provider
-  protocols are not implied by the Codex/Claude CLI integration labels.
+- Account-authenticated local CLI routing is defined by ADR 0012. Unsupported
+  cloud-provider protocols are still not implied by the Codex/Claude CLI
+  integration labels.

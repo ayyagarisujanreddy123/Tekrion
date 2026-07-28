@@ -39,6 +39,7 @@ import {
   defaultUpstreamForAgent,
   prepareAgentLaunch,
   resolveAgentIntegration,
+  sessionUpstreamRouteForAgent,
 } from "./agent-integration.js";
 import {
   createViewerUrl,
@@ -131,6 +132,7 @@ Archive and retention options:
 
 Run options:
   --agent NAME                    Agent integration (default auto-detect)
+                                  Codex/Claude reuse their active native login
   --cwd PATH                      Child working directory (default current directory)
   --max-output-frame-bytes N      Maximum stored stdout/stderr frame (default 262144)
   --max-untracked-file-bytes N    Maximum stored content per changed file (default 1048576)
@@ -448,10 +450,11 @@ async function commandRun(
     configuration,
     runtime,
   );
-  const hasPerRunUpstream =
+  const hasExplicitUpstream =
     stringFlag(parsed.flags, "upstream") !== undefined ||
-    runtime.environment.BLACKBOX_UPSTREAM_URL !== undefined ||
-    defaultUpstream !== undefined;
+    runtime.environment.BLACKBOX_UPSTREAM_URL !== undefined;
+  const hasPerRunUpstream =
+    hasExplicitUpstream || defaultUpstream !== undefined;
   const sessionUpstreamOrigin = hasPerRunUpstream
     ? configuration.proxy.upstream.origin
     : (status.upstreamOrigin ??
@@ -466,6 +469,7 @@ async function commandRun(
     agent,
     parsed.positionals.slice(1),
     sessionProxyOrigin,
+    executable,
   );
   const startedAt = runtime.now().toISOString();
   const storage = await openBlackBoxStorage({
@@ -522,6 +526,7 @@ async function commandRun(
       ...(sessionUpstreamOrigin === undefined
         ? {}
         : { upstreamOrigin: sessionUpstreamOrigin }),
+      upstreamRoute: sessionUpstreamRouteForAgent(agent, hasExplicitUpstream),
     },
   );
   let recordingFailure: unknown;

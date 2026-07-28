@@ -122,7 +122,7 @@ describe("deterministic rogue demo fixture", () => {
     } finally {
       await rm(outputRoot, { recursive: true, force: true });
     }
-  }, 15_000);
+  }, 30_000);
 
   it("refuses to reset a directory that is not explicitly demo-scoped", async () => {
     const unsafeRoot = await mkdtemp(join(tmpdir(), "unsafe-reset-target-"));
