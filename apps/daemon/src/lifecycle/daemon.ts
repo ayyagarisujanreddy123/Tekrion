@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import type { AiReportProvider } from "@blackbox/analysis";
+import type { AiReportProvider } from "@tekrion/analysis";
 import {
-  openBlackBoxStorage,
-  type BlackBoxStorage,
+  openTekrionStorage,
+  type TekrionStorage,
   type BlobStoreOptions,
-} from "@blackbox/storage";
+} from "@tekrion/storage";
 import { z } from "zod";
 
 import type { ProxyConfigurationInput } from "../proxy/config.js";
@@ -28,7 +28,7 @@ export interface DaemonProxyOptions extends ProxyConfigurationInput {
   readonly sensitiveHeaderNames?: readonly string[];
 }
 
-export interface BlackBoxDaemonOptions {
+export interface TekrionDaemonOptions {
   readonly homeDirectory?: string;
   readonly proxy?: DaemonProxyOptions;
   readonly control?: {
@@ -43,21 +43,21 @@ export interface BlackBoxDaemonOptions {
   readonly now?: () => Date;
 }
 
-export class BlackBoxDaemon {
+export class TekrionDaemon {
   readonly paths: DaemonPaths;
   readonly instanceId = `daemon-${randomUUID()}`;
   readonly shutdownGraceMilliseconds: number;
 
   private stateValue: DaemonLifecycleState = "new";
   private startedAtValue?: string;
-  private storageValue?: BlackBoxStorage;
+  private storageValue?: TekrionStorage;
   private proxyValue?: RecorderProxy;
   private controlValue?: ControlServer;
   private lockValue?: DaemonLock;
   private startPromise?: Promise<DaemonStatus>;
   private stopPromise?: Promise<void>;
 
-  constructor(private readonly options: BlackBoxDaemonOptions = {}) {
+  constructor(private readonly options: TekrionDaemonOptions = {}) {
     this.paths = resolveDaemonPaths(options.homeDirectory);
     this.shutdownGraceMilliseconds = ShutdownGraceSchema.parse(
       options.shutdownGraceMilliseconds ?? 5_000,
@@ -168,7 +168,7 @@ export class BlackBoxDaemon {
         now: () => this.now(),
       });
       this.startedAtValue = this.lockValue.record.startedAt;
-      this.storageValue = await openBlackBoxStorage({
+      this.storageValue = await openTekrionStorage({
         databasePath: this.paths.databasePath,
         dataDirectory: this.paths.dataDirectory,
         ...(this.options.blobStore === undefined

@@ -8,6 +8,7 @@ export default tseslint.config(
     ignores: [
       "**/dist/**",
       "**/node_modules/**",
+      ".tekrion-demo/**",
       ".blackbox-demo/**",
       "coverage/**",
       "demo/rogue-repo-template/**",
@@ -30,7 +31,7 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ["@blackbox/viewer", "@blackbox/viewer/*"],
+              group: ["@tekrion/viewer", "@tekrion/viewer/*"],
               message:
                 "Runtime packages must not depend on the viewer application.",
             },

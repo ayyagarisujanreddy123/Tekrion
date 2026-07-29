@@ -19,11 +19,11 @@ import {
   type AiReportProvider,
   type AnalysisContextWindow,
   type MinimizedReportEvidence,
-} from "@blackbox/analysis";
-import { ContextReconstructor } from "@blackbox/context";
+} from "@tekrion/analysis";
+import { ContextReconstructor } from "@tekrion/context";
 import {
   BlameAnalysisSchema,
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   ContextResultSchema,
   EventDetailSchema,
   EventListQuerySchema,
@@ -49,7 +49,7 @@ import {
   type EventSearchResult,
   type FileChangeListQueryInput,
   type FileChangePage,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type ContextResult,
   type IncidentReportResult,
   type ReportAnalysisUsage,
@@ -58,16 +58,15 @@ import {
   type SessionDetail,
   type SessionListQueryInput,
   type SessionPage,
-} from "@blackbox/protocol";
-import type { BlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/protocol";
+import type { TekrionStorage } from "@tekrion/storage";
 
 const DETERMINISTIC_ANALYZER_ID = `${DETERMINISTIC_SCORING_VERSION}+${ANOMALY_ANALYZER_VERSION}`;
-const ANALYSIS_MEDIA_TYPE = "application/vnd.blackbox.blame+json";
-const REPORT_MEDIA_TYPE = "application/vnd.blackbox.incident-report+json";
+const ANALYSIS_MEDIA_TYPE = "application/vnd.tekrion.blame+json";
+const REPORT_MEDIA_TYPE = "application/vnd.tekrion.incident-report+json";
 const REPORT_SNAPSHOT_MEDIA_TYPE =
-  "application/vnd.blackbox.report-evidence+json";
-const AI_OUTPUT_MEDIA_TYPE =
-  "application/vnd.blackbox.ai-report-narrative+json";
+  "application/vnd.tekrion.report-evidence+json";
+const AI_OUTPUT_MEDIA_TYPE = "application/vnd.tekrion.ai-report-narrative+json";
 const MAXIMUM_ANALYSIS_EVENTS = 5_000;
 const MAXIMUM_BLAME_CANDIDATES = 500;
 const MAXIMUM_REPORT_EVENTS = 10_000;
@@ -178,9 +177,9 @@ function normalizedEvidencePath(path: string): string {
 }
 
 function relatedInvocation(
-  events: readonly BlackBoxEvent[],
-  target: BlackBoxEvent,
-): BlackBoxEvent {
+  events: readonly TekrionEvent[],
+  target: TekrionEvent,
+): TekrionEvent {
   if (target.type === "tool.call") {
     return target;
   }
@@ -232,7 +231,7 @@ export class EvidenceQueryService {
   private readonly analyzer = new DeterministicAnalyzer();
 
   constructor(
-    private readonly storage: BlackBoxStorage,
+    private readonly storage: TekrionStorage,
     private readonly options: EvidenceQueryServiceOptions = {},
   ) {
     this.context = new ContextReconstructor({
@@ -602,7 +601,7 @@ export class EvidenceQueryService {
       const endedAt = this.now().toISOString();
       const failure =
         provider === undefined
-          ? "AI analysis is not configured. Set BLACKBOX_ANALYSIS_API_KEY and BLACKBOX_ANALYSIS_MODEL before starting the daemon or invoking --ai."
+          ? "AI analysis is not configured. Set TEKRION_ANALYSIS_API_KEY and TEKRION_ANALYSIS_MODEL before starting the daemon or invoking --ai."
           : "AI analysis was not started because the minimized snapshot contains no citeable event evidence.";
       try {
         this.storage.analysisRuns.replace({
@@ -774,7 +773,7 @@ export class EvidenceQueryService {
   private reportEventWindow(
     session: Session,
     targetEventId?: string,
-  ): { readonly events: BlackBoxEvent[]; readonly truncated: boolean } {
+  ): { readonly events: TekrionEvent[]; readonly truncated: boolean } {
     const recent = this.storage.events.listThroughSequence(
       session.id,
       Number.MAX_SAFE_INTEGER,
@@ -877,7 +876,7 @@ export class EvidenceQueryService {
       startedAt,
       status: "active",
       captureLevel: "api",
-      agentName: "blackbox-report-analyzer",
+      agentName: "tekrion-report-analyzer",
       models: [provider.model],
       tags: ["internal-analysis", "incident-report"],
       counts: {
@@ -947,7 +946,7 @@ export class EvidenceQueryService {
   private async recordAiAnalysisEvent(
     sessionId: string,
     type: string,
-    evidence: BlackBoxEvent["evidence"],
+    evidence: TekrionEvent["evidence"],
     summary: Record<string, unknown>,
     payloadRef?: BlobReference,
     redactionRuleIds: readonly string[] = [],
@@ -958,7 +957,7 @@ export class EvidenceQueryService {
     }
     const timestamp = this.now().toISOString();
     this.storage.events.insert(
-      BlackBoxEventSchema.parse({
+      TekrionEventSchema.parse({
         schemaVersion: 1,
         id: recordId("event-analysis-report"),
         sessionId,
@@ -1029,7 +1028,7 @@ export class EvidenceQueryService {
     sessionId: string,
     afterSequence: number,
     limit: number,
-  ): BlackBoxEvent[] {
+  ): TekrionEvent[] {
     const id = IdentifierSchema.parse(sessionId);
     const cursor = LiveEventCursorSchema.parse(afterSequence);
     return this.storage.events.listAfterSequence(id, cursor, limit);

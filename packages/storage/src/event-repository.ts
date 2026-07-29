@@ -1,14 +1,14 @@
 import { isDeepStrictEqual } from "node:util";
 
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   RawExchangeParseStatusSchema,
   RawExchangeSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type EvidenceSource,
   type RawExchange,
   type RawExchangeParseStatus,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import type Database from "better-sqlite3";
 
 import { ImmutableEvidenceError, StorageIntegrityError } from "./errors.js";
@@ -38,12 +38,12 @@ interface RawRecordRow {
 }
 
 export interface EventCursorPage {
-  readonly events: BlackBoxEvent[];
+  readonly events: TekrionEvent[];
   readonly nextCursor?: string;
 }
 
 export interface EventAnalysisWindow {
-  readonly events: BlackBoxEvent[];
+  readonly events: TekrionEvent[];
   readonly truncated: boolean;
 }
 
@@ -60,7 +60,7 @@ export interface EventListOptions {
 export interface NormalizationInput {
   readonly exchangeId: string;
   readonly parserVersion: string;
-  readonly events: readonly BlackBoxEvent[];
+  readonly events: readonly TekrionEvent[];
   readonly parseStatus?: Exclude<RawExchangeParseStatus, "pending">;
   readonly completedAt?: string;
 }
@@ -72,7 +72,7 @@ export interface NormalizationResult {
 
 export interface StoredNormalization {
   readonly parserVersion: string;
-  readonly events: readonly BlackBoxEvent[];
+  readonly events: readonly TekrionEvent[];
 }
 
 interface EventCursor {
@@ -105,8 +105,8 @@ function decodeCursor(cursor: string): EventCursor {
   }
 }
 
-function parseEventRow(row: EventRow): BlackBoxEvent {
-  return BlackBoxEventSchema.parse(JSON.parse(row.record_json));
+function parseEventRow(row: EventRow): TekrionEvent {
+  return TekrionEventSchema.parse(JSON.parse(row.record_json));
 }
 
 function exchangeHashes(exchange: RawExchange): {
@@ -123,14 +123,14 @@ export class EventRepository {
   constructor(private readonly database: Database.Database) {}
 
   insert(
-    input: BlackBoxEvent,
+    input: TekrionEvent,
     origin: {
       readonly rawExchangeId?: string;
       readonly normalizationVersion?: string;
     } = {},
     now: string = new Date().toISOString(),
-  ): BlackBoxEvent {
-    const event = BlackBoxEventSchema.parse(input);
+  ): TekrionEvent {
+    const event = TekrionEventSchema.parse(input);
     this.database.transaction(() => {
       this.insertRow(event, origin, now);
     })();
@@ -141,9 +141,7 @@ export class EventRepository {
     const completedAt = input.completedAt ?? new Date().toISOString();
     const exchange = this.getRawExchange(input.exchangeId);
     const hashes = exchangeHashes(exchange);
-    const events = input.events.map((event) =>
-      BlackBoxEventSchema.parse(event),
-    );
+    const events = input.events.map((event) => TekrionEventSchema.parse(event));
     const parseStatus: RawExchangeParseStatus =
       RawExchangeParseStatusSchema.parse(input.parseStatus ?? "parsed");
     if (parseStatus === "pending") {
@@ -246,7 +244,7 @@ export class EventRepository {
     return { inserted: true, eventIds: events.map((event) => event.id) };
   }
 
-  get(id: string): BlackBoxEvent | undefined {
+  get(id: string): TekrionEvent | undefined {
     const row = this.database
       .prepare("SELECT record_json FROM events WHERE id = ?")
       .get(id) as EventRow | undefined;
@@ -274,7 +272,7 @@ export class EventRepository {
     };
   }
 
-  listForExchange(exchangeId: string): BlackBoxEvent[] {
+  listForExchange(exchangeId: string): TekrionEvent[] {
     const rows = this.database
       .prepare(
         `SELECT record_json
@@ -289,7 +287,7 @@ export class EventRepository {
   findResponseEvent(
     sessionId: string,
     responseId: string,
-  ): BlackBoxEvent | undefined {
+  ): TekrionEvent | undefined {
     const row = this.database
       .prepare(
         `SELECT record_json
@@ -378,7 +376,7 @@ export class EventRepository {
     sessionId: string,
     afterSequence: number,
     limit = 100,
-  ): BlackBoxEvent[] {
+  ): TekrionEvent[] {
     if (!Number.isSafeInteger(afterSequence) || afterSequence < 0) {
       throw new RangeError(
         "Event sequence cursor must be a non-negative integer.",
@@ -430,7 +428,7 @@ export class EventRepository {
     return { events: visible, truncated };
   }
 
-  search(sessionId: string, query: string, limit = 50): BlackBoxEvent[] {
+  search(sessionId: string, query: string, limit = 50): TekrionEvent[] {
     const rows = this.database
       .prepare(
         `SELECT events.record_json
@@ -468,7 +466,7 @@ export class EventRepository {
   }
 
   private insertRow(
-    event: BlackBoxEvent,
+    event: TekrionEvent,
     origin: {
       readonly rawExchangeId?: string;
       readonly normalizationVersion?: string;
@@ -586,7 +584,7 @@ export class EventRepository {
     }
   }
 
-  private getStoredEvents(eventIds: readonly string[]): BlackBoxEvent[] {
+  private getStoredEvents(eventIds: readonly string[]): TekrionEvent[] {
     return eventIds.map((eventId) => {
       try {
         const event = this.get(eventId);

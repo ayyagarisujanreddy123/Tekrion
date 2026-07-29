@@ -105,13 +105,13 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
           packages=(
-            @blackbox/protocol
-            @blackbox/storage
-            @blackbox/normalizers
-            @blackbox/context
-            @blackbox/analysis
-            @blackbox/daemon
-            @blackbox/cli
+            @tekrion/protocol
+            @tekrion/storage
+            @tekrion/normalizers
+            @tekrion/context
+            @tekrion/analysis
+            @tekrion/daemon
+            @tekrion/cli
           )
           for package_name in "${packages[@]}"; do
             set +e
@@ -133,10 +133,10 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          npm publish --workspace=@blackbox/protocol --access public --tag next --provenance
-          npm publish --workspace=@blackbox/storage --access public --tag next --provenance
-          npm publish --workspace=@blackbox/normalizers --access public --tag next --provenance
-          npm publish --workspace=@blackbox/context --access public --tag next --provenance
-          npm publish --workspace=@blackbox/analysis --access public --tag next --provenance
-          npm publish --workspace=@blackbox/daemon --access public --tag next --provenance
-          npm publish --workspace=@blackbox/cli --access public --tag next --provenance
+          npm publish --workspace=@tekrion/protocol --access public --tag next --provenance
+          npm publish --workspace=@tekrion/storage --access public --tag next --provenance
+          npm publish --workspace=@tekrion/normalizers --access public --tag next --provenance
+          npm publish --workspace=@tekrion/context --access public --tag next --provenance
+          npm publish --workspace=@tekrion/analysis --access public --tag next --provenance
+          npm publish --workspace=@tekrion/daemon --access public --tag next --provenance
+          npm publish --workspace=@tekrion/cli --access public --tag next --provenance

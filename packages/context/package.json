@@ -1,12 +1,11 @@
 {
-  "name": "@blackbox/context",
+  "name": "@tekrion/context",
   "version": "0.1.0",
-  "private": true,
-  "description": "Client-visible model context reconstruction for Black Box",
+  "description": "Client-visible model context reconstruction for Tekrion",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayyagarisujanreddy123/Black-Box.git",
+    "url": "git+https://github.com/ayyagarisujanreddy123/Tekrion.git",
     "directory": "packages/context"
   },
   "publishConfig": {
@@ -24,6 +23,6 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@blackbox/protocol": "0.1.0"
+    "@tekrion/protocol": "0.1.0"
   }
 }

@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { chmod, lstat, mkdir, stat } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 
@@ -109,7 +110,7 @@ async function createMigrationBackup(
   const timestamp = now.toISOString().replace(/\D/gu, "");
   const backupPath = join(
     backupDirectory,
-    `blackbox-v${currentVersion}-${timestamp}.sqlite`,
+    `tekrion-v${currentVersion}-${timestamp}.sqlite`,
   );
   await database.backup(backupPath);
   await setPrivateFileMode(backupPath);
@@ -222,7 +223,7 @@ async function openDatabase(
   }
 }
 
-export class BlackBoxStorage {
+export class TekrionStorage {
   readonly sessions: SessionRepository;
   readonly sequences: SequenceAllocator;
   readonly rawExchanges: RawExchangeRepository;
@@ -277,13 +278,18 @@ export class BlackBoxStorage {
   }
 }
 
-export async function openBlackBoxStorage(
+export async function openTekrionStorage(
   options: OpenStorageOptions,
-): Promise<BlackBoxStorage> {
+): Promise<TekrionStorage> {
   assertBlobCodecRuntimeSupport();
   const databasePath = resolve(options.databasePath);
+  const currentDataDirectory = join(dirname(databasePath), "tekrion-data");
+  const legacyDataDirectory = join(dirname(databasePath), "blackbox-data");
   const dataDirectory = resolve(
-    options.dataDirectory ?? join(dirname(databasePath), "blackbox-data"),
+    options.dataDirectory ??
+      (!existsSync(currentDataDirectory) && existsSync(legacyDataDirectory)
+        ? legacyDataDirectory
+        : currentDataDirectory),
   );
   if (options.readOnly !== true) {
     await mkdir(dirname(databasePath), { recursive: true, mode: 0o700 });
@@ -315,7 +321,7 @@ export async function openBlackBoxStorage(
             (options.now ?? (() => new Date()))().toISOString(),
           );
 
-    return new BlackBoxStorage(
+    return new TekrionStorage(
       opened.database,
       databasePath,
       dataDirectory,

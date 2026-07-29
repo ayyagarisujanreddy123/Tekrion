@@ -5,13 +5,13 @@ import {
   minimizeReportEvidence,
   snapshotEvidenceById,
   validateAiNarrativeCitations,
-} from "@blackbox/analysis";
+} from "@tekrion/analysis";
 import {
   AiIncidentNarrativeSchema,
   IncidentReportSchema,
   type AiIncidentNarrative,
   type AiReportCitation,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import { describe, expect, it } from "vitest";
 
 import { REPORT_TIME, reportFixture } from "./report-fixture.js";

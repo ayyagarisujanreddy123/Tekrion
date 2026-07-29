@@ -1,16 +1,16 @@
 {
-  "name": "blackbox",
+  "name": "tekrion",
   "version": "0.1.0",
   "private": true,
   "description": "Local flight recorder for AI coding agents",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayyagarisujanreddy123/Black-Box.git"
+    "url": "git+https://github.com/ayyagarisujanreddy123/Tekrion.git"
   },
-  "homepage": "https://github.com/ayyagarisujanreddy123/Black-Box#readme",
+  "homepage": "https://github.com/ayyagarisujanreddy123/Tekrion#readme",
   "bugs": {
-    "url": "https://github.com/ayyagarisujanreddy123/Black-Box/issues"
+    "url": "https://github.com/ayyagarisujanreddy123/Tekrion/issues"
   },
   "type": "module",
   "workspaces": [
@@ -26,11 +26,11 @@
     "fsevents@2.3.3": true
   },
   "scripts": {
-    "blackbox": "node apps/cli/dist/bin.js",
+    "tekrion": "node apps/cli/dist/bin.js",
     "benchmark": "npm run build && node scripts/benchmark.mjs",
-    "build": "tsc -b --pretty false && npm run build:assets --workspace @blackbox/viewer && node scripts/package-license.mjs",
+    "build": "tsc -b --pretty false && npm run build:assets --workspace @tekrion/viewer && node scripts/package-license.mjs",
     "check": "npm run format && npm run lint && npm run typecheck && npm test && npm run test:e2e",
-    "clean": "tsc -b --clean",
+    "clean": "tsc -b --clean && node scripts/clean-output.mjs",
     "demo:cleanup": "node demo/scripts/reset.mjs --clean",
     "demo:offline": "npm run build && node demo/scripts/run-offline.mjs",
     "demo:reset": "node demo/scripts/reset.mjs",
@@ -38,6 +38,7 @@
     "format:write": "prettier --write .",
     "lint": "eslint . --max-warnings=0",
     "package:smoke": "npm run build && node scripts/package-smoke.mjs",
+    "prebuild": "npm run clean",
     "release:preflight": "node scripts/release-preflight.mjs",
     "test": "npm run test:unit",
     "test:e2e": "npm run build && vitest run --config vitest.e2e.config.ts",

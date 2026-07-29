@@ -1,4 +1,4 @@
-import { BlackBoxEventSchema, SessionSchema } from "@blackbox/protocol";
+import { TekrionEventSchema, SessionSchema } from "@tekrion/protocol";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -19,7 +19,7 @@ describe("seeded incident fixtures", () => {
       expect(SessionSchema.safeParse(fixture.session).success).toBe(true);
       expect(
         fixture.events.every(
-          (event) => BlackBoxEventSchema.safeParse(event).success,
+          (event) => TekrionEventSchema.safeParse(event).success,
         ),
       ).toBe(true);
       expect(

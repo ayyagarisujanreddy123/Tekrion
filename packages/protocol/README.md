@@ -1,12 +1,12 @@
-# `@blackbox/protocol`
+# `@tekrion/protocol`
 
-Versioned runtime contracts for Black Box evidence, queries, context reconstruction,
+Versioned runtime contracts for Tekrion evidence, queries, context reconstruction,
 analysis, incident reports, and portable archives.
 
 This package contains the shared Zod schemas and TypeScript types used at Black
-Box's storage, daemon, CLI, and viewer boundaries. It is primarily a Black Box
+Box's storage, daemon, CLI, and viewer boundaries. It is primarily a Tekrion
 runtime component. Most users should install
-[`@blackbox/cli`](https://www.npmjs.com/package/@blackbox/cli) instead.
+[`@tekrion/cli`](https://www.npmjs.com/package/@tekrion/cli) instead.
 
 ## Contract rules
 
@@ -22,7 +22,7 @@ application objects.
 
 ## Project links
 
-- [Black Box repository](https://github.com/ayyagarisujanreddy123/Black-Box)
-- [Complete project guide](https://github.com/ayyagarisujanreddy123/Black-Box/blob/main/docs/complete-project-guide.md)
-- [Security policy](https://github.com/ayyagarisujanreddy123/Black-Box/security/policy)
-- [Apache-2.0 license](https://github.com/ayyagarisujanreddy123/Black-Box/blob/main/LICENSE)
+- [Tekrion repository](https://github.com/ayyagarisujanreddy123/Tekrion)
+- [Complete project guide](https://github.com/ayyagarisujanreddy123/Tekrion/blob/main/docs/complete-project-guide.md)
+- [Security policy](https://github.com/ayyagarisujanreddy123/Tekrion/security/policy)
+- [Apache-2.0 license](https://github.com/ayyagarisujanreddy123/Tekrion/blob/main/LICENSE)

@@ -1,634 +1,208 @@
-# Black Box project memory and session handoff
-
-This is the durable handoff for future Codex sessions working on Black Box.
-Read it completely before changing the repository. It records where work stopped,
-what the user expects, what is already built, the current release state, and the
-next safe actions.
-
-Product documentation remains authoritative for implementation details. Never put
-passwords, npm tokens, 2FA codes, signing keys, API keys, control tokens, or
-captured user evidence in this file.
-
-## Latest direction: local production readiness
-
-This section supersedes older hackathon/demo priorities and the older statement
-that new commits should remain local. On 2026-07-22, the user explicitly stopped
-the hackathon track and made a production-ready application the goal. In the same
-conversation, the user explicitly requested pushes to `origin/main` and asked that
-CI failures be investigated and fixed. Future sessions must still recheck external
-state and must not treat that past authorization as permission for npm publication,
-tagging, releases, or unrelated external changes.
-
-Before the production-hardening continuation, `main` and `origin/main` were clean
-and synchronized at `1726f6d123778979006c1b2f36d62ef839b4d561`. GitHub Actions run
-`29813012194` was green across quality, minimum Node, and packaged Ubuntu, macOS,
-and Windows jobs for that exact commit. The current production pass adds:
-
-- a non-mutating storage open path and a `doctor` check for migration-ledger,
-  schema, and SQLite integrity failures;
-- private daemon log startup rotation with one backup and refusal of symlinked or
-  non-file targets;
-- immutable SHA pins for third-party GitHub Actions, CodeQL scanning, and weekly
-  Dependabot configuration;
-- `docs/operations.md`, covering the supported local single-user production
-  boundary, health, capacity, backup/restore, upgrades, logs, and incidents.
-
-Local verification for this pass completed on 2026-07-22 with 34 unit/contract
-files and 291 passing tests, two packaged end-to-end tests, all seven packed
-runtime smoke installations, two offline rehearsals, and zero audit
-vulnerabilities. Recheck the final commit, clean tree, remote CI, and CodeQL run
-rather than assuming those local results prove the state of a later SHA.
-
-The seven runtime `private: true` flags remain deliberate publication locks. npm
-was not authenticated, and npm E404 responses did not prove control of the
-`@blackbox` scope. Do not remove those locks or publish anything until identity and
-scope ownership are proven. Repository governance also still requires an explicit
-owner decision: main had no branch protection/ruleset, and dependency graph,
-vulnerability alerts, and Dependabot security updates were disabled when audited.
-
-## Resume protocol
-
-1. Read this file in full.
-2. Read docs/complete-project-guide.md for the complete product explanation.
-3. Recheck all time-sensitive state before acting:
-
-    git status --short --branch
-    git log --oneline --decorate -15
-    git rev-list --left-right --count origin/main...main
-    git remote -v
-    node --version
-    npm --version
-    npm whoami
-    gh repo view --json nameWithOwner,visibility,url,defaultBranchRef
-    npm view @blackbox/cli version --json
-    npm view @blackbox/protocol version --json
-
-4. Preserve unrelated user changes. Never reset, discard, amend, or squash them
-   without explicit permission.
-5. Make a local commit for every new feature or important milestone.
-6. Do not push to origin, push a tag, create a GitHub release, create an npm token,
-   change npm package settings, or publish packages unless the user explicitly
-   authorizes that external action in the current session.
-7. Publishing guidance is not publication authorization.
-
-## User preferences and decisions
-
-- Work autonomously when a safe best choice is available.
-- Continue through the next useful step instead of only suggesting it.
-- Make continuous, focused local commits with descriptive messages.
-- The most recent push preference was to keep new work local until the user
-  explicitly asks to push.
-- Never infer push permission from a request to commit or explain a release.
-- The README terminal-style BLACK BOX banner is intentional. Keep it large and
-  centered, with the original terminal glyph/font treatment and identical letters.
-  If it needs adjustment, only reduce its size enough to fit on one line.
-- Documentation must be understandable to someone with no project knowledge.
-- The user wants to ship the product to npm, but first requested this durable memory
-  checkpoint. The project is in release preparation, not yet authorized for public
-  publication.
-
-## State at this checkpoint
-
-Snapshot date: 2026-07-21 in America/Los_Angeles. The final automated preflight
-before this memory refresh finished at 2026-07-21T07:26:19.112Z.
-
-- Workspace: /Applications/Projects/BlackBox. On this case-insensitive macOS volume
-  the path can display as /Applications/projects/BlackBox.
-- Branch: main.
-- Candidate HEAD before this memory refresh:
-  9dc8850fa05d6392801d0058e81c1f9a8523b34a.
-- Candidate summary: build: pin reviewed dependency install scripts.
-- origin/main: 50e4662, docs: restore original terminal banner font.
-- Before this memory refresh, local main was 22 commits ahead and 0 behind
-  origin/main.
-- The branch did not show an upstream association in git branch -vv. Use the
-  explicit command git push origin main only after authorization.
-- The tree was clean before this memory refresh.
-- This file is intended to be the next local commit, making main 23 commits ahead
-  if external state has not changed. Always verify.
-- Remote: https://github.com/ayyagarisujanreddy123/Black-Box.git
-- GitHub repository: ayyagarisujanreddy123/Black-Box
-- GitHub visibility was PUBLIC at this checkpoint.
-- Default branch: main.
-- No Git tags existed.
-- Node: v22.20.0
-- npm: 10.9.3
-- Root engine requirement: Node >=22.15.0
-- Root package: blackbox 0.1.0, intentionally private.
-- npm whoami returned E401 Unauthorized; npm is not logged in.
-- npm view for @blackbox/cli and @blackbox/protocol returned E404. This means those
-  packages were unpublished at that moment. It does not prove the user controls the
-  @blackbox npm scope.
-- A guarded, manually dispatched first-publication workflow now exists at
-  .github/workflows/bootstrap-npm.yml. It uses the protected npm-production
-  environment and cannot pass preflight while the seven release locks remain.
-- .github/workflows/ci.yml still has no publish credentials or deployment job.
-- Codex created no npm token or GitHub publishing secret.
-- Nothing was pushed, tagged, or published while making this checkpoint.
-
-## Recent completed local commits
-
-These commits are after origin/main, newest first:
-
-    9dc8850 build: pin reviewed dependency install scripts
-    73aa9cf docs: update candidate test count
-    38d71d3 docs: record fixed-candidate performance
-    3ceb53a fix(storage): require a zstd-capable Node runtime
-    079660c docs: refresh candidate performance measurements
-    fbf8504 ci(release): add guarded npm bootstrap workflow
-    efb9279 build: enforce runtime release documentation
-    20e4c73 docs(packages): document all runtime components
-    1fbf4d4 docs: save project handoff memory
-    458c3ed build: exclude disposable demo output from lint
-    2319a7e docs: refresh candidate validation measurements
-    cad4eed test: close the security verification checklist
-    800f30e docs: define the adapter integration contract
-    883474b docs: add complete Black Box project guide
-    ea7e22b release: prepare version 0.1.0 candidate
-    2c75802 docs: license Black Box under Apache 2.0
-    69cea6e build: complete package listing metadata
-    eaed9e9 build: add release candidate preflight
-    fc2dbab build: enforce runtime package compatibility
-    f222e11 build: verify installable runtime packages
-    7d5ef21 ci: add cross-platform release gates
-    b6e0e07 feat: complete incident reports and release hardening
-
-The 2026-07-21 completion pass also established these facts:
-
-- Every runtime package has an npm-facing package-local README, and both package
-  smoke testing and release preflight require all seven.
-- Release preflight proves that the root and all four development-only workspaces
-  remain private.
-- Node 22.13 could not provide the Zstandard APIs used by storage. The minimum was
-  corrected to Node 22.15, storage now fails before creating files on an
-  unsupported runtime, and doctor reports the incompatibility explicitly.
-- Node 22.15 passed the build and all 279 tests. Node 24.18 with npm 11.18 passed a
-  clean install, all tests, both end-to-end tests, and every packed-package smoke
-  check.
-- npm 11's strict lifecycle-script policy is supported through an exact reviewed
-  allowlist for better-sqlite3 12.11.1 and fsevents 2.3.3. The bootstrap workflow
-  installs with --strict-allow-scripts.
-- npm audit reported zero vulnerabilities, and npm audit signatures verified 178
-  registry signatures and 52 attestations.
-- The fixed-candidate performance record is in docs/performance.md and is tied to
-  source commit 3ceb53a89f2d898917a447554096394be1608dcf.
-
-## What Black Box is
-
-Black Box is a local flight recorder for AI coding agents. It is not an agent and
-does not control or sandbox one. It records observable evidence so a developer can
-investigate what an agent saw, returned, ran, printed, and changed.
-
-High-level flow:
-
-    agent/client
-      -> byte-faithful local proxy
-      -> configured OpenAI-compatible provider
-      -> crash-safe SQLite journal and content-addressed blobs
-      -> protocol normalization
-      -> client-visible context reconstruction
-      -> process and workspace evidence
-      -> deterministic blame/anomaly analysis
-      -> incident report, local cockpit, or portable .bbx archive
-
-Important product principles:
-
-- Evidence stays local by default.
-- Raw observed evidence, deterministic derived evidence, inference, and
-  unknown/missing evidence remain distinct.
-- Authorization and cookie values may be forwarded but are not persisted.
-- Normal analysis and reporting are local. Optional AI-written report enrichment
-  requires explicit consent.
-- Black Box does not expose chain-of-thought or provider-hidden instructions.
-- It does not claim to prove private model causation.
-- Blame output is an evidence-backed hypothesis with provenance, counterevidence,
-  alternatives, confidence limits, and missing-evidence warnings.
-
-Recommended installed use:
-
-    blackbox run -- <agent-command> [arguments...]
-
-From source:
-
-    npm run blackbox -- run -- <agent-command> [arguments...]
-
-The child must honor the injected OpenAI-compatible base URL for provider-traffic
-capture. Wrapped-process and workspace evidence still work around the child process.
-
-## Completed product scope
-
-The planned M0 through M9 source-candidate path is implemented:
-
-- Typed canonical evidence contracts and versioned schemas.
-- Crash-safe SQLite storage and content-addressed payload blobs.
-- Byte-faithful OpenAI-compatible recording proxy.
-- Chat Completions and Responses JSON/SSE normalization.
-- Wrapped-process lifecycle, bounded output, signal forwarding, and exit
-  preservation.
-- Git-aware and plain-directory baselines and authoritative final diffs.
-- Approximate live observations kept distinct from final evidence.
-- Local authenticated React cockpit with timeline, context, diff, blame, report,
-  and raw-evidence views.
-- Client-visible context reconstruction, including Responses ancestry.
-- Deterministic blame ranking, anomaly detection, counterevidence, and limitations.
-- Deterministic Markdown/JSON reports and optional consent-gated AI prose.
-- Tamper-evident .bbx export/import, retention, quota, deletion, and garbage
-  collection.
-- Adapter integration contract. No completed agent-specific adapter is bundled in
-  0.1.0.
-- Deterministic offline demo and seeded rogue-agent incident.
-- Cross-platform CI and packed-artifact installation tests on Linux, macOS, and
-  Windows.
-- Apache-2.0 licensing, third-party notices, security verification, and a complete
-  newcomer guide.
-
-Read these instead of reconstructing implementation details from memory:
-
-- docs/complete-project-guide.md: complete newcomer-oriented project guide.
-- README.md: product overview, quickstart, CLI, and feature summary.
-- plan.md: milestone and implementation history.
-- design.md: product and design reasoning.
-- docs/release-checklist.md: release boundaries and gates.
-- docs/security-verification.md: security controls and regression coverage.
-- docs/privacy.md: evidence and privacy boundaries.
-- docs/protocol-support.md: supported and unsupported protocols.
-- docs/archive-format.md: portable .bbx behavior.
-- docs/adapter-authoring.md: adapter integration contract.
-- docs/decisions/: architecture decisions 0001 through 0010.
-
-## Runtime release set
-
-The root npm workspace remains private. The public runtime set is defined by
-scripts/runtime-packages.mjs and must currently publish in this order:
-
-1. @blackbox/protocol at packages/protocol
-2. @blackbox/storage at packages/storage
-3. @blackbox/normalizers at packages/normalizers
-4. @blackbox/context at packages/context
-5. @blackbox/analysis at packages/analysis
-6. @blackbox/daemon at apps/daemon
-7. @blackbox/cli at apps/cli
-
-All seven are version 0.1.0, use exact internal 0.1.0 dependencies, declare Node
->=22.15.0, use Apache-2.0, have explicit file allowlists, and set
-publishConfig.access to public. The CLI binary is blackbox at ./dist/bin.js.
-
-Dependency graph:
-
-    protocol -> zod
-    storage -> protocol, better-sqlite3, zod
-    normalizers -> protocol, zod
-    context -> protocol
-    analysis -> protocol
-    daemon -> analysis, context, normalizers, protocol, storage, zod
-    cli -> daemon, protocol, storage
-
-These development workspaces must stay private and must not be published:
-
-- Root blackbox workspace
-- @blackbox/viewer
-- @blackbox/demo-agent
-- @blackbox/adapters
-- @blackbox/test-fixtures
-
-## Exact preflight result
-
-At candidate commit 9dc8850, this was run:
-
-    npm run --silent release:preflight -- --json
-
-It rebuilt and tested the project. Result: ready false for one deliberate blocker.
-
-    PASS source-gates             completed successfully
-    PASS package-smoke            completed successfully
-    PASS dependency-audit         completed successfully
-    PASS candidate-version        0.1.0
-    PASS version-alignment        7 package versions match 0.1.0
-    FAIL publishable-packages     7 runtime packages are still private
-    PASS private-development-workspaces
-                                 5 non-runtime workspaces remain protected
-    PASS license                  Apache-2.0 across release set
-    PASS repository-metadata      correct GitHub repository URL
-    PASS publish-configuration    scoped packages use public access
-    PASS package-readmes          7 package-local READMEs are present
-    PASS clean-tree               candidate tree clean
-
-The only failing packages were the seven runtime packages. Their private flags are
-intentional publication locks, not implementation defects. Do not remove them until
-npm scope ownership is confirmed.
-
-## Current public-package documentation state
-
-Package-local READMEs are present for all seven runtime packages:
-
-- packages/protocol/README.md
-- packages/storage/README.md
-- packages/normalizers/README.md
-- packages/context/README.md
-- packages/analysis/README.md
-- apps/daemon/README.md
-- apps/cli/README.md
-
-Each explains its runtime role, directs normal users to @blackbox/cli where
-appropriate, and links to the repository, license, and security policy. Packed
-artifacts include the correct package README.
-
-Release-candidate wording remains in README.md, CHANGELOG.md,
-docs/release-checklist.md, docs/security-verification.md,
-docs/complete-project-guide.md, and apps/cli/README.md.
-
-Search again with:
-
-    rg -n -i "unreleased|source candidate|publication.{0,40}deferred|deferred.{0,40}publication" README.md CHANGELOG.md docs plan.md apps/cli/README.md
-
-CHANGELOG.md still says 0.1.0 — Unreleased. Give it the actual release date only
-during genuine release preparation.
-
-## Hard gate: npm scope ownership
-
-The current names require control of the npm @blackbox user or organization scope.
-Package E404 results are not ownership evidence.
-
-Before removing private flags, the user must log in and verify identity:
-
-    npm login
-    npm whoami
-
-Then confirm in npm organization settings that the authenticated identity owns,
-administers, or has package-write access to the blackbox organization.
-
-If the user does not control @blackbox, stop and choose a scope the user controls.
-Rename these atomically before any publication:
-
-- Seven public package names
-- Internal dependency keys
-- TypeScript imports
-- npm workspace command references
-- Tests and fixtures
-- Documentation and examples
-- package-lock.json entries
-- Release workflow package references
-
-Do not choose a permanent public scope on the user's behalf when ownership is
-unclear.
-
-## Recommended first release
-
-The shipping plan already explained to the user is:
-
-1. Confirm npm scope ownership and enable npm 2FA.
-2. Keep the GitHub repository public for provenance.
-3. Prepare seven runtime packages, documentation, and READMEs.
-4. Run all local gates and commit a clean candidate.
-5. Push the exact SHA only with user authorization.
-6. Wait for all GitHub CI jobs on that SHA.
-7. Bootstrap the first packages from a protected GitHub Actions environment with a
-   short-expiry granular npm token.
-8. Publish all seven as public packages under the next dist-tag with provenance,
-   dependencies first and CLI last.
-9. Install and verify the real registry artifacts.
-10. Sign and push v0.1.0 at the tested SHA.
-11. Promote support packages and then CLI from next to latest.
-12. Publish the GitHub release.
-13. Revoke the bootstrap token and configure npm trusted publishing for all seven.
-
-Why next first: ordinary installs follow latest. Publishing under next allows the
-real registry artifacts to be tested before normal users receive them.
-
-Why a bootstrap workflow: GitHub Actions can generate provenance for the public
-repository and exact commit. Trusted publishing cannot be configured until each
-package exists, so first creation needs a one-time credential or interactive local
-publish. The one-time protected workflow is recommended.
-
-## Exact next local work after scope confirmation
-
-The runtime documentation, guarded bootstrap workflow, release runbook, and local
-quality gates are complete. After npm identity and @blackbox write access are
-confirmed, remove private true from exactly:
-
-- packages/protocol/package.json
-- packages/storage/package.json
-- packages/normalizers/package.json
-- packages/context/package.json
-- packages/analysis/package.json
-- apps/daemon/package.json
-- apps/cli/package.json
-
-Leave root and development-only workspaces private. Suggested message:
-
-    chore(release): make runtime packages publishable
-
-Then remove registry-publication-deferred/source-candidate wording, make npm
-installation the production path while retaining source instructions, and add the
-actual 0.1.0 release date to CHANGELOG.md. Preserve privacy, supported-protocol,
-capture-level, and limitations claims.
-
-Suggested message:
-
-    docs(release): prepare package documentation for 0.1.0
-
-Do not recreate the bootstrap workflow: it is already committed. Never put token
-text in it. It may only reference the protected NPM_TOKEN GitHub environment secret
-after the user creates that short-lived credential.
-
-Then run:
-
-    node --version
-    npm --version
-    npm ci
-    npm run check
-    npm audit --audit-level=high
-    npm run benchmark
-    npm run demo:offline
-    npm run demo:offline
-    npm run package:smoke
-    npm run release:preflight
-    git status --short
-
-Proceed only when every command succeeds, preflight says READY, packed artifacts
-install successfully, and the tree is clean.
-
-## Bootstrap workflow requirements
-
-Verify current official GitHub/npm requirements before committing because action
-and npm requirements can change. The planned workflow should:
-
-- Be manually dispatched.
-- Refuse to run unless the selected ref is main.
-- Use permissions contents read and id-token write.
-- Run on ubuntu-latest.
-- Use the protected npm-production environment.
-- Check out the exact commit.
-- Use a supported Node version; Node 24 was recommended for publishing.
-- Configure registry-url as https://registry.npmjs.org.
-- Run npm ci, npm run check, npm run package:smoke, and
-  npm run release:preflight.
-- Set NODE_AUTH_TOKEN from the GitHub NPM_TOKEN secret for bootstrap only.
-- Run these explicit commands:
-
-    npm publish --workspace=@blackbox/protocol --access public --tag next --provenance
-    npm publish --workspace=@blackbox/storage --access public --tag next --provenance
-    npm publish --workspace=@blackbox/normalizers --access public --tag next --provenance
-    npm publish --workspace=@blackbox/context --access public --tag next --provenance
-    npm publish --workspace=@blackbox/analysis --access public --tag next --provenance
-    npm publish --workspace=@blackbox/daemon --access public --tag next --provenance
-    npm publish --workspace=@blackbox/cli --access public --tag next --provenance
-
-The committed workflow pins actions/checkout@v6.0.2, actions/setup-node@v6.4.0,
-Node 24, and npm 11.18.0. It requires the exact approved full SHA and confirmation
-phrase, runs all gates with strict lifecycle-script handling, refuses existing or
-ambiguously unavailable package versions, and publishes dependencies first with
-provenance under next.
-
-Never blindly rerun a partially successful publication. Inspect every registry
-package first.
-
-## External release operations
-
-Everything here requires explicit current-session authorization.
-
-Push and CI:
-
-    git rev-parse HEAD
-    git push origin main
-
-Record the exact SHA. Wait for .github/workflows/ci.yml on that SHA. It currently
-tests quality on Ubuntu Node 22.20, minimum compatibility on Ubuntu Node 22.15, and
-the packed lifecycle on Ubuntu, macOS, and Windows. Do not publish with a pending,
-cancelled, unexpectedly skipped, or failing job.
-
-Bootstrap identity and secret:
-
-- Enable npm 2FA and securely save recovery codes.
-- Create a granular npm token with the shortest practical expiry.
-- Limit it to the controlled scope and package read/write access.
-- Configure automation according to current npm 2FA policy.
-- Store it only as the npm-production environment secret NPM_TOKEN.
-- Never commit credentials or literal token text.
-
-After publishing under next, inspect all seven package versions, integrity, and
-tarball URLs. Inspect CLI metadata:
-
-    npm view @blackbox/cli@0.1.0 version bin engines dist.integrity --json
-    npm view @blackbox/cli dist-tags --json
-
-Clean registry verification:
-
-    verify_dir="$(mktemp -d)"
-    npm install --prefix "$verify_dir" @blackbox/cli@next
-    "$verify_dir/node_modules/.bin/blackbox" --version
-    "$verify_dir/node_modules/.bin/blackbox" init --home "$verify_dir/home"
-    "$verify_dir/node_modules/.bin/blackbox" sessions --home "$verify_dir/home" --json
-    (cd "$verify_dir" && npm audit signatures)
-
-Expected: 0.1.0, successful initialization, empty new session list, working native
-SQLite, and valid signatures/attestation. Inspect npm pages for public visibility,
-README, license, repository, provenance, and clean contents. Test registry installs
-on Linux, macOS, and Windows.
-
-After next is verified, sign the exact tested SHA:
-
-    git tag -s v0.1.0 <tested-release-sha> -m "Black Box 0.1.0"
-    git tag -v v0.1.0
-    git push origin v0.1.0
-
-Promote dependencies and CLI last:
-
-    npm dist-tag add @blackbox/protocol@0.1.0 latest
-    npm dist-tag add @blackbox/storage@0.1.0 latest
-    npm dist-tag add @blackbox/normalizers@0.1.0 latest
-    npm dist-tag add @blackbox/context@0.1.0 latest
-    npm dist-tag add @blackbox/analysis@0.1.0 latest
-    npm dist-tag add @blackbox/daemon@0.1.0 latest
-    npm dist-tag add @blackbox/cli@0.1.0 latest
-
-Verify a normal install, then create the GitHub release for v0.1.0. Release notes
-must include purpose, global npm install, quickstart, Node >=22.15.0, highlights,
-supported protocols/capture levels, privacy warning, limitations, changelog, and
-security/documentation links. Never attach real .bbx evidence, databases,
-credentials, recordings, or machine-specific configuration.
-
-## Post-bootstrap security
-
-Immediately after successful first publication:
-
-1. Revoke the one-time npm token.
-2. Remove the NPM_TOKEN GitHub secret.
-3. Remove or disable bootstrap-npm.yml in a focused commit.
-4. Add permanent .github/workflows/publish.yml.
-5. Configure trusted publishing separately on all seven packages:
-
-    Provider: GitHub Actions
-    Owner: ayyagarisujanreddy123
-    Repository: Black-Box
-    Workflow: publish.yml
-    Environment: npm-production
-    Allowed action: npm publish
-
-6. Use a GitHub-hosted runner with id-token write, Node at least 22.14, and npm at
-   least 11.5.1. Recheck official requirements first.
-7. The trusted workflow must not use NODE_AUTH_TOKEN or a stored npm credential.
-8. Require 2FA and disallow ordinary publishing tokens after trusted publishing is
-   verified.
-9. Consider protecting main and v* tags with GitHub rulesets.
-
-## Failure policy
-
-npm package versions are immutable. Once package@version is published, that exact
-name/version cannot be reused, even after unpublish.
-
-If publication is partial:
-
-1. Inspect all seven registry records and artifacts.
-2. If existing artifacts are correct, publish only missing packages in order.
-3. If any artifact is wrong, do not overwrite or blindly unpublish it.
-4. Prepare 0.1.1, updating all seven versions and exact internal dependencies.
-5. Run all gates, publish the corrected set, and deprecate defective versions.
-
-Example:
-
-    npm deprecate '@blackbox/cli@0.1.0' \
-      'This release is defective. Install @blackbox/cli@0.1.1 or newer.'
-
-Use unpublish only for a genuine security or legal emergency.
-
-## Future releases
-
-For every later version:
-
-1. Choose a semantic version.
-2. Update all seven runtime package versions together.
-3. Update every exact internal @blackbox dependency.
-4. Update changelog and affected documentation.
-5. Commit locally.
-6. Run all checks and preflight.
-7. Push only with authorization and wait for CI on the exact SHA.
-8. Publish under next using trusted publishing.
-9. Verify registry installations.
-10. Sign/tag the tested SHA.
-11. Promote dependencies and CLI to latest, CLI last.
-12. Publish the GitHub release.
-
-Do not use npm version --workspaces blindly; it may not synchronize exact internal
-dependencies. Release preflight is the final alignment authority.
-
-## Never infer these permissions or claims
-
-- An explanation request is not permission to publish.
-- A commit request is not permission to push.
-- Permission to push main is not automatically permission to push a tag.
-- A public GitHub repository does not prove npm scope ownership.
-- An npm E404 does not prove this user can publish a name.
-- Passing tests does not authorize credentials or external release operations.
-- Runtime private flags are deliberate release locks.
-- Black Box is evidence infrastructure, not a sandbox or policy enforcer.
-- Never claim access to private reasoning, hidden context, or complete causation.
-
-## Best next move
-
-On resume, first help the user log in to npm and verify ownership/write access for
-@blackbox. If ownership is confirmed, remove only the seven runtime private locks,
-finalize the genuine-release wording/date, run the complete preflight until it says
-READY, and make focused local commits. Stop before any push, tag, token, package
-setting, workflow dispatch, or publication unless the user explicitly authorizes
-those external actions.
+# Tekrion project memory and session handoff
+
+This is the durable handoff for future Codex sessions working on Tekrion.
+Read it before changing the repository. Product documentation remains
+authoritative for implementation details.
+
+Never put passwords, npm tokens, 2FA codes, signing keys, API keys, control
+tokens, account identifiers, or captured user evidence in this file.
+
+## Current identity
+
+The user selected **Tekrion** as the permanent brand and confirmed on
+2026-07-28 that they own the npm organization `@tekrion`.
+
+- Product: Tekrion
+- Pronunciation: TEK-ree-on
+- CLI: `tekrion`
+- Runtime packages: `@tekrion/*`
+- Configuration prefix: `TEKRION_*`
+- Archive extension and format: `.tkr` / `tekrion-tkr`
+- New default evidence home: a platform-specific `Tekrion`/`tekrion` directory
+- Version: 0.1.0, still an unreleased source candidate
+
+Public registry lookups on 2026-07-29 returned no published version for any of
+the seven intended runtime package names. The local npm session returned E401
+for `npm whoami`, so npm authentication must be refreshed before a future
+release. An E404 does not prove scope ownership; ownership is recorded from the
+user's explicit confirmation.
+
+The user explicitly authorized the GitHub repository rename on 2026-07-29.
+GitHub now hosts the public repository at
+`ayyagarisujanreddy123/Tekrion`, and local `origin` points to
+`https://github.com/ayyagarisujanreddy123/Tekrion.git`. The local workspace is
+still `/Applications/Projects/BlackBox`; it was intentionally not renamed.
+
+No npm package has been published. The user explicitly authorized committing
+and pushing the complete Tekrion rebrand to `origin/main` on 2026-07-29. That
+authorization does not extend to future pushes, npm publication, tags, GitHub
+releases, another repository rename, or a local-directory rename.
+
+## Repository state at this handoff
+
+- Branch: `main`
+- Pre-rebrand baseline: commit `84740e0`
+  (`fix: settle abandoned recorder exchanges`)
+- Baseline is already on `origin/main`
+- GitHub repository rename to `ayyagarisujanreddy123/Tekrion` is complete
+- The complete Tekrion rebrand was authorized for commit and push on
+  2026-07-29; verify the final local and remote SHA before relying on this
+  handoff
+- Nothing was tagged, released, or published to npm
+- Existing user work was not discarded or reset
+- `AGENTS.md` is local instruction context and was not modified
+- Node used for verification: 22.20.0
+- npm used for verification: 10.9.3
+
+Always inspect `git status`, the remote, and registry state again before acting;
+this handoff describes a point in time, not permanent external truth.
+
+## Rebrand implementation
+
+The rebrand covers product copy, CLI/help output, workspace package names,
+TypeScript APIs, daemon/provider names, environment variables, local storage,
+session routes and headers, browser keys and event names, archive types,
+documentation, tests, demos, CI configuration, and release tooling.
+
+The seven publishable runtime workspaces are:
+
+1. `@tekrion/protocol`
+2. `@tekrion/storage`
+3. `@tekrion/normalizers`
+4. `@tekrion/context`
+5. `@tekrion/analysis`
+6. `@tekrion/daemon`
+7. `@tekrion/cli`
+
+Only those runtime manifests had their publication locks removed. The root,
+viewer, demo agent, adapters, and test fixtures remain private. The CLI exposes
+only the `tekrion` binary; no duplicate pre-rebrand binary is shipped.
+
+Builds now remove every workspace `dist` directory before compiling so deleted
+or renamed modules cannot survive as stale package output. Package smoke tests
+also reject any packaged path containing `blackbox` or `bbx`.
+
+## Compatibility contract
+
+The rebrand is deliberately non-destructive for pre-release users:
+
+- New configuration uses `TEKRION_*`; supported old `BLACKBOX_*` values remain
+  aliases, with current names taking precedence.
+- New sessions use `x-tekrion-*` headers and `/.tekrion/session/`; old headers
+  and scoped routes are accepted and stripped. Conflicting identities fail.
+- The cockpit migrates the old browser token key and accepts old SSE event names.
+- New installs use the Tekrion default home and `tekrion.sqlite`.
+- If a new default database does not exist but an old default
+  `blackbox.sqlite` does, Tekrion opens the old store in place.
+- An explicit home prefers `tekrion.sqlite`, then an existing
+  `blackbox.sqlite`.
+- Direct storage use falls back to an existing `blackbox-data` directory when a
+  new `tekrion-data` directory does not exist.
+- New exports are `.tkr` archives with format `tekrion-tkr`.
+- Import remains content-based and accepts old `.bbx` archives whose manifest
+  format is `blackbox-bbx`.
+
+The compatibility details and precedence rules are documented in
+`docs/migration-from-black-box.md`. Do not remove compatibility in an ordinary
+cleanup; it requires an explicit breaking-version decision and migration plan.
+
+## Verification completed on 2026-07-29
+
+The rebranded working tree passed:
+
+- clean dependency installation with `npm ci`;
+- formatting, ESLint, TypeScript checking, 36 unit/contract files and all
+  327 tests through `npm run check`;
+- both packaged end-to-end lifecycle tests after a clean rebuild;
+- package smoke packing, installation, CLI execution, initialization, and
+  session listing for all seven `@tekrion/*` runtime packages;
+- dependency audit at high severity with zero vulnerabilities;
+- the deterministic offline demo;
+- the performance benchmark:
+  - recorder p95 time-to-first-byte overhead: 10.283 ms;
+  - recorder p95 total overhead: 10.264 ms;
+  - cockpit query p95 total: 2.919 ms;
+  - cockpit assets: 100,444 gzip bytes;
+- `tekrion doctor --json` against an initialized disposable home. Every
+  required check passed. The only warning was the expected unsupported
+  WebSocket/Realtime transport; HTTP JSON and SSE remain supported.
+
+The complete JSON release preflight passed its source, package-smoke, audit,
+version-alignment, publication-lock, license, repository-metadata,
+public-access, and README checks. Before the authorized commit its only failure
+was repository cleanliness. A clean-tree preflight is required after commit
+and before push.
+
+Package smoke results after stale-output cleanup:
+
+- protocol: 27 files;
+- storage: 25 files;
+- normalizers: 25 files;
+- context: 7 files;
+- analysis: 19 files;
+- daemon: 53 files;
+- CLI: 39 files.
+
+## Real Codex acceptance
+
+A fresh real account-authenticated Codex `exec` run passed through the Tekrion
+wrapper on 2026-07-29 using the existing ChatGPT login and a disposable
+home/workspace:
+
+- Codex selected a temporary `tekrion_recorder_*` provider;
+- the requested file was created and byte-verified;
+- the wrapped session completed;
+- 84 events and zero recorded errors were retained;
+- all four provider requests completed;
+- active requests returned to zero;
+- provider authentication was recorded only as `chatgpt-account`;
+- the workspace final snapshot contained the expected one-file change;
+- the disposable daemon was stopped cleanly.
+
+The preceding Codex acceptance also verified share `.tkr` export/import,
+read-only imported evidence, and persistence across daemon restart.
+
+Claude Code 2.1.205 was installed but `claude auth status` reported
+`loggedIn: false`. A Claude subscription OAuth flow was opened but not
+completed. Tekrion then wrapped a non-interactive Claude run and correctly
+captured process start, stdout/stderr, workspace snapshots, exit code 1, and
+session end while Claude reported `Not logged in · Please run /login`.
+Provider-level Claude acceptance therefore remains blocked by missing native
+Claude authentication. This is an account prerequisite, not a known Tekrion
+defect. Repeat the real model test after the user completes `claude auth login`
+in their own terminal.
+
+Disposable `/tmp` homes and workspaces are not persistent user data.
+
+## Release boundary
+
+The code is prepared for `@tekrion`, but preparation is not publication
+authorization.
+
+Before any future release:
+
+1. confirm npm authentication and current organization/package access;
+2. inspect all seven package names and registry state;
+3. commit the exact reviewed source if the user requests a commit;
+4. run the complete release preflight on a clean tree;
+5. push only with explicit authorization and wait for CI on the exact SHA;
+6. publish only after a separate explicit instruction;
+7. verify clean registry installation before tagging or promoting release tags.
+
+Never infer:
+
+- a rebrand request is permission to rename the GitHub repository;
+- a commit request is permission to push;
+- a push request is permission to tag or publish;
+- npm organization ownership is permission to publish now;
+- passing tests proves future external state;
+- Tekrion is a sandbox or policy-enforcement system;
+- observable evidence exposes private reasoning or proves complete causation.
+
+## Recommended next moves
+
+1. Review and commit the atomic Tekrion rebrand when the user asks.
+2. Rename the local directory only if the user separately requests it.
+3. Run Claude manual acceptance later with a real authenticated account.
+4. Run release preflight from a clean commit and publish only on explicit
+   authorization.

@@ -1,6 +1,6 @@
 # Production operations
 
-Black Box is a single-user, local application. A production deployment means a
+Tekrion is a single-user, local application. A production deployment means a
 reviewed installation on a developer workstation or a dedicated private account,
 with its proxy, control API, and evidence cockpit kept off public networks. It is
 not a hosted multi-user service and must not be exposed directly to the Internet.
@@ -12,9 +12,9 @@ and incident handling. Read the [privacy guide](privacy.md) and
 ## Deployment boundary
 
 - Use Node.js 22.15.0 or newer on a currently supported operating system.
-- Run Black Box as the user who owns the recorded workspace. Do not run it as
+- Run Tekrion as the user who owns the recorded workspace. Do not run it as
   `root`, Administrator, or a shared service account.
-- Put `BLACKBOX_HOME` on a private local disk. Do not use a shared, synchronized,
+- Put `TEKRION_HOME` on a private local disk. Do not use a shared, synchronized,
   or publicly mounted directory for live SQLite and blob data.
 - Keep the control API and cockpit on their enforced loopback listener. Keep the
   proxy on its default loopback listener as well. `--allow-non-loopback` is an
@@ -22,7 +22,7 @@ and incident handling. Read the [privacy guide](privacy.md) and
 - Treat the evidence home, forensic exports, backups, and operational logs as
   sensitive. They can contain prompts, source, paths, command output, and model
   responses even though known credential headers are excluded.
-- Black Box records an agent; it does not sandbox or authorize the agent's actions.
+- Tekrion records an agent; it does not sandbox or authorize the agent's actions.
 
 ## Install a reviewed build
 
@@ -31,16 +31,16 @@ ownership are verified. Until an npm release is independently verified, operate 
 reviewed source commit:
 
 ```bash
-git clone https://github.com/ayyagarisujanreddy123/Black-Box.git
-cd Black-Box
+git clone https://github.com/ayyagarisujanreddy123/Tekrion.git
+cd Tekrion
 git checkout <reviewed-full-commit-sha>
 npm ci
 npm run check
 npm run build
-npm run blackbox -- --version
+npm run tekrion -- --version
 ```
 
-Use `npm run blackbox --` in place of `blackbox` for the remaining commands in this
+Use `npm run tekrion --` in place of `tekrion` for the remaining commands in this
 runbook. Do not deploy a moving branch name without recording its immutable commit
 SHA and successful CI run.
 
@@ -48,8 +48,8 @@ After an official npm release has passed the registry-install checks in the
 [release runbook](npm-release-runbook.md), an installed deployment can use:
 
 ```bash
-npm install --global @blackbox/cli@<verified-version>
-blackbox --version
+npm install --global @tekrion/cli@<verified-version>
+tekrion --version
 ```
 
 Do not use an unpublished package name or an unverified prerelease tag for a
@@ -62,16 +62,16 @@ The example ceiling below is 10 GiB; size it for the sensitivity and workload of
 the installation.
 
 ```bash
-export BLACKBOX_HOME="/private/local/path/blackbox"
-blackbox init
-blackbox doctor --upstream https://api.openai.com
-blackbox start \
+export TEKRION_HOME="/private/local/path/tekrion"
+tekrion init
+tekrion doctor --upstream https://api.openai.com
+tekrion start \
   --upstream https://api.openai.com \
   --max-stored-bytes 10737418240
-blackbox status --json
+tekrion status --json
 ```
 
-On Windows, set `BLACKBOX_HOME` with the shell's normal environment-variable
+On Windows, set `TEKRION_HOME` with the shell's normal environment-variable
 syntax. `doctor` warns that Node.js cannot verify POSIX owner/group/other modes;
 use Windows account and directory access controls to protect the home.
 
@@ -82,8 +82,8 @@ Never place credentials in the upstream URL.
 For normal use, prefer the wrapper because it adds process and workspace evidence:
 
 ```bash
-blackbox run --cwd /path/to/workspace -- codex
-blackbox run --cwd /path/to/workspace -- claude
+tekrion run --cwd /path/to/workspace -- codex
+tekrion run --cwd /path/to/workspace -- claude
 ```
 
 Direct Codex and Claude executables are detected automatically. Use
@@ -91,16 +91,16 @@ Direct Codex and Claude executables are detected automatically. Use
 npm, pnpm, Yarn, or Bun package runner hides the executable. Prefer a direct
 agent command over an opaque shell command string, which cannot be rewritten
 safely. Codex receives a temporary HTTP-only recorder provider that reuses its
-active ChatGPT or API-key authentication. Black Box selects the matching OpenAI
+active ChatGPT or API-key authentication. Tekrion selects the matching OpenAI
 backend from the request in memory. Claude receives `ANTHROPIC_BASE_URL` and
 keeps its native OAuth/API-key credential precedence. Each session pins its
 validated routing mode, so one daemon can safely serve concurrent or sequential
 Codex and Claude sessions. An explicit `--upstream` always wins and disables
 automatic first-party routing for that session.
 
-Black Box never needs the Codex or Claude credential itself. Verify the native
+Tekrion never needs the Codex or Claude credential itself. Verify the native
 login before a valuable capture with `codex login status` or
-`claude auth status`; do not paste the result into Black Box. For a Codex
+`claude auth status`; do not paste the result into Tekrion. For a Codex
 `CODEX_API_KEY` one-shot run, set that variable only on the wrapped `codex exec`
 invocation, following Codex's own credential-handling guidance.
 
@@ -117,8 +117,8 @@ WebSockets for that run and uses the supported HTTP transport.
 Run these checks before a valuable capture and after an upgrade:
 
 ```bash
-blackbox doctor --upstream https://api.openai.com --json
-blackbox status --json
+tekrion doctor --upstream https://api.openai.com --json
+tekrion status --json
 ```
 
 `doctor` checks the Node runtime, private writable layout, SQLite migration ledger
@@ -135,20 +135,20 @@ For automated readiness, parse JSON and require all of the following:
 - proxy `status` is `healthy`.
 
 Do not rely only on the `status` process exit code: a daemon that is still starting
-can return successfully before it is ready. Black Box intentionally has no
+can return successfully before it is ready. Tekrion intentionally has no
 telemetry or remote monitoring endpoint. Monitoring must remain on the same host
 and must not copy evidence or the control token into a central log service.
 
 ## Data locations and permissions
 
 The default home is platform-specific and can be replaced with `--home` or
-`BLACKBOX_HOME`:
+`TEKRION_HOME`:
 
-| Platform   | Default home                                                                   |
-| ---------- | ------------------------------------------------------------------------------ |
-| macOS      | `~/Library/Application Support/BlackBox`                                       |
-| Windows    | `%LOCALAPPDATA%\BlackBox`                                                      |
-| Linux/Unix | `${XDG_DATA_HOME}/blackbox` when absolute, otherwise `~/.local/share/blackbox` |
+| Platform   | Default home                                                                 |
+| ---------- | ---------------------------------------------------------------------------- |
+| macOS      | `~/Library/Application Support/Tekrion`                                      |
+| Windows    | `%LOCALAPPDATA%\Tekrion`                                                     |
+| Linux/Unix | `${XDG_DATA_HOME}/tekrion` when absolute, otherwise `~/.local/share/tekrion` |
 
 The home contains the control token, daemon lock, SQLite database and side files,
 content-addressed blobs, migration backups, and daemon logs. POSIX directories are
@@ -158,15 +158,15 @@ files, blob names, or the lock file by hand.
 ## Capacity and retention
 
 `--max-stored-bytes` is a refusal ceiling, not automatic eviction. When the ceiling
-is reached, Black Box preserves existing evidence and refuses additional blob
+is reached, Tekrion preserves existing evidence and refuses additional blob
 writes rather than silently deleting older sessions.
 
 Review retention plans before applying them:
 
 ```bash
-blackbox prune --older-than-days 30
-blackbox prune --max-bytes 5368709120
-blackbox prune --older-than-days 30 --max-bytes 5368709120 --yes
+tekrion prune --older-than-days 30
+tekrion prune --max-bytes 5368709120
+tekrion prune --older-than-days 30 --max-bytes 5368709120 --yes
 ```
 
 Commands without `--yes` are dry runs. Active sessions are protected, linked
@@ -176,13 +176,13 @@ or an unclean host shutdown.
 
 ## Backup and restore
 
-For a completed investigation, a forensic `.bbx` export is the preferred portable
+For a completed investigation, a forensic `.tkr` export is the preferred portable
 backup unit:
 
 ```bash
-blackbox export <session-id> \
+tekrion export <session-id> \
   --profile forensic \
-  --output /private/backup/session-id.bbx
+  --output /private/backup/session-id.tkr
 ```
 
 A share-profile archive is deliberately minimized and is not a full backup. Verify
@@ -191,15 +191,15 @@ the original home, and never attach real evidence to a public issue.
 
 For whole-install disaster recovery:
 
-1. Run `blackbox stop` and confirm `blackbox status --json` reports `stopped`.
+1. Run `tekrion stop` and confirm `tekrion status --json` reports `stopped`.
 2. Copy the entire home as one unit, including SQLite side files, blobs, logs, and
-   the control token. Do not copy only `blackbox.sqlite` from a live daemon.
+   the control token. Do not copy only `tekrion.sqlite` from a live daemon.
 3. Store the snapshot encrypted with access limited to the owning user or recovery
    operators.
 4. Rehearse restoration on an isolated host with the same or a newer compatible
-   Black Box version.
+   Tekrion version.
 5. Restore only while the daemon is stopped, preserve private permissions, then
-   run `blackbox doctor` before starting it.
+   run `tekrion doctor` before starting it.
 
 The database-only files under `data/backups/` protect migration steps; they do not
 include external blobs and are not complete disaster-recovery backups. Never merge
@@ -211,9 +211,9 @@ two evidence homes or open an upgraded database with an older application.
 2. Create a forensic export of critical sessions and a stopped whole-home snapshot.
 3. Record the current application version and commit/package integrity.
 4. Install the reviewed new version and run its full source or registry validation.
-5. Run `blackbox init`; this applies supported forward migrations with a database
+5. Run `tekrion init`; this applies supported forward migrations with a database
    backup when required.
-6. Run `blackbox doctor`, start with the previously reviewed runtime flags, and
+6. Run `tekrion doctor`, start with the previously reviewed runtime flags, and
    require healthy JSON status.
 7. Perform a disposable capture and verify sessions, inspection, report, export,
    stop, and restart before resuming critical work.
@@ -227,7 +227,7 @@ Provider-support migrations remove historically retained `x-api-key` and
 pre-migration database backup can still contain the earlier bytes. Protect or
 retire that backup according to your credential and personal-data retention
 policy, and rotate an Anthropic key if it was previously routed through an older
-Black Box build.
+Tekrion build.
 
 ## Operational logs
 
@@ -246,7 +246,7 @@ for paths, provider origins, and error text.
 If integrity, unexpected exposure, or unsafe agent behavior is suspected:
 
 1. Stop the daemon and the wrapped agent without deleting evidence.
-2. Record the Black Box version, source SHA, host time, `doctor --json`, and
+2. Record the Tekrion version, source SHA, host time, `doctor --json`, and
    `status --json` output in a private incident record.
 3. Preserve a stopped whole-home snapshot and forensic exports of relevant
    completed sessions. Hash copies using the organization's approved tooling.

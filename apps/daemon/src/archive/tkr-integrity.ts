@@ -3,24 +3,24 @@ import { chmod, link, mkdir, open, rename, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 import {
-  BbxArchiveSchema,
-  type BbxArchive,
-  type BbxArchiveEntryDescriptor,
-} from "@blackbox/protocol";
+  TekrionArchiveSchema,
+  type TekrionArchive,
+  type TekrionArchiveEntryDescriptor,
+} from "@tekrion/protocol";
 
 export const DEFAULT_MAXIMUM_ARCHIVE_BYTES = 512 * 1024 * 1024;
 
-export class BbxArchiveIntegrityError extends Error {
+export class TekrionArchiveIntegrityError extends Error {
   constructor(message: string, options?: ErrorOptions) {
     super(message, options);
-    this.name = "BbxArchiveIntegrityError";
+    this.name = "TekrionArchiveIntegrityError";
   }
 }
 
-export class BbxArchiveSizeError extends Error {
+export class TekrionArchiveSizeError extends Error {
   constructor(readonly maximumBytes: number) {
-    super(`The BBX archive exceeds the ${maximumBytes}-byte safety limit.`);
-    this.name = "BbxArchiveSizeError";
+    super(`The TKR archive exceeds the ${maximumBytes}-byte safety limit.`);
+    this.name = "TekrionArchiveSizeError";
   }
 }
 
@@ -50,29 +50,29 @@ export function archiveSha256(value: Uint8Array | string): string {
 function canonicalBase64(value: string): Uint8Array {
   const bytes = Buffer.from(value, "base64");
   if (bytes.toString("base64") !== value) {
-    throw new BbxArchiveIntegrityError(
-      "A BBX archive entry is not canonical base64.",
+    throw new TekrionArchiveIntegrityError(
+      "A TKR archive entry is not canonical base64.",
     );
   }
   return bytes;
 }
 
-export interface VerifiedBbxArchive {
-  readonly archive: BbxArchive;
+export interface VerifiedTekrionArchive {
+  readonly archive: TekrionArchive;
   readonly entries: ReadonlyMap<string, Uint8Array>;
 }
 
-export function encodeBbxArchive(archive: BbxArchive): Uint8Array {
-  const parsed = BbxArchiveSchema.parse(archive);
+export function encodeTekrionArchive(archive: TekrionArchive): Uint8Array {
+  const parsed = TekrionArchiveSchema.parse(archive);
   return Buffer.from(`${canonicalJson(parsed)}\n`, "utf8");
 }
 
-export function verifyBbxArchive(
+export function verifyTekrionArchive(
   input: Uint8Array,
   maximumBytes = DEFAULT_MAXIMUM_ARCHIVE_BYTES,
-): VerifiedBbxArchive {
+): VerifiedTekrionArchive {
   if (input.byteLength > maximumBytes) {
-    throw new BbxArchiveSizeError(maximumBytes);
+    throw new TekrionArchiveSizeError(maximumBytes);
   }
   let decoded: unknown;
   try {
@@ -80,25 +80,25 @@ export function verifyBbxArchive(
       new TextDecoder("utf-8", { fatal: true }).decode(input),
     );
   } catch (error: unknown) {
-    throw new BbxArchiveIntegrityError(
-      "The BBX archive is not valid UTF-8 JSON.",
+    throw new TekrionArchiveIntegrityError(
+      "The TKR archive is not valid UTF-8 JSON.",
       { cause: error },
     );
   }
-  let archive: BbxArchive;
+  let archive: TekrionArchive;
   try {
-    archive = BbxArchiveSchema.parse(decoded);
+    archive = TekrionArchiveSchema.parse(decoded);
   } catch (error: unknown) {
-    throw new BbxArchiveIntegrityError(
-      "The BBX archive does not match the supported versioned schema.",
+    throw new TekrionArchiveIntegrityError(
+      "The TKR archive does not match the supported versioned schema.",
       { cause: error },
     );
   }
   if (
     archiveSha256(canonicalJson(archive.manifest)) !== archive.manifestSha256
   ) {
-    throw new BbxArchiveIntegrityError(
-      "The BBX archive manifest digest does not match.",
+    throw new TekrionArchiveIntegrityError(
+      "The TKR archive manifest digest does not match.",
     );
   }
   const descriptors = new Map(
@@ -109,28 +109,28 @@ export function verifyBbxArchive(
   for (const entry of archive.entries) {
     const descriptor = descriptors.get(entry.path);
     if (descriptor === undefined) {
-      throw new BbxArchiveIntegrityError(
+      throw new TekrionArchiveIntegrityError(
         `Archive entry ${entry.path} is not declared in the manifest.`,
       );
     }
     const bytes = canonicalBase64(entry.data);
     decodedBytes += bytes.byteLength;
     if (decodedBytes > maximumBytes) {
-      throw new BbxArchiveSizeError(maximumBytes);
+      throw new TekrionArchiveSizeError(maximumBytes);
     }
     if (
       bytes.byteLength !== descriptor.byteLength ||
       archiveSha256(bytes) !== descriptor.sha256
     ) {
-      throw new BbxArchiveIntegrityError(
+      throw new TekrionArchiveIntegrityError(
         `Archive entry ${entry.path} failed its size or SHA-256 check.`,
       );
     }
     entries.set(entry.path, bytes);
   }
   if (decodedBytes !== archive.manifest.totalBytes) {
-    throw new BbxArchiveIntegrityError(
-      "The decoded BBX archive size does not match the manifest.",
+    throw new TekrionArchiveIntegrityError(
+      "The decoded TKR archive size does not match the manifest.",
     );
   }
   for (const blob of archive.manifest.blobs) {
@@ -142,7 +142,7 @@ export function verifyBbxArchive(
       descriptor.mediaType !== blob.reference.mediaType ||
       blob.reference.id !== `blob-${blob.reference.sha256}`
     ) {
-      throw new BbxArchiveIntegrityError(
+      throw new TekrionArchiveIntegrityError(
         `Blob metadata for ${blob.entryPath} does not match its entry.`,
       );
     }
@@ -154,7 +154,7 @@ function entryDescriptor(
   path: string,
   mediaType: string,
   bytes: Uint8Array,
-): BbxArchiveEntryDescriptor {
+): TekrionArchiveEntryDescriptor {
   return {
     path,
     mediaType,
@@ -163,17 +163,17 @@ function entryDescriptor(
   };
 }
 
-export interface BbxArchiveContentEntry {
+export interface TekrionArchiveContentEntry {
   readonly path: string;
   readonly mediaType: string;
   readonly bytes: Uint8Array;
 }
 
 export function materializeArchiveEntries(
-  entries: readonly BbxArchiveContentEntry[],
+  entries: readonly TekrionArchiveContentEntry[],
 ): {
-  readonly descriptors: BbxArchiveEntryDescriptor[];
-  readonly payloads: BbxArchive["entries"];
+  readonly descriptors: TekrionArchiveEntryDescriptor[];
+  readonly payloads: TekrionArchive["entries"];
   readonly totalBytes: number;
 } {
   const ordered = [...entries].sort((left, right) =>
@@ -214,7 +214,7 @@ async function syncDirectory(path: string): Promise<void> {
   }
 }
 
-export async function writeBbxArchiveFile(
+export async function writeTekrionArchiveFile(
   path: string,
   bytes: Uint8Array,
   overwrite = false,
@@ -223,7 +223,7 @@ export async function writeBbxArchiveFile(
   await mkdir(directory, { recursive: true, mode: 0o700 });
   const temporaryPath = join(
     directory,
-    `.blackbox-export-${process.pid}-${randomUUID()}.tmp`,
+    `.tekrion-export-${process.pid}-${randomUUID()}.tmp`,
   );
   let handle;
   try {
@@ -262,23 +262,25 @@ export async function writeBbxArchiveFile(
   }
 }
 
-export async function readBbxArchiveFile(
+export async function readTekrionArchiveFile(
   path: string,
   maximumBytes = DEFAULT_MAXIMUM_ARCHIVE_BYTES,
 ): Promise<Uint8Array> {
   if (!Number.isSafeInteger(maximumBytes) || maximumBytes < 0) {
     throw new RangeError(
-      "The BBX archive byte limit must be a non-negative integer.",
+      "The TKR archive byte limit must be a non-negative integer.",
     );
   }
   const handle = await open(path, "r");
   try {
     const information = await handle.stat();
     if (!information.isFile()) {
-      throw new BbxArchiveIntegrityError("The BBX archive path is not a file.");
+      throw new TekrionArchiveIntegrityError(
+        "The TKR archive path is not a file.",
+      );
     }
     if (information.size > maximumBytes) {
-      throw new BbxArchiveSizeError(maximumBytes);
+      throw new TekrionArchiveSizeError(maximumBytes);
     }
 
     const chunks: Buffer[] = [];
@@ -293,7 +295,7 @@ export async function readBbxArchiveFile(
       chunks.push(chunk.subarray(0, bytesRead));
       totalBytes += bytesRead;
     }
-    throw new BbxArchiveSizeError(maximumBytes);
+    throw new TekrionArchiveSizeError(maximumBytes);
   } finally {
     await handle.close();
   }

@@ -1,8 +1,17 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import { IdentifierSchema } from "@blackbox/protocol";
+import { IdentifierSchema } from "@tekrion/protocol";
 
 export const SESSION_SIGNAL_HEADERS = {
+  explicit: "x-tekrion-session",
+  adapter: "x-tekrion-agent-session",
+  ancestry: "x-tekrion-response-ancestor",
+  analysis: "x-tekrion-analysis-session",
+  analysisTarget: "x-tekrion-analysis-target",
+  client: "x-tekrion-client-id",
+} as const;
+
+export const LEGACY_SESSION_SIGNAL_HEADERS = {
   explicit: "x-blackbox-session",
   adapter: "x-blackbox-agent-session",
   ancestry: "x-blackbox-response-ancestor",
@@ -11,9 +20,10 @@ export const SESSION_SIGNAL_HEADERS = {
   client: "x-blackbox-client-id",
 } as const;
 
-export const SESSION_SIGNAL_HEADER_NAMES = Object.values(
-  SESSION_SIGNAL_HEADERS,
-);
+export const SESSION_SIGNAL_HEADER_NAMES = [
+  ...Object.values(SESSION_SIGNAL_HEADERS),
+  ...Object.values(LEGACY_SESSION_SIGNAL_HEADERS),
+] as const;
 
 export type SessionizationSource =
   "analysis" | "explicit" | "adapter" | "ancestry" | "heuristic" | "manual";

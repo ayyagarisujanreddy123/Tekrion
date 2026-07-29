@@ -1,6 +1,6 @@
 # Release checklist
 
-Black Box 0.1.0 is an unreleased source candidate. Completing a source check is necessary but does not authorize a tag, package publication, signing operation, or update to `origin`.
+Tekrion 0.1.0 is an unreleased source candidate. Completing a source check is necessary but does not authorize a tag, package publication, signing operation, or update to `origin`.
 
 The implemented privacy/security controls and their regression coverage are indexed in the [security verification map](security-verification.md).
 
@@ -41,7 +41,7 @@ It runs the source gate, clean-installs the packed runtime set, audits dependenc
 - [ ] Inspect the package tarballs from the package smoke test; reject secrets, local databases, logs, source maps, fixtures not intended for distribution, and missing runtime assets.
 - [ ] Confirm the CLI tarball contains the project license and generated notices for every dependency embedded in the browser assets.
 - [ ] Confirm all seven runtime tarballs contain their package-local README and canonical license.
-- [ ] Review `.bbx` share/forensic warnings, optional-AI consent copy, and supported/unsupported claims.
+- [ ] Review `.tkr` share/forensic warnings, optional-AI consent copy, and supported/unsupported claims.
 - [ ] Record known limitations and migration compatibility.
 - [ ] Capture fallback screenshots/video from the exact candidate, if required for the release venue.
 

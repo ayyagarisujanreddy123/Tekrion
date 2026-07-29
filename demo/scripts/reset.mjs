@@ -16,10 +16,10 @@ function safeDemoRoot(value) {
   if (
     outputRoot === parse(outputRoot).root ||
     outputRoot === repositoryRoot ||
-    !basename(outputRoot).toLowerCase().includes("blackbox-demo")
+    !basename(outputRoot).toLowerCase().includes("tekrion-demo")
   ) {
     throw new Error(
-      "Demo output must be a dedicated directory whose name contains 'blackbox-demo'.",
+      "Demo output must be a dedicated directory whose name contains 'tekrion-demo'.",
     );
   }
   return outputRoot;
@@ -27,7 +27,7 @@ function safeDemoRoot(value) {
 
 export async function resetDemo(options = {}) {
   const outputRoot = safeDemoRoot(
-    options.outputRoot ?? join(repositoryRoot, ".blackbox-demo"),
+    options.outputRoot ?? join(repositoryRoot, ".tekrion-demo"),
   );
   await rm(outputRoot, { recursive: true, force: true });
   if (options.clean === true) {
@@ -44,14 +44,14 @@ export async function resetDemo(options = {}) {
     workspace,
     "config",
     "user.email",
-    "blackbox-demo@example.test",
+    "tekrion-demo@example.test",
   ]);
   await execute("git", [
     "-C",
     workspace,
     "config",
     "user.name",
-    "Black Box Demo",
+    "Tekrion Demo",
   ]);
   await execute("git", ["-C", workspace, "add", "."]);
   await execute("git", [
@@ -60,7 +60,7 @@ export async function resetDemo(options = {}) {
     "commit",
     "--quiet",
     "-m",
-    "seeded Black Box demo baseline",
+    "seeded Tekrion demo baseline",
   ]);
   return { outputRoot, workspace, home, cleaned: false };
 }
@@ -94,7 +94,7 @@ if (
     process.stdout.write(`${JSON.stringify(result)}\n`);
   } catch (error) {
     process.stderr.write(
-      `blackbox demo reset: ${error instanceof Error ? error.message : String(error)}\n`,
+      `tekrion demo reset: ${error instanceof Error ? error.message : String(error)}\n`,
     );
     process.exitCode = 1;
   }

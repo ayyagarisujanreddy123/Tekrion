@@ -7,5 +7,8 @@ coverage/
 .env
 .env.*
 !.env.example
+.tekrion/
+.tekrion-demo/
+# Legacy pre-rebrand local data and deterministic demo output.
 .blackbox/
 .blackbox-demo/

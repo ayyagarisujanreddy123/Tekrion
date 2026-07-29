@@ -1,23 +1,23 @@
 <pre align="center" role="heading" aria-level="1">
-██████╗ ██╗      █████╗  ██████╗██╗  ██╗    ██████╗  ██████╗ ██╗  ██╗
-██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝    ██╔══██╗██╔═══██╗╚██╗██╔╝
-██████╔╝██║     ███████║██║     █████╔╝     ██████╔╝██║   ██║ ╚███╔╝
-██╔══██╗██║     ██╔══██║██║     ██╔═██╗     ██╔══██╗██║   ██║ ██╔██╗
-██████╔╝███████╗██║  ██║╚██████╗██║  ██╗    ██████╔╝╚██████╔╝██╔╝ ██╗
-╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝    ╚═════╝  ╚═════╝ ╚═╝  ╚═╝
+████████╗███████╗██╗  ██╗██████╗ ██╗ ██████╗ ███╗   ██╗
+╚══██╔══╝██╔════╝██║ ██╔╝██╔══██╗██║██╔═══██╗████╗  ██║
+   ██║   █████╗  █████╔╝ ██████╔╝██║██║   ██║██╔██╗ ██║
+   ██║   ██╔══╝  ██╔═██╗ ██╔══██╗██║██║   ██║██║╚██╗██║
+   ██║   ███████╗██║  ██╗██║  ██║██║╚██████╔╝██║ ╚████║
+   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
 </pre>
 
 <p align="center">
   <samp><strong>LOCAL FLIGHT RECORDER FOR AI CODING AGENTS</strong></samp>
   <br />
-  <samp>EVIDENCE, NOT GUESSWORK.</samp>
+  <samp>EVIDENCE FOR EVERY AGENT ACTION.</samp>
 </p>
 
-Black Box records what an AI coding agent saw, said, called, printed, and changed—then turns that evidence into an investigation you can inspect locally.
+Tekrion (pronounced **TEK-ree-on**) is named after the Greek _tekmērion_, meaning evidence or proof. It records what an AI coding agent saw, said, called, printed, and changed—then turns that evidence into an investigation you can inspect locally.
 
-It runs as a CLI-managed localhost recorder with a browser cockpit. Launch Codex, Claude Code, or another supported HTTP client through `blackbox run`, and Black Box builds a synchronized record of API traffic, model/tool events, process output, and workspace effects.
+It runs as a CLI-managed localhost recorder with a browser cockpit. Launch Codex, Claude Code, or another supported HTTP client through `tekrion run`, and Tekrion builds a synchronized record of API traffic, model/tool events, process output, and workspace effects.
 
-When an agent deletes a test, follows instructions hidden in a README, repeats a failing command, or drifts outside the user's request, Black Box helps answer:
+When an agent deletes a test, follows instructions hidden in a README, repeats a failing command, or drifts outside the user's request, Tekrion helps answer:
 
 - What exactly happened?
 - What information was visible before the action?
@@ -25,19 +25,19 @@ When an agent deletes a test, follows instructions hidden in a README, repeats a
 - Was the action inconsistent with the user's request?
 - How complete—and how trustworthy—is the conclusion?
 
-> Black Box does not read minds or expose private chain-of-thought. It preserves observable evidence, labels missing context, and keeps inference separate from fact.
+> Tekrion does not read minds or expose private chain-of-thought. It preserves observable evidence, labels missing context, and keeps inference separate from fact.
 
 ## The investigation loop
 
 ```text
-$ blackbox run -- <agent-command>
+$ tekrion run -- <agent-command>
         │
         ├── record API request and response bytes
         ├── normalize messages, tool calls, results, errors, and usage
         ├── mirror bounded stdout and stderr
         └── observe workspace changes from baseline to final state
 
-$ blackbox open
+$ tekrion open
         │
         ├── TIMELINE   what happened, in sequence
         ├── CONTEXT    what the client made visible to the model
@@ -47,15 +47,15 @@ $ blackbox open
         └── RAW        the retained evidence behind every claim
 ```
 
-![Black Box local evidence architecture](docs/architecture.svg)
+![Tekrion local evidence architecture](docs/architecture.svg)
 
-## Why Black Box exists
+## Why Tekrion exists
 
 Normal agent logs tell only part of the story. A terminal transcript may show a command but not the model request that produced it. An API trace may show a tool call but not the file deletion that followed. A final Git diff shows the outcome but not the sequence, context, or transient behavior.
 
-Black Box joins those signals into one evidence trail:
+Tekrion joins those signals into one evidence trail:
 
-| Question                     | Black Box evidence                                                               |
+| Question                     | Tekrion evidence                                                                 |
 | ---------------------------- | -------------------------------------------------------------------------------- |
 | What did the client send?    | Byte-faithful request capture and canonical `model.request` events               |
 | What came back?              | Ordered JSON/SSE response bytes, messages, tool calls, errors, and usage         |
@@ -79,21 +79,21 @@ From this repository:
 ```bash
 npm install
 npm run build
-npm run blackbox -- init
-npm run blackbox -- doctor
+npm run tekrion -- init
+npm run tekrion -- doctor
 ```
 
 Run an agent under the recorder:
 
 ```bash
-npm run blackbox -- run -- <agent-command> [arguments...]
+npm run tekrion -- run -- <agent-command> [arguments...]
 ```
 
 For example:
 
 ```bash
-npm run blackbox -- run -- codex
-npm run blackbox -- run -- claude
+npm run tekrion -- run -- codex
+npm run tekrion -- run -- claude
 ```
 
 Direct `codex` and `claude` executables are detected automatically. Use
@@ -105,52 +105,52 @@ command string.
 Open the local evidence cockpit:
 
 ```bash
-npm run blackbox -- open
+npm run tekrion -- open
 ```
 
 Inspect the journal from the terminal:
 
 ```bash
-npm run blackbox -- sessions --json
-npm run blackbox -- inspect <session-id> --json
-npm run blackbox -- report <session-id>
+npm run tekrion -- sessions --json
+npm run tekrion -- inspect <session-id> --json
+npm run tekrion -- report <session-id>
 ```
 
-`blackbox run` starts or reuses the daemon, creates one explicit session, selects a provider integration, mirrors the child process, observes its workspace, and preserves the child's exit status. Codex receives a temporary HTTP-only model-provider override plus `OPENAI_BASE_URL`; the provider reuses Codex's active OpenAI authentication. Claude receives a session-scoped `ANTHROPIC_BASE_URL` and keeps using Claude's native credential selection. Black Box does not edit either agent's global configuration.
+`tekrion run` starts or reuses the daemon, creates one explicit session, selects a provider integration, mirrors the child process, observes its workspace, and preserves the child's exit status. Codex receives a temporary HTTP-only model-provider override plus `OPENAI_BASE_URL`; the provider reuses Codex's active OpenAI authentication. Claude receives a session-scoped `ANTHROPIC_BASE_URL` and keeps using Claude's native credential selection. Tekrion does not edit either agent's global configuration.
 
-The child must honor the selected base URL for Black Box to capture its provider traffic. Process and workspace evidence still works through the wrapper; `blackbox doctor` reports known transport and configuration limitations before a real run. Each wrapped session pins its own validated routing mode, so Codex and Claude sessions can safely reuse one daemon.
+The child must honor the selected base URL for Tekrion to capture its provider traffic. Process and workspace evidence still works through the wrapper; `tekrion doctor` reports known transport and configuration limitations before a real run. Each wrapped session pins its own validated routing mode, so Codex and Claude sessions can safely reuse one daemon.
 
-No separate Black Box API key is required for local first-party sessions:
+No separate Tekrion API key is required for local first-party sessions:
 
 | Agent session                                            | Native authentication reused by the wrapper                                | Provider route                   |
 | -------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------- |
 | Codex interactive, `exec`, `resume`, `fork`, or `review` | ChatGPT sign-in or Codex API-key sign-in                                   | Selected automatically in memory |
 | Claude interactive, print mode, or resumed session       | Claude subscription OAuth, OAuth token, bearer token, or Anthropic API key | Anthropic Messages API           |
 
-Authorization values and the Codex account-routing identifier are forwarded only in memory and are forbidden in durable header evidence. An explicit `--upstream` or `BLACKBOX_UPSTREAM_URL` always selects direct gateway routing. Hosted Codex/Claude web sessions, IDE sessions not launched by the wrapper, and Bedrock/Vertex/Foundry transports do not pass through this localhost recorder.
+Authorization values and the Codex account-routing identifier are forwarded only in memory and are forbidden in durable header evidence. An explicit `--upstream` or `TEKRION_UPSTREAM_URL` always selects direct gateway routing. Hosted Codex/Claude web sessions, IDE sessions not launched by the wrapper, and Bedrock/Vertex/Foundry transports do not pass through this localhost recorder.
 
-All examples below use the installed `blackbox` command for readability. When running from source, replace `blackbox` with `npm run blackbox --`.
+All examples below use the installed `tekrion` command for readability. When running from source, replace `tekrion` with `npm run tekrion --`.
 
 ## Run as a standalone proxy
 
-If a client already supports a custom provider base URL, start Black Box separately:
+If a client already supports a custom provider base URL, start Tekrion separately:
 
 ```bash
-blackbox init
-blackbox start --upstream https://api.openai.com
-blackbox status
+tekrion init
+tekrion start --upstream https://api.openai.com
+tekrion status
 ```
 
 Point an OpenAI-compatible client at the printed `OPENAI_BASE_URL`, or an Anthropic Messages client at the printed `ANTHROPIC_BASE_URL`, then inspect its sessions:
 
 ```bash
-blackbox sessions
-blackbox open <session-id>
+tekrion sessions
+tekrion open <session-id>
 ```
 
-Configure the credential-free provider origin with `--upstream` or `BLACKBOX_UPSTREAM_URL`. Black Box deliberately does not use `OPENAI_BASE_URL` or `ANTHROPIC_BASE_URL` as its upstream because those variables point clients back to the recorder.
+Configure the credential-free provider origin with `--upstream` or `TEKRION_UPSTREAM_URL`. Tekrion deliberately does not use `OPENAI_BASE_URL` or `ANTHROPIC_BASE_URL` as its upstream because those variables point clients back to the recorder.
 
-## What Black Box records
+## What Tekrion records
 
 ### API evidence
 
@@ -179,7 +179,7 @@ The proxy preserves downstream status, relevant headers, response bytes, and SSE
 - Approximate watcher timing for live visibility
 - Authoritative exact final diff evidence for attribution
 
-Black Box excludes `.git`, dependencies, common build/cache directories, its own data directory, and untracked Git-ignored paths. It records symlink targets but does not traverse directory symlinks.
+Tekrion excludes `.git`, dependencies, common build/cache directories, its own data directory, and untracked Git-ignored paths. It records symlink targets but does not traverse directory symlinks.
 
 ### Capture levels
 
@@ -207,7 +207,7 @@ The local React cockpit provides:
 Open it with:
 
 ```bash
-blackbox open [session-id]
+tekrion open [session-id]
 ```
 
 The CLI transfers the local control credential through the URL fragment, does not print it during normal operation, and the viewer removes it from the visible URL after bootstrap.
@@ -216,7 +216,7 @@ The CLI transfers the local control credential through the URL fragment, does no
 
 Select a `model.request` event and open the **context** tab.
 
-For Chat Completions, Black Box reconstructs the explicit message history sent in the request. For Responses, it follows locally recorded `previous_response_id` ancestry with cycle, depth, and recorded-sequence guards.
+For Chat Completions, Tekrion reconstructs the explicit message history sent in the request. For Responses, it follows locally recorded `previous_response_id` ancestry with cycle, depth, and recorded-sequence guards.
 
 Every result receives one of these completeness labels:
 
@@ -228,15 +228,15 @@ Every result receives one of these completeness labels:
 | `provider-managed-context`   | Some context is resolved remotely by the provider          |
 | `unknown-unsupported`        | The capture or protocol cannot support a stronger claim    |
 
-Context items retain event, raw exchange, payload, role, ordering, and evidence-kind provenance. Provider-reported input usage is shown separately from Black Box's rough visible-content estimate.
+Context items retain event, raw exchange, payload, role, ordering, and evidence-kind provenance. Provider-reported input usage is shown separately from Tekrion's rough visible-content estimate.
 
-Black Box never invents missing messages, hidden instructions, or private model reasoning.
+Tekrion never invents missing messages, hidden instructions, or private model reasoning.
 
 ## Deterministic blame
 
 Select a `tool.call` or file action and open the **blame** tab.
 
-Black Box first normalizes the target into its verb, path/entity, arguments, scope, result, and impact. It then considers only eligible evidence that preceded—and was available to—the target invocation.
+Tekrion first normalizes the target into its verb, path/entity, arguments, scope, result, and impact. It then considers only eligible evidence that preceded—and was available to—the target invocation.
 
 Candidates are ranked locally using a versioned feature breakdown:
 
@@ -286,9 +286,9 @@ Analysis results are versioned and cached as content-addressed local evidence.
 Generate a local Markdown report for the highest-impact recorded action:
 
 ```bash
-blackbox report <session-id>
-blackbox report <session-id> --target-event <event-id>
-blackbox report <session-id> --json
+tekrion report <session-id>
+tekrion report <session-id> --target-event <event-id>
+tekrion report <session-id> --json
 ```
 
 The deterministic report is the default. It includes capture completeness, impact, a factual timeline, a separately labeled root-cause hypothesis, contributing conditions, counterevidence, alternative explanations, observed containment or recovery, prevention actions, limitations, and links back to event evidence. Recorded markup is escaped and the JSON form is versioned.
@@ -300,27 +300,27 @@ The same report is available in the cockpit's **report** tab. It is generated lo
 AI enrichment is disabled unless dedicated analysis credentials are configured:
 
 ```bash
-export BLACKBOX_ANALYSIS_API_KEY="..."
-export BLACKBOX_ANALYSIS_MODEL="<structured-output-capable-model>"
+export TEKRION_ANALYSIS_API_KEY="..."
+export TEKRION_ANALYSIS_MODEL="<structured-output-capable-model>"
 
 # Optional for another OpenAI-compatible Responses endpoint:
-export BLACKBOX_ANALYSIS_BASE_URL="https://api.openai.com/v1/"
-export BLACKBOX_ANALYSIS_PROVIDER="openai"
+export TEKRION_ANALYSIS_BASE_URL="https://api.openai.com/v1/"
+export TEKRION_ANALYSIS_PROVIDER="openai"
 ```
 
 Then either preview and confirm in the cockpit, or make the CLI opt-in explicit:
 
 ```bash
-blackbox report <session-id> --ai
+tekrion report <session-id> --ai
 ```
 
-The CLI prints the local preflight before sending. The cockpit uses a separate preview and confirmation step; canceling the preview makes no provider call. Consent is bound to a fingerprint of the snapshot hash, provider, model, and prompt version, so any change requires a new review. Black Box minimizes evidence to declared categories, removes recognized secrets, shows exact category and byte counts, sends the redacted snapshot with provider storage disabled, and requires strict structured output. It rejects nonexistent event citations and excerpts that do not occur in the transmitted evidence.
+The CLI prints the local preflight before sending. The cockpit uses a separate preview and confirmation step; canceling the preview makes no provider call. Consent is bound to a fingerprint of the snapshot hash, provider, model, and prompt version, so any change requires a new review. Tekrion minimizes evidence to declared categories, removes recognized secrets, shows exact category and byte counts, sends the redacted snapshot with provider storage disabled, and requires strict structured output. It rejects nonexistent event citations and excerpts that do not occur in the transmitted evidence.
 
 AI can edit only the inferred narrative. It cannot replace the deterministic impact or factual timeline, raise confidence beyond the offline analysis, create provenance, or claim access to hidden reasoning. The disclosure records provider, model, prompt version, usage, redaction rules, snapshot hash, and a separate internal analysis session. Any provider, refusal, schema, or citation failure returns the original deterministic report intact.
 
 ## Evidence integrity
 
-Black Box uses two layers of evidence:
+Tekrion uses two layers of evidence:
 
 1. **Raw evidence** preserves the exchange or observation as recorded.
 2. **Derived evidence** normalizes and connects those observations for investigation.
@@ -329,19 +329,19 @@ The raw layer remains recoverable when normalization fails. Canonical events dis
 
 SQLite runs in WAL mode so the cockpit can read while the recorder writes. Large payloads are compressed into content-addressed blobs, while small payloads may remain inline.
 
-## Portable `.bbx` archives
+## Portable `.tkr` archives
 
 Export a settled investigation as one versioned, self-contained file:
 
 ```bash
-blackbox export <session-id> --output incident.bbx
-blackbox import incident.bbx
+tekrion export <session-id> --output incident.tkr
+tekrion import incident.tkr
 ```
 
 The default `share` profile removes raw request/response bytes, payload blobs, absolute workspace scope, and upstream identifiers. It applies the same secret-redaction rules used by report minimization and includes redacted records plus matching deterministic JSON and Markdown reports. Use the more sensitive profile only when an authorized recipient needs the original evidence:
 
 ```bash
-blackbox export <session-id> --output incident-forensic.bbx --profile forensic
+tekrion export <session-id> --output incident-forensic.tkr --profile forensic
 ```
 
 | Profile    | Intended use                 | Contents                                                                 |
@@ -353,7 +353,7 @@ Forensic archives can contain prompts, source, filesystem paths, command output,
 
 Every archive has a canonical manifest, bounded entries, and SHA-256 hashes. Import verifies hashes, record counts, paths, relationships, blob coverage, and both report representations before writing anything. This detects corruption and modification, but it is **not a digital signature**: someone who can rewrite an archive can also recompute its hashes. Use a trusted transfer channel or an external signature when authenticity matters.
 
-Imported sessions are marked `imported-readonly`. Database guards prevent evidence mutation, report generation stays offline and read-only, optional AI transmission is disabled, duplicate import cannot overwrite local evidence, and Black Box provides no action-replay command.
+Imported sessions are marked `imported-readonly`. Database guards prevent evidence mutation, report generation stays offline and read-only, optional AI transmission is disabled, duplicate import cannot overwrite local evidence, and Tekrion provides no action-replay command.
 
 The complete version 1 layout and verification sequence are documented in [docs/archive-format.md](docs/archive-format.md).
 
@@ -362,18 +362,18 @@ The complete version 1 layout and verification sequence are documented in [docs/
 Deletion is explicit and plan-first. Without `--yes`, these commands only show what would change:
 
 ```bash
-blackbox delete <session-id>             # dry run
-blackbox delete <session-id> --yes       # apply displayed deletion
-blackbox prune --older-than-days 30      # dry run by age
-blackbox prune --max-bytes 10737418240   # dry run to a 10 GiB target
-blackbox prune --older-than-days 30 --max-bytes 10737418240 --yes
+tekrion delete <session-id>             # dry run
+tekrion delete <session-id> --yes       # apply displayed deletion
+tekrion prune --older-than-days 30      # dry run by age
+tekrion prune --max-bytes 10737418240   # dry run to a 10 GiB target
+tekrion prune --older-than-days 30 --max-bytes 10737418240 --yes
 ```
 
-Active sessions are never selected. Linked internal analysis sessions are included with their source investigation, each plan is revalidated before execution, and only blobs with no remaining evidence reference are collected. Set `--max-stored-bytes N` on `start`, `open`, `run`, or `doctor` to make the blob store refuse new payloads beyond a fixed ceiling; Black Box does not silently evict recorded evidence.
+Active sessions are never selected. Linked internal analysis sessions are included with their source investigation, each plan is revalidated before execution, and only blobs with no remaining evidence reference are collected. Set `--max-stored-bytes N` on `start`, `open`, `run`, or `doctor` to make the blob store refuse new payloads beyond a fixed ceiling; Tekrion does not silently evict recorded evidence.
 
 ## Privacy and security
 
-Black Box is local-first, not magically risk-free. Recordings can contain prompts, source code, file paths, and tool output; protect the data directory accordingly.
+Tekrion is local-first, not magically risk-free. Recordings can contain prompts, source code, file paths, and tool output; protect the data directory accordingly.
 
 Implemented controls include:
 
@@ -387,40 +387,40 @@ Implemented controls include:
 - No external model call for context reconstruction, blame, or anomaly analysis
 - Offline incident reports by default; optional report enrichment requires an exact local preflight and explicit consent
 
-Recorded agent API requests still go to the configured upstream by design. Optional report analysis uses only the dedicated `BLACKBOX_ANALYSIS_*` configuration and never silently reuses general `OPENAI_API_KEY` credentials. Black Box forwards credentials in memory when required but does not persist them as header evidence.
+Recorded agent API requests still go to the configured upstream by design. Optional report analysis uses only the dedicated `TEKRION_ANALYSIS_*` configuration and never silently reuses general `OPENAI_API_KEY` credentials. Tekrion forwards credentials in memory when required but does not persist them as header evidence.
 
-Use `--home PATH` or `BLACKBOX_HOME` to select the private data directory.
+Use `--home PATH` or `TEKRION_HOME` to select the private data directory.
 
 See [docs/privacy.md](docs/privacy.md) for the stored-field and transmission boundary, [docs/capture-model.md](docs/capture-model.md) for evidence/completeness semantics, and [SECURITY.md](SECURITY.md) for vulnerability reporting and threat boundaries.
 
 ## Offline demo
 
-The seeded rogue-agent incident runs without an API key, provider, or network connection. It resets a disposable repository, imports the checked-in transcript into a fresh private Black Box home, and generates the packaged CLI report:
+The seeded rogue-agent incident runs without an API key, provider, or network connection. It resets a disposable repository, imports the checked-in transcript into a fresh private Tekrion home, and generates the packaged CLI report:
 
 ```bash
 npm install
 npm run demo:offline
 ```
 
-The command prints the session ID, report path, evidence home, and a command for opening the cockpit. It is safe to rerun: each invocation recreates only the dedicated `.blackbox-demo` workspace.
+The command prints the session ID, report path, evidence home, and a command for opening the cockpit. It is safe to rerun: each invocation recreates only the dedicated `.tekrion-demo` workspace.
 
 ```bash
 npm run demo:reset    # recreate the clean demo repository only
 npm run demo:cleanup  # remove the disposable demo workspace
 ```
 
-If a live provider is unavailable during a real investigation, process and workspace capture still complete through `blackbox run`, and deterministic inspection/reporting remains local. Provider traffic can only be recorded when the client reaches its configured upstream through the Black Box proxy.
+If a live provider is unavailable during a real investigation, process and workspace capture still complete through `tekrion run`, and deterministic inspection/reporting remains local. Provider traffic can only be recorded when the client reaches its configured upstream through the Tekrion proxy.
 
 ## Troubleshooting
 
 | Symptom                              | Check                                                                                                                                          |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | No API events                        | Confirm the child honors its injected OpenAI or Anthropic base URL; use `--agent` explicitly if auto-detection cannot see the real executable. |
-| Daemon or port conflict              | Run `blackbox status`, then `blackbox stop`; `doctor` identifies occupied listeners and stale state.                                           |
-| Cockpit does not open automatically  | Run `blackbox open` again and use the authenticated loopback URL printed by the CLI.                                                           |
+| Daemon or port conflict              | Run `tekrion status`, then `tekrion stop`; `doctor` identifies occupied listeners and stale state.                                             |
+| Cockpit does not open automatically  | Run `tekrion open` again and use the authenticated loopback URL printed by the CLI.                                                            |
 | Export says the session is unsettled | Finish or stop the capture first; active and incomplete writes cannot be packaged safely.                                                      |
 | Import reports an integrity failure  | Treat the file as corrupt or modified. Obtain a new copy instead of bypassing verification.                                                    |
-| Storage quota is reached             | Preview `blackbox prune` with an age or byte target, inspect the plan, then rerun with `--yes`.                                                |
+| Storage quota is reached             | Preview `tekrion prune` with an age or byte target, inspect the plan, then rerun with `--yes`.                                                 |
 
 ## Measured local smoke test
 
@@ -442,7 +442,7 @@ On 2026-07-21, the reproducible 100-sample loopback benchmark measured 6.031 ms 
 | Offline deterministic blame and anomalies   | Supported                              |
 | Deterministic Markdown/JSON incident report | Supported                              |
 | Explicit opt-in AI report explanation       | Supported through Responses JSON       |
-| Redacted and full-fidelity `.bbx` archives  | Supported with verified import         |
+| Redacted and full-fidelity `.tkr` archives  | Supported with verified import         |
 | Read-only imported investigations           | Supported and database-enforced        |
 | Dry-run deletion and retention pruning      | Supported                              |
 | Wrapped Codex HTTP fallback                 | Supported; WebSockets disabled per run |
@@ -454,28 +454,28 @@ On 2026-07-21, the reproducible 100-sample loopback benchmark measured 6.031 ms 
 
 ## CLI reference
 
-| Command                                                    | Purpose                                                          |
-| ---------------------------------------------------------- | ---------------------------------------------------------------- |
-| `blackbox init [--home PATH]`                              | Create the private local data area                               |
-| `blackbox doctor [--upstream URL] [--json]`                | Check runtime, database, storage, upstream, and transport health |
-| `blackbox start [--upstream URL]`                          | Start the detached proxy and control server                      |
-| `blackbox run [--agent NAME] [--cwd PATH] -- <command...>` | Run one agent/process with API, process, and workspace evidence  |
-| `blackbox status [--json]`                                 | Show daemon and recorder health                                  |
-| `blackbox open [session-id]`                               | Start/reuse the daemon and open the authenticated cockpit        |
-| `blackbox sessions [--limit N] [--json]`                   | List recorded sessions                                           |
-| `blackbox inspect <session-id> [--type TYPE] [--json]`     | Read canonical events from the terminal                          |
-| `blackbox report <session-id> [--ai] [--json]`             | Generate an offline report or explicitly opt into AI enrichment  |
-| `blackbox export <session-id> --output FILE`               | Create a redacted or explicit forensic `.bbx` archive            |
-| `blackbox import <archive.bbx> [--json]`                   | Verify and install a read-only investigation                     |
-| `blackbox delete <session-id> [--yes]`                     | Preview or apply deletion of one investigation                   |
-| `blackbox prune [--older-than-days N] [--max-bytes N]`     | Preview or apply an age/size retention plan                      |
-| `blackbox stop [--timeout-ms MS]`                          | Stop the daemon with bounded cleanup                             |
+| Command                                                   | Purpose                                                          |
+| --------------------------------------------------------- | ---------------------------------------------------------------- |
+| `tekrion init [--home PATH]`                              | Create the private local data area                               |
+| `tekrion doctor [--upstream URL] [--json]`                | Check runtime, database, storage, upstream, and transport health |
+| `tekrion start [--upstream URL]`                          | Start the detached proxy and control server                      |
+| `tekrion run [--agent NAME] [--cwd PATH] -- <command...>` | Run one agent/process with API, process, and workspace evidence  |
+| `tekrion status [--json]`                                 | Show daemon and recorder health                                  |
+| `tekrion open [session-id]`                               | Start/reuse the daemon and open the authenticated cockpit        |
+| `tekrion sessions [--limit N] [--json]`                   | List recorded sessions                                           |
+| `tekrion inspect <session-id> [--type TYPE] [--json]`     | Read canonical events from the terminal                          |
+| `tekrion report <session-id> [--ai] [--json]`             | Generate an offline report or explicitly opt into AI enrichment  |
+| `tekrion export <session-id> --output FILE`               | Create a redacted or explicit forensic `.tkr` archive            |
+| `tekrion import <archive.tkr> [--json]`                   | Verify and install a read-only investigation                     |
+| `tekrion delete <session-id> [--yes]`                     | Preview or apply deletion of one investigation                   |
+| `tekrion prune [--older-than-days N] [--max-bytes N]`     | Preview or apply an age/size retention plan                      |
+| `tekrion stop [--timeout-ms MS]`                          | Stop the daemon with bounded cleanup                             |
 
 See the complete option list with:
 
 ```bash
-blackbox --help
-blackbox --version
+tekrion --help
+tekrion --version
 ```
 
 ## Architecture
@@ -491,7 +491,7 @@ agent or client ─────────► byte-faithful proxy ────�
        │                          ├── protocol normalization
        │                          └── session correlation
        │
-       └── blackbox run ──────────┬── process stdout / stderr
+       └── tekrion run ──────────┬── process stdout / stderr
                                   └── workspace baseline + observations + diff
                                                    │
                                                    ▼
@@ -499,7 +499,7 @@ agent or client ─────────► byte-faithful proxy ────�
                                                    │
                          ┌─────────────────────────┼────────────────────────┬───────────────┐
                          ▼                         ▼                        ▼               ▼
-                 authenticated queries       live event stream     deterministic analysis  .bbx archive
+                 authenticated queries       live event stream     deterministic analysis  .tkr archive
                          │                         │                        │               │
                          └─────────────────────────┴────────────────────────┴───────────────┘
                                                    │
@@ -552,7 +552,7 @@ npm run benchmark         # rebuild and measure local proxy/cockpit overhead
 npm run clean             # remove TypeScript build outputs
 ```
 
-Black Box handles forensic evidence. Schema and fixture changes must preserve raw data, label uncertainty honestly, and keep credential-exclusion guarantees intact. Read [CONTRIBUTING.md](./CONTRIBUTING.md) before changing evidence contracts or golden fixtures.
+Tekrion handles forensic evidence. Schema and fixture changes must preserve raw data, label uncertainty honestly, and keep credential-exclusion guarantees intact. Read [CONTRIBUTING.md](./CONTRIBUTING.md) before changing evidence contracts or golden fixtures.
 
 ## Project status
 
@@ -582,6 +582,7 @@ For the detailed product contract and milestone acceptance criteria, see:
 - [Adapter authoring](./docs/adapter-authoring.md)
 - [Protocol support](./docs/protocol-support.md)
 - [Archive format](./docs/archive-format.md)
+- [Migration from pre-release Black Box builds](./docs/migration-from-black-box.md)
 - [Security verification map](./docs/security-verification.md)
 - [Three- and seven-minute demo script](./docs/demo-script.md)
 - [Release checklist and CI boundaries](./docs/release-checklist.md)
@@ -590,4 +591,4 @@ For the detailed product contract and milestone acceptance criteria, see:
 
 ## License
 
-Black Box is licensed under the [Apache License 2.0](./LICENSE).
+Tekrion is licensed under the [Apache License 2.0](./LICENSE).

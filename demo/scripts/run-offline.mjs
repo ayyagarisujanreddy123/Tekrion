@@ -71,7 +71,7 @@ try {
   );
 } catch (error) {
   process.stderr.write(
-    `blackbox offline demo: ${error instanceof Error ? error.message : String(error)}\n`,
+    `tekrion offline demo: ${error instanceof Error ? error.message : String(error)}\n`,
   );
   process.exitCode = 1;
 }

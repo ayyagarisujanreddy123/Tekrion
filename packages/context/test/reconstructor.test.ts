@@ -6,12 +6,12 @@ import {
   type ContextEvidenceSource,
 } from "../src/index.js";
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   RawExchangeSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type RawExchange,
   type RawExchangeProtocol,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import { describe, expect, it } from "vitest";
 
 const TIME = "2026-07-16T12:00:00.000Z";
@@ -25,7 +25,7 @@ interface TurnInput {
   readonly outputEvents?: readonly {
     readonly type: string;
     readonly summary: Record<string, unknown>;
-    readonly evidence?: BlackBoxEvent["evidence"];
+    readonly evidence?: TekrionEvent["evidence"];
   }[];
   readonly reportedInputTokens?: number;
   readonly requestComplete?: boolean;
@@ -34,13 +34,13 @@ interface TurnInput {
 
 class FixtureSource implements ContextEvidenceSource {
   private sequence = 1;
-  private readonly events = new Map<string, BlackBoxEvent>();
+  private readonly events = new Map<string, TekrionEvent>();
   private readonly origins = new Map<string, ContextEventOrigin>();
   private readonly exchanges = new Map<string, RawExchange>();
-  private readonly eventsByExchange = new Map<string, BlackBoxEvent[]>();
+  private readonly eventsByExchange = new Map<string, TekrionEvent[]>();
   private readonly payloads = new Map<string, Uint8Array>();
 
-  addTurn(input: TurnInput): BlackBoxEvent {
+  addTurn(input: TurnInput): TekrionEvent {
     const exchangeId = `exchange-${input.id}`;
     const requestEventId = `request-${input.id}`;
     const bytes = new TextEncoder().encode(JSON.stringify(input.request));
@@ -85,14 +85,14 @@ class FixtureSource implements ContextEvidenceSource {
     });
     this.exchanges.set(exchange.id, exchange);
 
-    const turnEvents: BlackBoxEvent[] = [];
+    const turnEvents: TekrionEvent[] = [];
     const addEvent = (
       id: string,
       type: string,
       summary: Record<string, unknown>,
-      evidence: BlackBoxEvent["evidence"] = "observed",
+      evidence: TekrionEvent["evidence"] = "observed",
     ) => {
-      const event = BlackBoxEventSchema.parse({
+      const event = TekrionEventSchema.parse({
         schemaVersion: 1,
         id,
         sessionId: SESSION,
@@ -139,7 +139,7 @@ class FixtureSource implements ContextEvidenceSource {
     return request;
   }
 
-  getEvent(eventId: string): BlackBoxEvent | undefined {
+  getEvent(eventId: string): TekrionEvent | undefined {
     return this.events.get(eventId);
   }
 
@@ -151,14 +151,14 @@ class FixtureSource implements ContextEvidenceSource {
     return this.exchanges.get(exchangeId);
   }
 
-  getEventsForExchange(exchangeId: string): readonly BlackBoxEvent[] {
+  getEventsForExchange(exchangeId: string): readonly TekrionEvent[] {
     return this.eventsByExchange.get(exchangeId) ?? [];
   }
 
   findResponseEvent(
     sessionId: string,
     responseId: string,
-  ): BlackBoxEvent | undefined {
+  ): TekrionEvent | undefined {
     return [...this.events.values()].find(
       (event) =>
         event.sessionId === sessionId &&

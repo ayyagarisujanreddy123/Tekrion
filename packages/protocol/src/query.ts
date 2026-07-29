@@ -6,7 +6,7 @@ import {
   IsoTimestampSchema,
   SchemaVersionSchema,
 } from "./common.js";
-import { BlackBoxEventSchema } from "./event.js";
+import { TekrionEventSchema } from "./event.js";
 import { WorkspaceFileChangeSummarySchema } from "./process.js";
 import { RawExchangeSchema } from "./raw-exchange.js";
 import { SessionSchema } from "./session.js";
@@ -67,7 +67,7 @@ export const EventPageSchema = z
   .object({
     schemaVersion: SchemaVersionSchema,
     sessionId: IdentifierSchema,
-    events: z.array(BlackBoxEventSchema),
+    events: z.array(TekrionEventSchema),
     nextCursor: QueryCursorSchema.optional(),
   })
   .strict();
@@ -75,7 +75,7 @@ export const EventPageSchema = z
 export const EventDetailSchema = z
   .object({
     schemaVersion: SchemaVersionSchema,
-    event: BlackBoxEventSchema,
+    event: TekrionEventSchema,
     fileChange: WorkspaceFileChangeSummarySchema.optional(),
     rawExchange: RawExchangeSchema.optional(),
     normalizationVersion: z.string().trim().min(1).max(256).optional(),
@@ -91,7 +91,7 @@ export const FileChangeListQuerySchema = z
 
 export const FileChangeItemSchema = z
   .object({
-    event: BlackBoxEventSchema,
+    event: TekrionEventSchema,
     change: WorkspaceFileChangeSummarySchema.nullable(),
   })
   .strict();
@@ -131,7 +131,7 @@ export const EventSearchResultSchema = z
     schemaVersion: SchemaVersionSchema,
     sessionId: IdentifierSchema,
     query: z.string().min(1),
-    events: z.array(BlackBoxEventSchema),
+    events: z.array(TekrionEventSchema),
   })
   .strict();
 

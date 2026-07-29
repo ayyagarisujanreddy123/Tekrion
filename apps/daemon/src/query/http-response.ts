@@ -1,6 +1,6 @@
 import type { ServerResponse } from "node:http";
 
-import type { BlobReference } from "@blackbox/protocol";
+import type { BlobReference } from "@tekrion/protocol";
 
 const INERT_RESPONSE_HEADERS = {
   "cache-control": "no-store",
@@ -34,11 +34,11 @@ export function sendInertPayload(
   response.writeHead(200, {
     ...INERT_RESPONSE_HEADERS,
     "content-type": "application/octet-stream",
-    "content-disposition": 'attachment; filename="blackbox-payload.bin"',
+    "content-disposition": 'attachment; filename="tekrion-payload.bin"',
     "content-length": bytes.byteLength,
-    "x-blackbox-byte-length": String(reference.byteLength),
-    "x-blackbox-sha256": reference.sha256,
-    "x-blackbox-truncated": String(reference.truncated),
+    "x-tekrion-byte-length": String(reference.byteLength),
+    "x-tekrion-sha256": reference.sha256,
+    "x-tekrion-truncated": String(reference.truncated),
   });
   response.end(Buffer.from(bytes));
 }

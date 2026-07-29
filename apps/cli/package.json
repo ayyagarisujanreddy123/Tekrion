@@ -1,12 +1,11 @@
 {
-  "name": "@blackbox/cli",
+  "name": "@tekrion/cli",
   "version": "0.1.0",
-  "private": true,
   "description": "Local flight recorder and evidence cockpit for AI coding agents",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayyagarisujanreddy123/Black-Box.git",
+    "url": "git+https://github.com/ayyagarisujanreddy123/Tekrion.git",
     "directory": "apps/cli"
   },
   "publishConfig": {
@@ -17,7 +16,7 @@
     "node": ">=22.15.0"
   },
   "bin": {
-    "blackbox": "./dist/bin.js"
+    "tekrion": "./dist/bin.js"
   },
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -30,8 +29,8 @@
     "dist/**/*.css"
   ],
   "dependencies": {
-    "@blackbox/daemon": "0.1.0",
-    "@blackbox/protocol": "0.1.0",
-    "@blackbox/storage": "0.1.0"
+    "@tekrion/daemon": "0.1.0",
+    "@tekrion/protocol": "0.1.0",
+    "@tekrion/storage": "0.1.0"
   }
 }

@@ -4,9 +4,9 @@ import {
   AnomalyResultSchema,
   type AnomalyFinding,
   type AnomalyResult,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type BlameTarget,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 import {
   eventArguments,
@@ -61,7 +61,7 @@ function targetTerms(target: BlameTarget): string[] {
 }
 
 export function assessUserIntent(
-  events: readonly BlackBoxEvent[],
+  events: readonly TekrionEvent[],
   target: BlameTarget,
 ): UserIntentAssessment {
   const terms = targetTerms(target);
@@ -189,7 +189,7 @@ function injectionLikeContent(
 }
 
 function repeatedToolCalls(facts: AnalysisFacts): AnomalyFinding | undefined {
-  const groups = new Map<string, BlackBoxEvent[]>();
+  const groups = new Map<string, TekrionEvent[]>();
   for (const event of facts.events) {
     if (
       event.sequence > facts.invocationEvent.sequence ||
@@ -251,7 +251,7 @@ function repeatedErrors(facts: AnalysisFacts): AnomalyFinding | undefined {
   };
 }
 
-function pressureRatio(event: BlackBoxEvent): number | undefined {
+function pressureRatio(event: TekrionEvent): number | undefined {
   for (const key of ["ratio", "pressure", "contextUtilization"] as const) {
     const value = event.summary[key];
     if (typeof value === "number" && Number.isFinite(value)) {
@@ -340,6 +340,6 @@ export function isDestructiveTarget(target: BlameTarget): boolean {
   return DESTRUCTIVE_VERBS.has(target.verb.toLowerCase());
 }
 
-export function targetPathForEvent(event: BlackBoxEvent): string | undefined {
+export function targetPathForEvent(event: TekrionEvent): string | undefined {
   return eventPath(event);
 }

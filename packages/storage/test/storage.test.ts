@@ -14,14 +14,14 @@ import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   RawExchangeSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type BlobReference,
   type RawExchange,
   type Session,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import Database from "better-sqlite3";
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -37,28 +37,28 @@ import {
   StorageIntegrityError,
   applyMigrations,
   defineMigration,
-  openBlackBoxStorage,
-  type BlackBoxStorage,
+  openTekrionStorage,
+  type TekrionStorage,
   type OpenStorageOptions,
 } from "../src/index.js";
 
 const TIME = "2026-07-16T12:00:00.000Z";
 const LATER = "2026-07-16T12:00:01.000Z";
 const roots: string[] = [];
-const openedStorages: BlackBoxStorage[] = [];
+const openedStorages: TekrionStorage[] = [];
 
 async function makeRoot(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-storage-test-"));
+  const root = await mkdtemp(join(tmpdir(), "tekrion-storage-test-"));
   roots.push(root);
   return root;
 }
 
 async function openTestStorage(
   overrides: Partial<OpenStorageOptions> = {},
-): Promise<{ storage: BlackBoxStorage; root: string }> {
+): Promise<{ storage: TekrionStorage; root: string }> {
   const root = await makeRoot();
-  const storage = await openBlackBoxStorage({
-    databasePath: join(root, "blackbox.sqlite"),
+  const storage = await openTekrionStorage({
+    databasePath: join(root, "tekrion.sqlite"),
     dataDirectory: join(root, "data"),
     now: () => new Date(TIME),
     ...overrides,
@@ -92,8 +92,8 @@ function event(
   sequence: number,
   type = "model.request",
   summary: Record<string, unknown> = { text: "fixture evidence" },
-): BlackBoxEvent {
-  return BlackBoxEventSchema.parse({
+): TekrionEvent {
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id,
     sessionId,
@@ -163,6 +163,19 @@ afterEach(async () => {
 });
 
 describe("database lifecycle and migrations", () => {
+  it("reuses a pre-rebrand default blob directory", async () => {
+    const root = await makeRoot();
+    const legacyDataDirectory = join(root, "blackbox-data");
+    await mkdir(legacyDataDirectory);
+    const storage = await openTekrionStorage({
+      databasePath: join(root, "tekrion.sqlite"),
+      now: () => new Date(TIME),
+    });
+    openedStorages.push(storage);
+
+    expect(storage.dataDirectory).toBe(legacyDataDirectory);
+  });
+
   it("initializes WAL, private files, and an integrity-clean schema", async () => {
     const { storage } = await openTestStorage();
     const databaseMode = (await stat(storage.databasePath)).mode & 0o777;
@@ -211,7 +224,7 @@ describe("database lifecycle and migrations", () => {
     storage.close();
     openedStorages.splice(openedStorages.indexOf(storage), 1);
 
-    const readOnly = await openBlackBoxStorage({
+    const readOnly = await openTekrionStorage({
       databasePath,
       dataDirectory,
       readOnly: true,
@@ -239,7 +252,7 @@ describe("database lifecycle and migrations", () => {
     await symlink(databasePath, linkPath);
 
     await expect(
-      openBlackBoxStorage({
+      openTekrionStorage({
         databasePath: linkPath,
         dataDirectory: join(root, "unused-read-only-data"),
         readOnly: true,
@@ -287,7 +300,7 @@ describe("database lifecycle and migrations", () => {
       .run("present");
     legacy.close();
 
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath,
       dataDirectory: join(root, "data"),
       now: () => new Date(TIME),
@@ -399,7 +412,7 @@ describe("database lifecycle and migrations", () => {
       );
     legacy.close();
 
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath,
       dataDirectory: join(root, "data"),
       now: () => new Date(TIME),
@@ -436,10 +449,10 @@ describe("database lifecycle and migrations", () => {
     future.close();
 
     await expect(
-      openBlackBoxStorage({ databasePath, dataDirectory: join(root, "data") }),
+      openTekrionStorage({ databasePath, dataDirectory: join(root, "data") }),
     ).rejects.toBeInstanceOf(StorageCompatibilityError);
 
-    const readOnly = await openBlackBoxStorage({
+    const readOnly = await openTekrionStorage({
       databasePath,
       dataDirectory: join(root, "data"),
       allowNewerReadOnly: true,
@@ -463,7 +476,7 @@ describe("database lifecycle and migrations", () => {
     tamper.close();
 
     await expect(
-      openBlackBoxStorage({
+      openTekrionStorage({
         databasePath,
         dataDirectory: join(root, "data"),
       }),
@@ -514,7 +527,7 @@ describe("content-addressed blobs and chunk manifests", () => {
     const { storage, root } = await openTestStorage({
       blobStore: { inlineThresholdBytes: 8 },
     });
-    const second = await openBlackBoxStorage({
+    const second = await openTekrionStorage({
       databasePath: storage.databasePath,
       dataDirectory: join(root, "data"),
       blobStore: { inlineThresholdBytes: 8 },
@@ -574,8 +587,8 @@ describe("content-addressed blobs and chunk manifests", () => {
     storage.close();
     openedStorages.splice(openedStorages.indexOf(storage), 1);
 
-    const reopened = await openBlackBoxStorage({
-      databasePath: join(root, "blackbox.sqlite"),
+    const reopened = await openTekrionStorage({
+      databasePath: join(root, "tekrion.sqlite"),
       dataDirectory: join(root, "data"),
       now: () => new Date(TIME),
     });
@@ -639,7 +652,7 @@ describe("repositories, recovery, and stable ordering", () => {
   it("allocates monotonic sequences across connections and paginates stably", async () => {
     const { storage, root } = await openTestStorage();
     storage.sessions.create(session());
-    const second = await openBlackBoxStorage({
+    const second = await openTekrionStorage({
       databasePath: storage.databasePath,
       dataDirectory: join(root, "data"),
       recoverIncompleteExchanges: false,
@@ -737,7 +750,7 @@ describe("repositories, recovery, and stable ordering", () => {
         exchangeId: "exchange-storage",
         parserVersion: "responses-v1",
         events: [
-          BlackBoxEventSchema.parse({
+          TekrionEventSchema.parse({
             ...normalizedEvent,
             summary: { name: "changed_after_normalization" },
           }),
@@ -809,7 +822,7 @@ describe("repositories, recovery, and stable ordering", () => {
     child.kill("SIGKILL");
     await once(child, "exit");
 
-    const recovered = await openBlackBoxStorage({
+    const recovered = await openTekrionStorage({
       databasePath,
       dataDirectory: join(root, "data"),
       now: () => new Date(LATER),

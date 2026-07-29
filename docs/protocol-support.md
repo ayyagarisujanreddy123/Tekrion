@@ -1,6 +1,6 @@
 # Protocol and transport support
 
-Black Box is an HTTP reverse proxy for OpenAI-compatible and Anthropic Messages clients. The proxy preserves response bytes while normalization creates a separate derived evidence layer; a parser failure does not rewrite a valid upstream response.
+Tekrion is an HTTP reverse proxy for OpenAI-compatible and Anthropic Messages clients. The proxy preserves response bytes while normalization creates a separate derived evidence layer; a parser failure does not rewrite a valid upstream response.
 
 | Surface                                  | Forwarding  | Normalized evidence | Notes                                                        |
 | ---------------------------------------- | ----------- | ------------------- | ------------------------------------------------------------ |
@@ -17,11 +17,11 @@ Black Box is an HTTP reverse proxy for OpenAI-compatible and Anthropic Messages 
 
 ## Client setup
 
-`blackbox run -- <command>` auto-detects direct `codex` and `claude` executables. Codex receives a temporary `blackbox_recorder` model provider and a session-scoped `OPENAI_BASE_URL` ending in `/v1`. The provider requires OpenAI authentication and disables WebSockets, so Codex reuses either its ChatGPT login or API-key login while sending recordable HTTP traffic. Claude receives a session-scoped `ANTHROPIC_BASE_URL` without the `/v1` suffix expected to be added by Anthropic clients, and continues using its native credential precedence. Use `--agent` when a common npm, pnpm, Yarn, or Bun package runner hides the real executable; opaque shell command strings cannot be rewritten safely.
+`tekrion run -- <command>` auto-detects direct `codex` and `claude` executables. Codex receives a temporary `tekrion_recorder` model provider and a session-scoped `OPENAI_BASE_URL` ending in `/v1`. The provider requires OpenAI authentication and disables WebSockets, so Codex reuses either its ChatGPT login or API-key login while sending recordable HTTP traffic. Claude receives a session-scoped `ANTHROPIC_BASE_URL` without the `/v1` suffix expected to be added by Anthropic clients, and continues using its native credential precedence. Use `--agent` when a common npm, pnpm, Yarn, or Bun package runner hides the real executable; opaque shell command strings cannot be rewritten safely.
 
-Default Codex sessions select `https://api.openai.com/v1/*` for API-key requests and `https://chatgpt.com/backend-api/codex/*` for ChatGPT-account requests. Selection uses the account header in memory; the value is never persisted. Claude defaults to `https://api.anthropic.com`, and generic OpenAI-compatible clients use the daemon's configured upstream. `--upstream` and `BLACKBOX_UPSTREAM_URL` override automatic selection with a credential-free HTTP(S) origin. Each wrapped session stores its validated routing mode so differently configured clients can reuse one daemon without cross-provider routing.
+Default Codex sessions select `https://api.openai.com/v1/*` for API-key requests and `https://chatgpt.com/backend-api/codex/*` for ChatGPT-account requests. Selection uses the account header in memory; the value is never persisted. Claude defaults to `https://api.anthropic.com`, and generic OpenAI-compatible clients use the daemon's configured upstream. `--upstream` and `TEKRION_UPSTREAM_URL` override automatic selection with a credential-free HTTP(S) origin. Each wrapped session stores its validated routing mode so differently configured clients can reuse one daemon without cross-provider routing.
 
-For a separately managed client, run `blackbox start --upstream <provider-origin>` and configure the client with the printed base URL. This is L1/API capture: Black Box cannot see out-of-band tool execution or file effects without the wrapper or an adapter.
+For a separately managed client, run `tekrion start --upstream <provider-origin>` and configure the client with the printed base URL. This is L1/API capture: Tekrion cannot see out-of-band tool execution or file effects without the wrapper or an adapter.
 
 Native Claude support covers the Anthropic Messages HTTP API with Claude-selected API-key, bearer-token, or subscription OAuth authentication. Claude Code configurations that use Bedrock, Vertex AI, Foundry, or another provider-native protocol are outside this boundary. Hosted web/cloud sessions and IDE sessions not launched through the wrapper cannot traverse a localhost CLI proxy. OpenAI Responses WebSocket/Realtime remains unsupported outside the HTTP-forced Codex wrapper.
 
@@ -29,4 +29,4 @@ Native Claude support covers the Anthropic Messages HTTP API with Claude-selecte
 
 Hop-by-hop headers are removed as required for proxying. `authorization`, `x-api-key`, `ChatGPT-Account-ID`, cookies, proxy credentials, and configured sensitive headers are forwarded in memory when needed but excluded from persisted header evidence. Existing stores are migrated to scrub historically retained `x-api-key` and ChatGPT account-identifier fields. The upstream response body is passed through unchanged. Capture queues, request/response body sizes and stream-manifest entries are bounded. If a bound, disconnect, crash or storage failure prevents a complete recording, the raw exchange is retained as incomplete rather than represented as complete.
 
-Run `blackbox doctor` to inspect the selected upstream, listeners, storage, quota and known WebSocket limitation before a live capture.
+Run `tekrion doctor` to inspect the selected upstream, listeners, storage, quota and known WebSocket limitation before a live capture.

@@ -1,9 +1,9 @@
 import { setTimeout as delay } from "node:timers/promises";
 
 import {
-  BlackBoxDaemon,
+  TekrionDaemon,
   openAiReportProviderFromEnvironment,
-} from "@blackbox/daemon";
+} from "@tekrion/daemon";
 
 import {
   parseCliArguments,
@@ -16,7 +16,7 @@ function errorMessage(error: unknown): string {
 }
 
 async function runDaemonWorker(arguments_: readonly string[]): Promise<number> {
-  let daemon: BlackBoxDaemon | undefined;
+  let daemon: TekrionDaemon | undefined;
   let shutdownError: unknown;
   try {
     const parsed = parseCliArguments(["start", ...arguments_]);
@@ -31,7 +31,7 @@ async function runDaemonWorker(arguments_: readonly string[]): Promise<number> {
         return undefined;
       }
     })();
-    daemon = new BlackBoxDaemon({
+    daemon = new TekrionDaemon({
       homeDirectory: configuration.paths.homeDirectory,
       proxy: {
         listenHost: configuration.proxy.listenHost,

@@ -1,32 +1,32 @@
-# Black Box: Product and Technical Design
+# Tekrion: Product and Technical Design
 
 Status: implementation-ready design
 
 Version: 0.1
 
-Last updated: 2026-07-15
+Last updated: 2026-07-28
 
 Target: OpenAI Build Week 2026, Developer Tools track
 
 ## 1. Executive decision
 
-Black Box will be a **terminal-first local application with a browser-based cockpit**, not a hosted SaaS product and not a native desktop application for the first release.
+Tekrion will be a **terminal-first local application with a browser-based cockpit**, not a hosted SaaS product and not a native desktop application for the first release.
 
 The user installs one CLI and uses it in either of two ways:
 
 ```bash
 # Lowest-friction API recording
-blackbox start
+tekrion start
 export OPENAI_BASE_URL=http://127.0.0.1:4141/v1
 my-agent
 
 # Recommended: API recording plus process and filesystem evidence
-blackbox run -- my-agent
+tekrion run -- my-agent
 ```
 
-The CLI starts a local recorder daemon, stores recordings in SQLite, and serves a React viewer on localhost. `blackbox open` opens that viewer. This form fits a developer workflow better than a desktop shell, avoids Electron/Tauri packaging work during Build Week, works in local terminals and CI, and still permits a rich timeline UI. A native wrapper can be added later without changing the recorder, data model, or UI.
+The CLI starts a local recorder daemon, stores recordings in SQLite, and serves a React viewer on localhost. `tekrion open` opens that viewer. This form fits a developer workflow better than a desktop shell, avoids Electron/Tauri packaging work during Build Week, works in local terminals and CI, and still permits a rich timeline UI. A native wrapper can be added later without changing the recorder, data model, or UI.
 
-The product's wedge is not generic LLM observability. Existing products already trace model calls, tools, evaluations, and prompt experiments. Black Box is specifically an **investigation tool for coding-agent incidents**:
+The product's wedge is not generic LLM observability. Existing products already trace model calls, tools, evaluations, and prompt experiments. Tekrion is specifically an **investigation tool for coding-agent incidents**:
 
 - capture with minimal integration;
 - preserve raw, replayable evidence locally;
@@ -43,9 +43,9 @@ Coding agents operate across long, stateful loops. A developer may see the final
 
 ### 2.2 Product promise
 
-> Black Box records the client-visible decisions and effects of an AI coding session, then lets a developer replay the evidence and build an attributable explanation of a bad action.
+> Tekrion records the client-visible decisions and effects of an AI coding session, then lets a developer replay the evidence and build an attributable explanation of a bad action.
 
-This wording is intentionally narrower than “records the model's reasoning.” Hidden chain-of-thought and provider-internal instructions are neither exposed by the API nor required for a useful audit. Black Box records observable inputs, outputs, actions, results, timings, and state changes.
+This wording is intentionally narrower than “records the model's reasoning.” Hidden chain-of-thought and provider-internal instructions are neither exposed by the API nor required for a useful audit. Tekrion records observable inputs, outputs, actions, results, timings, and state changes.
 
 ### 2.3 Primary user
 
@@ -62,7 +62,7 @@ The initial user is a developer running an OpenAI-compatible coding agent locall
 ### 2.5 Non-goals for v0.1
 
 - Capturing private chain-of-thought or provider-hidden system instructions.
-- Preventing an agent from taking actions. Black Box is initially a recorder, not a policy enforcement gateway.
+- Preventing an agent from taking actions. Tekrion is initially a recorder, not a policy enforcement gateway.
 - Perfect causal proof. Blame is an evidence-backed hypothesis with confidence and alternatives.
 - Supporting every model provider and every agent protocol during Build Week.
 - Re-executing arbitrary tool calls during replay.
@@ -77,25 +77,25 @@ OpenAI's Responses API streams typed semantic events, while Chat Completions str
 
 Responses can carry state through `previous_response_id` or durable Conversation objects rather than resending the full history. A proxy can record IDs and observed predecessor responses, but it cannot claim to know provider-side compaction or hidden state. [OpenAI conversation-state guide](https://developers.openai.com/api/docs/guides/conversation-state).
 
-The OpenAI Agents SDK already provides traces for generations, tool calls, handoffs, guardrails, and custom events. That validates the need, but also means Black Box must differentiate on local capture, coding-specific filesystem evidence, context time travel, and incident attribution rather than “we show traces.” [OpenAI Agents SDK tracing guide](https://openai.github.io/openai-agents-js/guides/tracing/).
+The OpenAI Agents SDK already provides traces for generations, tool calls, handoffs, guardrails, and custom events. That validates the need, but also means Tekrion must differentiate on local capture, coding-specific filesystem evidence, context time travel, and incident attribution rather than “we show traces.” [OpenAI Agents SDK tracing guide](https://openai.github.io/openai-agents-js/guides/tracing/).
 
 ### 3.2 The observability category is crowded
 
-Arize Phoenix, LangSmith, and related tools already provide broad LLM tracing and evaluation. Phoenix accepts OpenTelemetry traces and covers model calls, retrieval, tools, prompt iteration, and experiments. Black Box should adopt interoperable concepts but remain optimized for a local forensic workflow. [Phoenix documentation](https://arize.com/docs/phoenix) and [LangSmith product overview](https://www.langchain.com/langsmith-platform).
+Arize Phoenix, LangSmith, and related tools already provide broad LLM tracing and evaluation. Phoenix accepts OpenTelemetry traces and covers model calls, retrieval, tools, prompt iteration, and experiments. Tekrion should adopt interoperable concepts but remain optimized for a local forensic workflow. [Phoenix documentation](https://arize.com/docs/phoenix) and [LangSmith product overview](https://www.langchain.com/langsmith-platform).
 
-OpenTelemetry defines shared semantic naming, including GenAI operation, conversation, tool, and usage attributes, but GenAI conventions are still evolving. Black Box should keep its own versioned canonical event schema and offer OpenTelemetry import/export at the boundary instead of making an unstable convention its database schema. [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/) and [GenAI attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/).
+OpenTelemetry defines shared semantic naming, including GenAI operation, conversation, tool, and usage attributes, but GenAI conventions are still evolving. Tekrion should keep its own versioned canonical event schema and offer OpenTelemetry import/export at the boundary instead of making an unstable convention its database schema. [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/specs/semconv/) and [GenAI attribute registry](https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/).
 
 ### 3.3 Prompt injection is a credible demo, not a solved classifier problem
 
 OWASP explicitly identifies code comments and documentation as indirect prompt-injection carriers. It also recommends comparing proposed actions with original user intent and warns that pattern matching alone is insufficient. That supports the README demo and the planned combination of deterministic provenance with a model-based judge. [OWASP prompt-injection prevention](https://cheatsheetseries.owasp.org/cheatsheets/LLM_Prompt_Injection_Prevention_Cheat_Sheet.html).
 
-Black Box must not imply that its blame output proves an injection caused an action. It should show the suspicious source, the propagation path, the action, competing explanations, and confidence.
+Tekrion must not imply that its blame output proves an injection caused an action. It should show the suspicious source, the propagation path, the action, competing explanations, and confidence.
 
 ### 3.4 SQLite fits the local write/read workload
 
 SQLite WAL mode allows readers to continue while commits are appended, which matches a recorder writing while a viewer reads. FTS5 provides local full-text search, and current SQLite builds include JSON functions by default. [SQLite WAL](https://www.sqlite.org/wal.html), [SQLite FTS5](https://sqlite.org/fts5.html), and [SQLite JSON](https://www.sqlite.org/json1.html).
 
-## 4. Honesty contract: what Black Box can and cannot know
+## 4. Honesty contract: what Tekrion can and cannot know
 
 Trust requires precise labels in both documentation and UI.
 
@@ -103,8 +103,8 @@ Trust requires precise labels in both documentation and UI.
 
 | Level | Setup | Reliably captured | Not guaranteed |
 |---|---|---|---|
-| L1: API | `blackbox start` + configurable base URL | HTTP request/response bytes, supported SSE events, model output items, proposed function calls, later-submitted function results, provider errors, usage reported by provider | Tool execution timing, out-of-band tool calls, file mutations, terminal subprocesses |
-| L2: Wrapped process | `blackbox run -- <agent>` | L1 plus command metadata, exit state, stdout/stderr timing, repository baseline/final diff, filesystem observations | Rich semantic name/result for agent-internal tools unless visible in API or process adapter |
+| L1: API | `tekrion start` + configurable base URL | HTTP request/response bytes, supported SSE events, model output items, proposed function calls, later-submitted function results, provider errors, usage reported by provider | Tool execution timing, out-of-band tool calls, file mutations, terminal subprocesses |
+| L2: Wrapped process | `tekrion run -- <agent>` | L1 plus command metadata, exit state, stdout/stderr timing, repository baseline/final diff, filesystem observations | Rich semantic name/result for agent-internal tools unless visible in API or process adapter |
 | L3: Adapter/hook | agent-specific opt-in | L2 plus tool lifecycle, cwd, command, file paths, approval events, agent session IDs, exact file-read provenance when the agent exposes it | Provider-hidden prompt and private model reasoning |
 
 The viewer displays the active capture level and missing signals. It never silently presents an inferred event as observed.
@@ -135,27 +135,27 @@ All facts in the UI and reports carry provenance:
 ### 5.1 CLI commands
 
 ```text
-blackbox init                 create config and verify local prerequisites
-blackbox start               start recorder/viewer daemon
-blackbox stop                stop the daemon cleanly
-blackbox status              show ports, database, active sessions, capture health
-blackbox run -- <cmd...>      start daemon if needed, inject config, monitor command
-blackbox open [session-id]    open local cockpit
-blackbox sessions            list recent recordings
-blackbox inspect <session>    terminal summary for headless use
-blackbox report <session>     run deterministic report; --ai opts into model analysis
-blackbox export <session>     create portable redacted .bbx archive
-blackbox import <archive>     import an archive as read-only evidence
-blackbox doctor               test endpoint, streaming, storage, permissions, redaction
-blackbox demo rogue           run the deterministic showcase fixture
+tekrion init                 create config and verify local prerequisites
+tekrion start               start recorder/viewer daemon
+tekrion stop                stop the daemon cleanly
+tekrion status              show ports, database, active sessions, capture health
+tekrion run -- <cmd...>      start daemon if needed, inject config, monitor command
+tekrion open [session-id]    open local cockpit
+tekrion sessions            list recent recordings
+tekrion inspect <session>    terminal summary for headless use
+tekrion report <session>     run deterministic report; --ai opts into model analysis
+tekrion export <session>     create portable redacted .tkr archive
+tekrion import <archive>     import an archive as read-only evidence
+tekrion doctor               test endpoint, streaming, storage, permissions, redaction
+tekrion demo rogue           run the deterministic showcase fixture
 ```
 
 Default bind addresses are `127.0.0.1:4141` for the OpenAI-compatible proxy and `127.0.0.1:4142` for the viewer/API. LAN binding requires an explicit flag and a warning.
 
-`blackbox run` is the recommended onboarding path because it avoids persistent shell mutation:
+`tekrion run` is the recommended onboarding path because it avoids persistent shell mutation:
 
 ```bash
-blackbox run --env OPENAI_BASE_URL=http://127.0.0.1:4141/v1 -- npm run agent
+tekrion run --env OPENAI_BASE_URL=http://127.0.0.1:4141/v1 -- npm run agent
 ```
 
 For known agents, adapters can supply the appropriate environment variable or config flag. Unknown commands receive the standard OpenAI base URL and a clear compatibility result from `doctor`.
@@ -187,7 +187,7 @@ The demo must be deterministic, short, and safe:
 1. A disposable fixture repository contains a test suite and a README line instructing agents to remove “outdated” tests.
 2. The user asks a small demo agent to fix a build error.
 3. The agent reads the README, issues a file-deletion tool call, and receives a successful tool result.
-4. Black Box shows the live event sequence and resulting diff.
+4. Tekrion shows the live event sequence and resulting diff.
 5. Selecting the deletion opens Blame, where a deterministic content-overlap/provenance path ranks the README line first.
 6. Optional AI analysis turns that evidence into a structured explanation while explicitly marking it inferred.
 7. The incident report recommends instruction/data separation, action approval for deletion, and scope checks against the original request.
@@ -199,7 +199,7 @@ The demo agent should use fixture responses by default, with a `--live` mode for
 ```text
                          localhost only
 ┌─────────────┐   HTTP/SSE   ┌───────────────────────────────────────┐
-│ Coding agent├─────────────►│ Black Box daemon                      │
+│ Coding agent├─────────────►│ Tekrion daemon                      │
 └──────┬──────┘              │                                       │
        │ tool/process         │  proxy ─► raw journal ─► normalizer   │
        ▼                      │    │                         │          │
@@ -236,7 +236,7 @@ Raw pass-through fidelity is the priority. Parser failure must not corrupt or de
 
 #### Process/filesystem observer
 
-`blackbox run` records command, arguments (with configurable redaction), cwd, repository root, PID, start/end, exit code, signals, and timestamped stdout/stderr frames. It takes a Git-aware baseline and final state:
+`tekrion run` records command, arguments (with configurable redaction), cwd, repository root, PID, start/end, exit code, signals, and timestamped stdout/stderr frames. It takes a Git-aware baseline and final state:
 
 - tracked changes: `git diff --binary` plus metadata;
 - untracked files: path, size, hash, and content only below configured size/sensitivity limits;
@@ -288,7 +288,7 @@ Avoid Electron/Tauri, Redis, Postgres, Docker, Kafka, and a vector database in v
 ### 6.3 Repository layout
 
 ```text
-blackbox/
+tekrion/
   apps/
     cli/                 command entry point and process wrapper
     daemon/              proxy, local API, lifecycle
@@ -326,7 +326,7 @@ blackbox/
 ```ts
 type EvidenceKind = "observed" | "derived" | "inferred" | "unknown";
 
-interface BlackBoxEvent<T = unknown> {
+interface TekrionEvent<T = unknown> {
   id: string;                 // UUIDv7
   sessionId: string;
   parentId?: string;
@@ -411,7 +411,7 @@ Internal multi-agent or hosted-tool events are preserved by concrete subtype in 
 
 Priority order:
 
-1. explicit `X-Blackbox-Session` injected by `blackbox run` or an adapter;
+1. explicit `X-Tekrion-Session` injected by `tekrion run` or an adapter;
 2. adapter-provided agent session ID;
 3. OpenAI conversation or response ancestry identifiers;
 4. short idle-window heuristic keyed by process/client fingerprint;
@@ -436,7 +436,7 @@ Defaults:
 
 ### 8.1 Upstream configuration
 
-Black Box must not reuse `OPENAI_BASE_URL` as its upstream because the CLI sets that variable to the proxy. Use a separate value:
+Tekrion must not reuse `OPENAI_BASE_URL` as its upstream because the CLI sets that variable to the proxy. Use a separate value:
 
 ```toml
 [proxy]
@@ -444,7 +444,7 @@ listen = "127.0.0.1:4141"
 upstream = "https://api.openai.com"
 ```
 
-Precedence: CLI flag, `BLACKBOX_UPSTREAM_URL`, project config, user config, default OpenAI origin.
+Precedence: CLI flag, `TEKRION_UPSTREAM_URL`, project config, user config, default OpenAI origin.
 
 ### 8.2 Header policy
 
@@ -452,7 +452,7 @@ Precedence: CLI flag, `BLACKBOX_UPSTREAM_URL`, project config, user config, defa
 - Drop hop-by-hop headers (`connection`, `transfer-encoding`, etc.) and let the HTTP stack regenerate them.
 - Preserve provider request IDs, rate-limit headers, content type, cache metadata, and relevant organization/project response headers.
 - Redact cookies and configured sensitive headers.
-- Add `X-Blackbox-Request-Id` upstream only if it cannot break signature/auth schemes; otherwise retain correlation locally.
+- Add `X-Tekrion-Request-Id` upstream only if it cannot break signature/auth schemes; otherwise retain correlation locally.
 
 ### 8.3 Failure policy
 
@@ -464,7 +464,7 @@ Precedence: CLI flag, `BLACKBOX_UPSTREAM_URL`, project config, user config, defa
 
 ### 8.4 Compatibility boundary
 
-Build Week v0.1 supports HTTP JSON and SSE for `/v1/responses` and `/v1/chat/completions`. Responses WebSocket mode and Realtime are explicit post-MVP items. `blackbox doctor` probes the selected client and reports unsupported transport before a real session.
+Build Week v0.1 supports HTTP JSON and SSE for `/v1/responses` and `/v1/chat/completions`. Responses WebSocket mode and Realtime are explicit post-MVP items. `tekrion doctor` probes the selected client and reports unsupported transport before a real session.
 
 The marketing phrase “any agent” should be replaced for v0.1 with “OpenAI-compatible agents that allow a custom base URL.” Agent-specific adapters can expand that boundary.
 
@@ -583,7 +583,7 @@ Deterministic mode works entirely offline. `--ai` is opt-in and previews exactly
 
 ### 11.1 Threat model
 
-Black Box handles source code, prompts, tool output, file paths, environment-derived data, and API credentials. Relevant threats include:
+Tekrion handles source code, prompts, tool output, file paths, environment-derived data, and API credentials. Relevant threats include:
 
 - another local process reading the database or control API;
 - browser cross-site requests against localhost;
@@ -606,7 +606,7 @@ Black Box handles source code, prompts, tool output, file paths, environment-der
 - Treat all recorded text as untrusted data in analysis prompts, use structured outputs, and verify evidence citations after generation.
 - Add per-session limits, disk quota, retention, and a visible degraded-capture state.
 - Hash blobs and include a manifest of hashes in exports; optional signing is post-MVP.
-- Disable telemetry by default. Black Box must not phone home.
+- Disable telemetry by default. Tekrion must not phone home.
 
 ### 11.3 Privacy language
 
@@ -639,7 +639,7 @@ These are engineering objectives, not claims to publish until measured.
 
 ## 13. Configuration
 
-Precedence: command flags > environment > nearest `.blackbox/config.toml` > user config > defaults.
+Precedence: command flags > environment > nearest `.tekrion/config.toml` > user config > defaults.
 
 ```toml
 version = 1
@@ -699,19 +699,19 @@ Run from source with Node and npm:
 ```bash
 npm install
 npm run build
-npm run blackbox -- doctor
+npm run tekrion -- doctor
 ```
 
 ### 15.2 Public release
 
-- Publish a signed npm package with a `blackbox` binary.
+- Publish a signed npm package with a `tekrion` binary.
 - Prebuild native SQLite bindings for supported Node/platform combinations or validate a fallback driver before release.
 - Build the viewer into static assets included in the package.
 - Add macOS, Linux, and Windows CI matrices.
-- Offer `npx @blackbox/cli` for evaluation, while recommending a pinned installation for routine use.
+- Offer `npx @tekrion/cli` for evaluation, while recommending a pinned installation for routine use.
 - Do not require Docker.
 
-Data directory defaults follow OS conventions and are shown by `blackbox status`. Database upgrades are backed up before migration. A newer database is opened read-only by an older CLI.
+Data directory defaults follow OS conventions and are shown by `tekrion status`. Database upgrades are backed up before migration. A newer database is opened read-only by an older CLI.
 
 ## 16. Metrics of success
 
@@ -727,7 +727,7 @@ Data directory defaults follow OS conventions and are shown by `blackbox status`
 ### 16.2 Early product validation
 
 - At least 80% of invited users complete first recording without assistance.
-- At least 70% correctly identify the cause in seeded incident tasks faster with Black Box than with terminal logs and `git diff` alone.
+- At least 70% correctly identify the cause in seeded incident tasks faster with Tekrion than with terminal logs and `git diff` alone.
 - No critical proxy-fidelity or credential-persistence defect.
 - Median recorder overhead stays below the stated internal target.
 - Users report the completeness/evidence labels as understandable, not obstructive.
@@ -738,7 +738,7 @@ No usage analytics are collected by default. Research sessions use explicit cons
 
 | Risk | Impact | Decision/mitigation |
 |---|---|---|
-| Proxy alone cannot see file effects | Core promise becomes misleading | Recommend `blackbox run`; show capture level; add adapters |
+| Proxy alone cannot see file effects | Core promise becomes misleading | Recommend `tekrion run`; show capture level; add adapters |
 | Server-managed state prevents exact reconstruction | Context claim loses credibility | Completeness labels; capture explicit-context demo; never claim provider internals |
 | Streaming proxy changes latency/bytes | Breaks the agent | Byte-fidelity golden tests; async normalization; bounded tee |
 | Sensitive code is recorded | Security/privacy harm | Local-only default, restrictive permissions, redaction before storage, quotas |
@@ -756,7 +756,7 @@ No usage analytics are collected by default. Research sessions use explicit cons
 3. OTLP/OpenInference import and export.
 4. Active replay in disposable Git worktrees/containers.
 5. Session comparison and regression evaluation.
-6. Team-safe signed/redacted `.bbx` sharing.
+6. Team-safe signed/redacted `.tkr` sharing.
 7. Optional policy gate for approval of destructive actions.
 8. Native desktop wrapper only if user research shows browser/daemon lifecycle is a real barrier.
 9. Additional providers behind explicit protocol adapters.
@@ -765,6 +765,6 @@ No usage analytics are collected by default. Research sessions use explicit cons
 
 Recommended short pitch:
 
-> Black Box is a local flight recorder for OpenAI-compatible coding agents. Run your agent through its proxy—or launch it with `blackbox run` for filesystem evidence—and inspect every API-visible message, tool call, result, error, and code change on a synchronized timeline. When an action goes wrong, Black Box traces the available evidence backward, shows what is observed versus inferred, and generates an auditable incident report.
+> Tekrion is a local flight recorder for OpenAI-compatible coding agents. Run your agent through its proxy—or launch it with `tekrion run` for filesystem evidence—and inspect every API-visible message, tool call, result, error, and code change on a synchronized timeline. When an action goes wrong, Tekrion traces the available evidence backward, shows what is observed versus inferred, and generates an auditable incident report.
 
 This remains ambitious, differentiated, and demonstrable without promising inaccessible reasoning or universal capture.

@@ -1,5 +1,5 @@
 {
-  "name": "@blackbox/viewer",
+  "name": "@tekrion/viewer",
   "version": "0.1.0",
   "private": true,
   "license": "Apache-2.0",
@@ -10,7 +10,7 @@
     "build:assets": "vite build && node ./scripts/package-assets.mjs"
   },
   "dependencies": {
-    "@blackbox/protocol": "0.1.0",
+    "@tekrion/protocol": "0.1.0",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },

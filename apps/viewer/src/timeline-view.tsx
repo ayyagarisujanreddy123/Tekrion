@@ -8,7 +8,7 @@ import {
   type UIEvent,
 } from "react";
 
-import type { BlackBoxEvent } from "@blackbox/protocol";
+import type { TekrionEvent } from "@tekrion/protocol";
 
 import {
   TIMELINE_LANES,
@@ -23,7 +23,7 @@ const ROW_HEIGHT = 92;
 const OVERSCAN = 8;
 
 export interface TimelineViewProps {
-  readonly events: readonly BlackBoxEvent[];
+  readonly events: readonly TekrionEvent[];
   readonly selectedEventId?: string | undefined;
   readonly sessionStartedAt: string;
   readonly timestampMode: TimestampMode;
@@ -32,7 +32,7 @@ export interface TimelineViewProps {
 }
 
 function EventButton(props: {
-  readonly event: BlackBoxEvent;
+  readonly event: TekrionEvent;
   readonly selected: boolean;
   readonly sessionStartedAt: string;
   readonly timestampMode: TimestampMode;

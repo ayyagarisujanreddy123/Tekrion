@@ -5,25 +5,25 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@blackbox/analysis": fileURLToPath(
+      "@tekrion/analysis": fileURLToPath(
         new URL("./packages/analysis/src/index.ts", import.meta.url),
       ),
-      "@blackbox/context": fileURLToPath(
+      "@tekrion/context": fileURLToPath(
         new URL("./packages/context/src/index.ts", import.meta.url),
       ),
-      "@blackbox/daemon": fileURLToPath(
+      "@tekrion/daemon": fileURLToPath(
         new URL("./apps/daemon/src/index.ts", import.meta.url),
       ),
-      "@blackbox/normalizers": fileURLToPath(
+      "@tekrion/normalizers": fileURLToPath(
         new URL("./packages/normalizers/src/index.ts", import.meta.url),
       ),
-      "@blackbox/protocol": fileURLToPath(
+      "@tekrion/protocol": fileURLToPath(
         new URL("./packages/protocol/src/index.ts", import.meta.url),
       ),
-      "@blackbox/storage": fileURLToPath(
+      "@tekrion/storage": fileURLToPath(
         new URL("./packages/storage/src/index.ts", import.meta.url),
       ),
-      "@blackbox/test-fixtures": fileURLToPath(
+      "@tekrion/test-fixtures": fileURLToPath(
         new URL("./packages/test-fixtures/src/index.ts", import.meta.url),
       ),
     },

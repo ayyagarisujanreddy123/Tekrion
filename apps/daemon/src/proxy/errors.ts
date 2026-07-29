@@ -22,7 +22,7 @@ export class ProxyLoopError extends ProxyConfigurationError {
   constructor(upstream: string) {
     super(
       "PROXY_LOOP",
-      `Upstream ${upstream} resolves to the Black Box proxy listener.`,
+      `Upstream ${upstream} resolves to the Tekrion proxy listener.`,
     );
     this.name = "ProxyLoopError";
   }

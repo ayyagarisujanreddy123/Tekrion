@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title description">
-  <title id="title">Black Box local evidence architecture</title>
+  <title id="title">Tekrion local evidence architecture</title>
   <desc id="description">Agent traffic and wrapped process signals flow into a localhost recorder, an append-only evidence store, deterministic analysis, the cockpit, and tamper-evident archives.</desc>
   <defs>
     <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -17,7 +17,7 @@
     </style>
   </defs>
   <rect class="background" width="1200" height="620" />
-  <text class="title" x="600" y="52" text-anchor="middle">BLACK BOX · LOCAL EVIDENCE PATH</text>
+  <text class="title" x="600" y="52" text-anchor="middle">TEKRION · LOCAL EVIDENCE PATH</text>
 
   <rect class="panel" x="42" y="104" width="240" height="112" />
   <text class="label" x="162" y="145" text-anchor="middle">AGENT / CLIENT</text>
@@ -58,7 +58,7 @@
   <text class="copy" x="1079" y="408" text-anchor="middle">live SSE</text>
 
   <rect class="panel" x="730" y="500" width="428" height="82" />
-  <text class="label" x="944" y="534" text-anchor="middle">.BBX ARCHIVE</text>
+  <text class="label" x="944" y="534" text-anchor="middle">.TKR ARCHIVE</text>
   <text class="copy" x="944" y="560" text-anchor="middle">share / forensic · manifest hashes · read-only import</text>
 
   <path class="arrow" d="M 282 160 L 365 160" />

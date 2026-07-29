@@ -7,8 +7,8 @@ import {
   type DaemonLockRecord,
   type DaemonPaths,
   type DaemonStatus,
-} from "@blackbox/daemon";
-import { IdentifierSchema } from "@blackbox/protocol";
+} from "@tekrion/daemon";
+import { IdentifierSchema } from "@tekrion/protocol";
 
 const MAX_CONTROL_RESPONSE_BYTES = 1024 * 1024;
 

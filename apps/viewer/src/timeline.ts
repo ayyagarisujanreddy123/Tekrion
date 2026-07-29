@@ -1,4 +1,4 @@
-import type { BlackBoxEvent } from "@blackbox/protocol";
+import type { TekrionEvent } from "@tekrion/protocol";
 
 export type TimelineLane = "model" | "tools" | "system" | "risk" | "context";
 export type TimestampMode = "relative" | "local" | "utc";
@@ -11,7 +11,7 @@ export const TIMELINE_LANES: readonly TimelineLane[] = [
   "context",
 ];
 
-export function classifyEvent(event: BlackBoxEvent): TimelineLane {
+export function classifyEvent(event: TekrionEvent): TimelineLane {
   const type = event.type.toLowerCase();
   if (
     type.includes("error") ||
@@ -52,7 +52,7 @@ function firstText(value: unknown): string | undefined {
   return undefined;
 }
 
-export function eventTitle(event: BlackBoxEvent): string {
+export function eventTitle(event: TekrionEvent): string {
   const summary = event.summary;
   return (
     firstText(summary.path) ??
@@ -62,7 +62,7 @@ export function eventTitle(event: BlackBoxEvent): string {
   );
 }
 
-export function eventPreview(event: BlackBoxEvent, maximum = 180): string {
+export function eventPreview(event: TekrionEvent, maximum = 180): string {
   const summary = event.summary;
   const candidate =
     firstText(summary.text) ??
@@ -76,9 +76,9 @@ export function eventPreview(event: BlackBoxEvent, maximum = 180): string {
 }
 
 export function mergeTimelineEvents(
-  existing: readonly BlackBoxEvent[],
-  incoming: readonly BlackBoxEvent[],
-): BlackBoxEvent[] {
+  existing: readonly TekrionEvent[],
+  incoming: readonly TekrionEvent[],
+): TekrionEvent[] {
   if (incoming.length === 0) {
     return [...existing];
   }
@@ -93,7 +93,7 @@ export function mergeTimelineEvents(
 }
 
 export function formatEventTime(
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   sessionStartedAt: string,
   mode: TimestampMode,
 ): string {

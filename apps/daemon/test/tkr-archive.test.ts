@@ -2,30 +2,30 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import type { AiReportProvider } from "@blackbox/analysis";
+import type { AiReportProvider } from "@tekrion/analysis";
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   IncidentReportResultSchema,
   RawExchangeSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type Session,
-} from "@blackbox/protocol";
-import { openBlackBoxStorage, type BlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/protocol";
+import { openTekrionStorage, type TekrionStorage } from "@tekrion/storage";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  BbxArchiveConflictError,
-  BbxArchiveIntegrityError,
+  TekrionArchiveConflictError,
+  TekrionArchiveIntegrityError,
   EvidenceQueryService,
   archiveSha256,
   canonicalJson,
   executeEvidenceDeletion,
-  exportBbxArchive,
-  importBbxArchive,
+  exportTekrionArchive,
+  importTekrionArchive,
   planEvidencePrune,
   planSessionDeletion,
-  verifyBbxArchive,
+  verifyTekrionArchive,
 } from "../src/index.js";
 
 const TIME = "2026-07-01T12:00:00.000Z";
@@ -33,13 +33,13 @@ const LATER = "2026-07-01T12:01:00.000Z";
 const IMPORTED_AT = "2026-07-20T12:00:00.000Z";
 const SECRET = "sk-proj-archivefixturesecret1234";
 const roots: string[] = [];
-const storages: BlackBoxStorage[] = [];
+const storages: TekrionStorage[] = [];
 
-async function storageRoot(): Promise<BlackBoxStorage> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-archive-test-"));
+async function storageRoot(): Promise<TekrionStorage> {
+  const root = await mkdtemp(join(tmpdir(), "tekrion-archive-test-"));
   roots.push(root);
-  const storage = await openBlackBoxStorage({
-    databasePath: join(root, "blackbox.sqlite"),
+  const storage = await openTekrionStorage({
+    databasePath: join(root, "tekrion.sqlite"),
     dataDirectory: join(root, "data"),
     recoverIncompleteExchanges: false,
   });
@@ -85,9 +85,9 @@ function event(input: {
   readonly sequence: number;
   readonly type: string;
   readonly summary: Record<string, unknown>;
-  readonly payloadRef?: BlackBoxEvent["payloadRef"];
-}): BlackBoxEvent {
-  return BlackBoxEventSchema.parse({
+  readonly payloadRef?: TekrionEvent["payloadRef"];
+}): TekrionEvent {
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id: input.id,
     sessionId: input.sessionId,
@@ -104,7 +104,7 @@ function event(input: {
 }
 
 async function seedSession(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   id = "session-archive-source",
 ): Promise<void> {
   storage.sessions.create(activeSession(id));
@@ -197,14 +197,14 @@ afterEach(async () => {
   );
 });
 
-describe("BBX archive export and import", () => {
+describe("TKR archive export and import", () => {
   it("creates a redacted share archive and imports it as immutable evidence", async () => {
     const source = await storageRoot();
     await seedSession(source);
     const report = await new EvidenceQueryService(source, {
       now: () => new Date(LATER),
     }).getReport("session-archive-source");
-    const exported = await exportBbxArchive(source, {
+    const exported = await exportTekrionArchive(source, {
       sessionId: "session-archive-source",
       profile: "share",
       report,
@@ -216,7 +216,7 @@ describe("BBX archive export and import", () => {
       counts: { events: 2, rawExchanges: 0, blobs: 0, reports: 1 },
       redaction: { applied: true },
     });
-    const verifiedShare = verifyBbxArchive(exported.bytes);
+    const verifiedShare = verifyTekrionArchive(exported.bytes);
     const archivedReport = IncidentReportResultSchema.parse(
       JSON.parse(
         Buffer.from(
@@ -242,7 +242,7 @@ describe("BBX archive export and import", () => {
     );
 
     const destination = await storageRoot();
-    const imported = await importBbxArchive(destination, {
+    const imported = await importTekrionArchive(destination, {
       bytes: exported.bytes,
       importedAt: IMPORTED_AT,
     });
@@ -281,11 +281,11 @@ describe("BBX archive export and import", () => {
       ),
     ).toThrow("imported session is read-only");
     await expect(
-      importBbxArchive(destination, {
+      importTekrionArchive(destination, {
         bytes: exported.bytes,
         importedAt: IMPORTED_AT,
       }),
-    ).rejects.toBeInstanceOf(BbxArchiveConflictError);
+    ).rejects.toBeInstanceOf(TekrionArchiveConflictError);
 
     let providerCalled = false;
     const provider: AiReportProvider = {
@@ -320,7 +320,7 @@ describe("BBX archive export and import", () => {
     const report = await new EvidenceQueryService(source, {
       now: () => new Date(LATER),
     }).getReport("session-archive-source");
-    const exported = await exportBbxArchive(source, {
+    const exported = await exportTekrionArchive(source, {
       sessionId: "session-archive-source",
       profile: "forensic",
       report,
@@ -328,7 +328,7 @@ describe("BBX archive export and import", () => {
     });
     expect(exported.archive.manifest.counts.rawExchanges).toBe(1);
     expect(exported.archive.manifest.counts.blobs).toBeGreaterThan(0);
-    const verified = verifyBbxArchive(exported.bytes);
+    const verified = verifyTekrionArchive(exported.bytes);
     const payload = verified.entries.get(
       exported.archive.manifest.blobs[0]?.entryPath as string,
     );
@@ -337,7 +337,7 @@ describe("BBX archive export and import", () => {
     );
 
     const destination = await storageRoot();
-    await importBbxArchive(destination, {
+    await importTekrionArchive(destination, {
       bytes: exported.bytes,
       importedAt: IMPORTED_AT,
     });
@@ -357,13 +357,13 @@ describe("BBX archive export and import", () => {
     }
     first.data = `${first.data.slice(0, -1)}${first.data.endsWith("A") ? "B" : "A"}`;
     expect(() =>
-      verifyBbxArchive(Buffer.from(JSON.stringify(tampered), "utf8")),
-    ).toThrow(BbxArchiveIntegrityError);
+      verifyTekrionArchive(Buffer.from(JSON.stringify(tampered), "utf8")),
+    ).toThrow(TekrionArchiveIntegrityError);
 
     const manifestTamper = structuredClone(exported.archive);
     manifestTamper.manifest.sourceSessionId = "session-tampered";
     expect(() =>
-      verifyBbxArchive(Buffer.from(JSON.stringify(manifestTamper), "utf8")),
+      verifyTekrionArchive(Buffer.from(JSON.stringify(manifestTamper), "utf8")),
     ).toThrow("manifest digest");
 
     const semanticTamper = structuredClone(exported.archive);
@@ -390,11 +390,40 @@ describe("BBX archive export and import", () => {
     );
     const semanticDestination = await storageRoot();
     await expect(
-      importBbxArchive(semanticDestination, {
+      importTekrionArchive(semanticDestination, {
         bytes: Buffer.from(JSON.stringify(semanticTamper), "utf8"),
         importedAt: IMPORTED_AT,
       }),
     ).rejects.toThrow("Markdown report");
+  });
+
+  it("imports pre-rebrand blackbox-bbx archives", async () => {
+    const source = await storageRoot();
+    await seedSession(source);
+    const exported = await exportTekrionArchive(source, {
+      sessionId: "session-archive-source",
+      profile: "share",
+      exportedAt: LATER,
+    });
+    const legacy = structuredClone(exported.archive);
+    legacy.manifest.format = "blackbox-bbx";
+    legacy.manifestSha256 = archiveSha256(canonicalJson(legacy.manifest));
+    const bytes = Buffer.from(`${canonicalJson(legacy)}\n`, "utf8");
+
+    expect(verifyTekrionArchive(bytes).archive.manifest.format).toBe(
+      "blackbox-bbx",
+    );
+    const destination = await storageRoot();
+    await expect(
+      importTekrionArchive(destination, {
+        bytes,
+        importedAt: IMPORTED_AT,
+      }),
+    ).resolves.toMatchObject({
+      sessionId: "session-archive-source",
+      profile: "share",
+      readOnly: true,
+    });
   });
 
   it("preserves an archived session-level report when no action target exists", async () => {
@@ -419,13 +448,13 @@ describe("BBX archive export and import", () => {
       now: () => new Date(LATER),
     }).getReport(sessionId);
     expect(report.report.targetEventId).toBeUndefined();
-    const exported = await exportBbxArchive(source, {
+    const exported = await exportTekrionArchive(source, {
       sessionId,
       profile: "share",
       report,
       exportedAt: LATER,
     });
-    const verified = verifyBbxArchive(exported.bytes);
+    const verified = verifyTekrionArchive(exported.bytes);
     const archivedReport = IncidentReportResultSchema.parse(
       JSON.parse(
         Buffer.from(
@@ -435,7 +464,7 @@ describe("BBX archive export and import", () => {
     );
 
     const destination = await storageRoot();
-    await importBbxArchive(destination, {
+    await importTekrionArchive(destination, {
       bytes: exported.bytes,
       importedAt: IMPORTED_AT,
     });

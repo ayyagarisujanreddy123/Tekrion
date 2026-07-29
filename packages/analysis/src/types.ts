@@ -1,10 +1,10 @@
 import type {
-  BlackBoxEvent,
+  TekrionEvent,
   BlameCandidate,
   BlameTarget,
   ContextCompleteness,
   Session,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 export interface AnalysisContextWindow {
   readonly completeness: ContextCompleteness;
@@ -22,7 +22,7 @@ export interface ProvenanceEdgeInput {
 
 export interface DeterministicAnalysisInput {
   readonly session: Session;
-  readonly events: readonly BlackBoxEvent[];
+  readonly events: readonly TekrionEvent[];
   readonly targetEventId: string;
   readonly context?: AnalysisContextWindow;
   readonly provenanceEdges?: readonly ProvenanceEdgeInput[];
@@ -31,7 +31,7 @@ export interface DeterministicAnalysisInput {
 }
 
 export interface CandidateAssessment {
-  readonly event: BlackBoxEvent;
+  readonly event: TekrionEvent;
   readonly candidate: BlameCandidate;
   readonly excerpt: string;
   readonly relations: readonly string[];
@@ -42,11 +42,11 @@ export interface CandidateAssessment {
 
 export interface AnalysisFacts {
   readonly session: Session;
-  readonly events: readonly BlackBoxEvent[];
-  readonly targetEvent: BlackBoxEvent;
+  readonly events: readonly TekrionEvent[];
+  readonly targetEvent: TekrionEvent;
   readonly target: BlameTarget;
-  readonly invocationEvent: BlackBoxEvent;
+  readonly invocationEvent: TekrionEvent;
   readonly candidates: readonly CandidateAssessment[];
-  readonly userEvents: readonly BlackBoxEvent[];
+  readonly userEvents: readonly TekrionEvent[];
   readonly contextCompleteness: ContextCompleteness;
 }

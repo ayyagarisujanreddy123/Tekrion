@@ -1,8 +1,8 @@
-import { SessionSchema, type Session } from "@blackbox/protocol";
+import { SessionSchema, type Session } from "@tekrion/protocol";
 import {
-  type BlackBoxStorage,
+  type TekrionStorage,
   type BlobGarbageCollectionResult,
-} from "@blackbox/storage";
+} from "@tekrion/storage";
 
 export interface EvidenceUsageSummary {
   readonly logicalBytes: number;
@@ -62,7 +62,7 @@ interface BlobRow {
   readonly stored_length: number;
 }
 
-function allSessions(storage: BlackBoxStorage): Session[] {
+function allSessions(storage: TekrionStorage): Session[] {
   const sessions: Session[] = [];
   let cursor: string | undefined;
   do {
@@ -77,7 +77,7 @@ function allSessions(storage: BlackBoxStorage): Session[] {
   return sessions.map((session) => SessionSchema.parse(session));
 }
 
-function usageSnapshot(storage: BlackBoxStorage): UsageSnapshot {
+function usageSnapshot(storage: TekrionStorage): UsageSnapshot {
   const sessions = allSessions(storage);
   const sizeRows = storage.unsafeDatabase
     .prepare(
@@ -267,12 +267,12 @@ function candidateList(
     }));
 }
 
-export function evidenceUsage(storage: BlackBoxStorage): EvidenceUsageSummary {
+export function evidenceUsage(storage: TekrionStorage): EvidenceUsageSummary {
   return summary(usageSnapshot(storage));
 }
 
 export function planSessionDeletion(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   sessionId: string,
 ): EvidencePrunePlan {
   const snapshot = usageSnapshot(storage);
@@ -298,7 +298,7 @@ export function planSessionDeletion(
 }
 
 export function planEvidencePrune(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   input: EvidencePruneInput,
 ): EvidencePrunePlan {
   if (input.olderThanDays === undefined && input.maximumBytes === undefined) {
@@ -370,7 +370,7 @@ export function planEvidencePrune(
 }
 
 export async function executeEvidenceDeletion(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   plan: EvidencePrunePlan,
 ): Promise<EvidenceDeletionResult> {
   if (storage.readOnly) {

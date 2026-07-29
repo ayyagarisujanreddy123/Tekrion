@@ -1,4 +1,4 @@
-import { SafeHeadersSchema, type SafeHeaders } from "@blackbox/protocol";
+import { SafeHeadersSchema, type SafeHeaders } from "@tekrion/protocol";
 import type { IncomingHttpHeaders, OutgoingHttpHeaders } from "node:http";
 
 const STANDARD_HOP_BY_HOP_HEADERS = new Set([

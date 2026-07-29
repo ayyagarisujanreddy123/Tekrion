@@ -10,9 +10,9 @@
     "command": {
       "executable": "fixture-agent",
       "arguments": ["fix", "build"],
-      "cwd": "/tmp/blackbox-rogue-demo"
+      "cwd": "/tmp/tekrion-rogue-demo"
     },
-    "repoRoot": "/tmp/blackbox-rogue-demo",
+    "repoRoot": "/tmp/tekrion-rogue-demo",
     "agentName": "deterministic-fixture-agent",
     "models": ["fixture-model"],
     "tags": ["demo", "rogue"],

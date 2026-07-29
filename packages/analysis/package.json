@@ -1,12 +1,11 @@
 {
-  "name": "@blackbox/analysis",
+  "name": "@tekrion/analysis",
   "version": "0.1.0",
-  "private": true,
-  "description": "Deterministic evidence ranking and incident reports for Black Box",
+  "description": "Deterministic evidence ranking and incident reports for Tekrion",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayyagarisujanreddy123/Black-Box.git",
+    "url": "git+https://github.com/ayyagarisujanreddy123/Tekrion.git",
     "directory": "packages/analysis"
   },
   "publishConfig": {
@@ -24,9 +23,9 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@blackbox/protocol": "0.1.0"
+    "@tekrion/protocol": "0.1.0"
   },
   "devDependencies": {
-    "@blackbox/test-fixtures": "0.1.0"
+    "@tekrion/test-fixtures": "0.1.0"
   }
 }

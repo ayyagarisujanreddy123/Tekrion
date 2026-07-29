@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 
-import { ControlTokenSchema, isLoopbackHost } from "@blackbox/daemon";
+import { ControlTokenSchema, isLoopbackHost } from "@tekrion/daemon";
 
 export type BrowserOpener = (url: URL) => Promise<void>;
 
@@ -54,7 +54,7 @@ export function createViewerUrl(
     origin.hash !== ""
   ) {
     throw new Error(
-      `Refusing to open a non-loopback Black Box control origin: ${controlOrigin}`,
+      `Refusing to open a non-loopback Tekrion control origin: ${controlOrigin}`,
     );
   }
   const fragment = new URLSearchParams({

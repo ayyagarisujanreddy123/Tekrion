@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   ProcessExitedSummarySchema,
   ProcessFailureSummarySchema,
   ProcessObservationIdentitySchema,
@@ -11,7 +11,7 @@ import {
   WorkspaceFileChangeSummarySchema,
   WorkspaceManifestSchema,
   WorkspaceSnapshotSummarySchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type EvidenceKind,
   type EvidenceSource,
   type ProcessObservationIdentity,
@@ -20,8 +20,8 @@ import {
   type WorkspaceFileChangeSummary,
   type WorkspaceManifest,
   type WorkspaceSnapshotSummary,
-} from "@blackbox/protocol";
-import type { BlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/protocol";
+import type { TekrionStorage } from "@tekrion/storage";
 
 const NO_REDACTION = { applied: false, ruleIds: [] } as const;
 
@@ -72,7 +72,7 @@ export interface RunSessionOptions {
 }
 
 interface EventOptions {
-  readonly payloadRef?: BlackBoxEvent["payloadRef"];
+  readonly payloadRef?: TekrionEvent["payloadRef"];
   readonly source?: EvidenceSource;
   readonly evidence?: EvidenceKind;
 }
@@ -107,7 +107,7 @@ export class RunEventJournal {
   private workspaceFinalRecorded = false;
 
   constructor(
-    private readonly storage: BlackBoxStorage,
+    private readonly storage: TekrionStorage,
     input: ProcessObservationIdentity,
     sessionOptions: RunSessionOptions = {},
   ) {
@@ -249,7 +249,7 @@ export class RunEventJournal {
     const bytes = Buffer.from(JSON.stringify(manifest), "utf8");
     return this.enqueue(async () => {
       const payloadRef = await this.storage.blobs.put(bytes, {
-        mediaType: "application/vnd.blackbox.workspace-manifest+json",
+        mediaType: "application/vnd.tekrion.workspace-manifest+json",
       });
       this.storage.transaction(() => {
         this.insertEvent("workspace.snapshot", summary, summary.capturedAt, {
@@ -416,10 +416,10 @@ export class RunEventJournal {
 
   private insertEvent(
     type: string,
-    summary: BlackBoxEvent["summary"],
+    summary: TekrionEvent["summary"],
     observedAt: string,
     options: EventOptions = {},
-  ): BlackBoxEvent {
+  ): TekrionEvent {
     const sequence = this.storage.sequences.reserve(this.identity.sessionId)[0];
     if (sequence === undefined) {
       throw new Error(
@@ -427,7 +427,7 @@ export class RunEventJournal {
       );
     }
     return this.storage.events.insert(
-      BlackBoxEventSchema.parse({
+      TekrionEventSchema.parse({
         schemaVersion: 1,
         id: eventId(this.identity.sessionId, sequence),
         sessionId: this.identity.sessionId,

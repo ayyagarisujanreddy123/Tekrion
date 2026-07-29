@@ -3,7 +3,7 @@ import {
   generateDeterministicReport,
   renderIncidentReportMarkdown,
   selectIncidentTarget,
-} from "@blackbox/analysis";
+} from "@tekrion/analysis";
 import { describe, expect, it } from "vitest";
 
 import { REPORT_TIME, reportFixture } from "./report-fixture.js";
@@ -56,10 +56,10 @@ describe("deterministic incident reports", () => {
     });
     const markdown = renderIncidentReportMarkdown(report);
 
-    expect(markdown).toContain("# Black Box Incident Report");
+    expect(markdown).toContain("# Tekrion Incident Report");
     expect(markdown).not.toContain("<script>");
     expect(markdown).toContain("&lt;script&gt;");
-    expect(markdown).toContain("blackbox://event/event-file-delete");
+    expect(markdown).toContain("tekrion://event/event-file-delete");
     expect(markdown).toContain("## Root-cause hypothesis");
     expect(markdown).toContain("inferred");
 

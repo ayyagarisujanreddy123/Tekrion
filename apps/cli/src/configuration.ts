@@ -5,7 +5,7 @@ import {
   resolveProxyConfiguration,
   type DaemonPaths,
   type ProxyConfiguration,
-} from "@blackbox/daemon";
+} from "@tekrion/daemon";
 
 export type CliCommand =
   | "init"
@@ -317,6 +317,7 @@ export function resolveStartConfiguration(
   const proxy = resolveProxyConfiguration({
     upstream:
       stringFlag(flags, "upstream") ??
+      environment.TEKRION_UPSTREAM_URL ??
       environment.BLACKBOX_UPSTREAM_URL ??
       defaults.upstreamOrigin ??
       DEFAULT_UPSTREAM_ORIGIN,

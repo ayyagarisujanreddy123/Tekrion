@@ -13,7 +13,7 @@ import {
   type WorkspaceManifest,
   type WorkspaceManifestEntry,
   type WorkspaceSnapshotSummary,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 import {
   DebouncedWorkspaceWatcher,
@@ -1118,7 +1118,7 @@ export class WorkspaceObserver {
         ) {
           payload = delta;
           payloadKind = "file-delta";
-          mediaType = "application/vnd.blackbox.file-delta+json";
+          mediaType = "application/vnd.tekrion.file-delta+json";
         }
       }
       if (payload !== undefined) {

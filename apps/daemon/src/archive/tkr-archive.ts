@@ -3,51 +3,51 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   DETERMINISTIC_REPORT_VERSION,
   redactSensitiveValue,
-} from "@blackbox/analysis";
+} from "@tekrion/analysis";
 import {
-  BbxArchiveImportResultSchema,
-  BbxArchiveManifestSchema,
-  BbxArchiveProfileSchema,
-  BbxArchiveSchema,
-  BlackBoxEventSchema,
+  TekrionArchiveImportResultSchema,
+  TekrionArchiveManifestSchema,
+  TekrionArchiveProfileSchema,
+  TekrionArchiveSchema,
+  TekrionEventSchema,
   IdentifierSchema,
   IncidentReportResultSchema,
   RawExchangeSchema,
   SessionSchema,
   Sha256Schema,
-  type BbxArchive,
-  type BbxArchiveBlob,
-  type BbxArchiveImportResult,
-  type BbxArchiveProfile,
-  type BlackBoxEvent,
+  type TekrionArchive,
+  type TekrionArchiveBlob,
+  type TekrionArchiveImportResult,
+  type TekrionArchiveProfile,
+  type TekrionEvent,
   type BlobReference,
   type IncidentReportResult,
   type RawExchange,
   type Session,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import {
   AnalysisRunRecordSchema,
   ContextEdgeRecordSchema,
   FileChangeRecordSchema,
   RedactionRecordSchema,
   type AnalysisRunRecord,
-  type BlackBoxStorage,
+  type TekrionStorage,
   type FileChangeRecord,
-} from "@blackbox/storage";
+} from "@tekrion/storage";
 import { z } from "zod";
 
 import {
-  BbxArchiveIntegrityError,
-  BbxArchiveSizeError,
+  TekrionArchiveIntegrityError,
+  TekrionArchiveSizeError,
   DEFAULT_MAXIMUM_ARCHIVE_BYTES,
   archiveSha256,
   canonicalJson,
-  encodeBbxArchive,
+  encodeTekrionArchive,
   materializeArchiveEntries,
-  verifyBbxArchive,
-  type BbxArchiveContentEntry,
-  type VerifiedBbxArchive,
-} from "./bbx-integrity.js";
+  verifyTekrionArchive,
+  type TekrionArchiveContentEntry,
+  type VerifiedTekrionArchive,
+} from "./tkr-integrity.js";
 
 const RECORD_PATHS = {
   session: "records/session.json",
@@ -62,7 +62,7 @@ const RECORD_PATHS = {
   reportMarkdown: "report/incident-report.md",
 } as const;
 
-const REPORT_MEDIA_TYPE = "application/vnd.blackbox.incident-report+json";
+const REPORT_MEDIA_TYPE = "application/vnd.tekrion.incident-report+json";
 
 const EventOriginSchema = z
   .object({
@@ -73,7 +73,7 @@ const EventOriginSchema = z
 
 const ArchiveEventRecordSchema = z
   .object({
-    event: BlackBoxEventSchema,
+    event: TekrionEventSchema,
     origin: EventOriginSchema,
   })
   .strict();
@@ -220,27 +220,27 @@ class ArchiveRedactionAccumulator {
   }
 }
 
-export class BbxArchiveConflictError extends Error {
+export class TekrionArchiveConflictError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = "BbxArchiveConflictError";
+    this.name = "TekrionArchiveConflictError";
   }
 }
 
-export interface ExportBbxArchiveInput {
+export interface ExportTekrionArchiveInput {
   readonly sessionId: string;
-  readonly profile?: BbxArchiveProfile;
+  readonly profile?: TekrionArchiveProfile;
   readonly report?: IncidentReportResult;
   readonly exportedAt?: string;
   readonly maximumBytes?: number;
 }
 
-export interface ExportedBbxArchive {
-  readonly archive: BbxArchive;
+export interface ExportedTekrionArchive {
+  readonly archive: TekrionArchive;
   readonly bytes: Uint8Array;
 }
 
-export interface ImportBbxArchiveInput {
+export interface ImportTekrionArchiveInput {
   readonly bytes: Uint8Array;
   readonly importedAt?: string;
   readonly maximumBytes?: number;
@@ -351,7 +351,7 @@ function shareEvent(
     ruleIds.add(ruleId);
   }
   return {
-    event: BlackBoxEventSchema.parse({
+    event: TekrionEventSchema.parse({
       schemaVersion: event.schemaVersion,
       id: event.id,
       sessionId: event.sessionId,
@@ -453,12 +453,12 @@ function reportAnalysisRunId(
   return `analysis-report-${digest}`;
 }
 
-export async function exportBbxArchive(
-  storage: BlackBoxStorage,
-  input: ExportBbxArchiveInput,
-): Promise<ExportedBbxArchive> {
+export async function exportTekrionArchive(
+  storage: TekrionStorage,
+  input: ExportTekrionArchiveInput,
+): Promise<ExportedTekrionArchive> {
   const sessionId = IdentifierSchema.parse(input.sessionId);
-  const profile = BbxArchiveProfileSchema.parse(input.profile ?? "share");
+  const profile = TekrionArchiveProfileSchema.parse(input.profile ?? "share");
   const session = storage.sessions.getRequired(sessionId);
   if (session.status === "active") {
     throw new RangeError(
@@ -622,7 +622,7 @@ export async function exportBbxArchive(
           )
         : input.report;
 
-  const entries: BbxArchiveContentEntry[] = [
+  const entries: TekrionArchiveContentEntry[] = [
     {
       path: RECORD_PATHS.session,
       mediaType: "application/json",
@@ -678,7 +678,7 @@ export async function exportBbxArchive(
           },
         ]),
   ];
-  const blobManifest: BbxArchiveBlob[] = [];
+  const blobManifest: TekrionArchiveBlob[] = [];
   if (profile === "forensic") {
     const blobIds = referencedBlobIds({
       rawExchanges,
@@ -689,7 +689,7 @@ export async function exportBbxArchive(
     for (const blobId of blobIds) {
       const reference = storage.blobs.describe(blobId);
       if (reference === undefined) {
-        throw new BbxArchiveIntegrityError(
+        throw new TekrionArchiveIntegrityError(
           `Referenced blob ${blobId} is unavailable for export.`,
         );
       }
@@ -702,12 +702,12 @@ export async function exportBbxArchive(
   const materialized = materializeArchiveEntries(entries);
   const maximumBytes = input.maximumBytes ?? DEFAULT_MAXIMUM_ARCHIVE_BYTES;
   if (materialized.totalBytes > maximumBytes) {
-    throw new BbxArchiveSizeError(maximumBytes);
+    throw new TekrionArchiveSizeError(maximumBytes);
   }
   const redaction = exportRedactions.summary();
-  const manifest = BbxArchiveManifestSchema.parse({
+  const manifest = TekrionArchiveManifestSchema.parse({
     schemaVersion: 1,
-    format: "blackbox-bbx",
+    format: "tekrion-tkr",
     archiveId: `archive-${randomUUID()}`,
     exportedAt: input.exportedAt ?? new Date().toISOString(),
     profile,
@@ -749,31 +749,31 @@ export async function exportBbxArchive(
             "Forensic archives can contain source code, prompts, outputs, paths, and other sensitive evidence.",
           ],
   });
-  const archive = BbxArchiveSchema.parse({
+  const archive = TekrionArchiveSchema.parse({
     schemaVersion: 1,
     manifest,
     manifestSha256: archiveSha256(canonicalJson(manifest)),
     entries: materialized.payloads,
   });
-  const bytes = encodeBbxArchive(archive);
+  const bytes = encodeTekrionArchive(archive);
   if (bytes.byteLength > maximumBytes) {
-    throw new BbxArchiveSizeError(maximumBytes);
+    throw new TekrionArchiveSizeError(maximumBytes);
   }
-  verifyBbxArchive(bytes, maximumBytes);
+  verifyTekrionArchive(bytes, maximumBytes);
   return { archive, bytes };
 }
 
-function utf8Entry(verified: VerifiedBbxArchive, path: string): string {
+function utf8Entry(verified: VerifiedTekrionArchive, path: string): string {
   const bytes = verified.entries.get(path);
   if (bytes === undefined) {
-    throw new BbxArchiveIntegrityError(
-      `Required BBX archive entry ${path} is missing.`,
+    throw new TekrionArchiveIntegrityError(
+      `Required TKR archive entry ${path} is missing.`,
     );
   }
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch (error: unknown) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       `Archive entry ${path} is not valid UTF-8.`,
       { cause: error },
     );
@@ -781,14 +781,14 @@ function utf8Entry(verified: VerifiedBbxArchive, path: string): string {
 }
 
 function jsonEntry<T>(
-  verified: VerifiedBbxArchive,
+  verified: VerifiedTekrionArchive,
   path: string,
   schema: { readonly parse: (value: unknown) => T },
 ): T {
   try {
     return schema.parse(JSON.parse(utf8Entry(verified, path)));
   } catch (error: unknown) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       `Archive entry ${path} contains an invalid record.`,
       { cause: error },
     );
@@ -796,7 +796,7 @@ function jsonEntry<T>(
 }
 
 function jsonLinesEntry<T>(
-  verified: VerifiedBbxArchive,
+  verified: VerifiedTekrionArchive,
   path: string,
   schema: { readonly parse: (value: unknown) => T },
 ): T[] {
@@ -805,7 +805,7 @@ function jsonLinesEntry<T>(
     return [];
   }
   if (!text.endsWith("\n")) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       `Archive JSONL entry ${path} must end with a newline.`,
     );
   }
@@ -816,7 +816,7 @@ function jsonLinesEntry<T>(
       try {
         return schema.parse(JSON.parse(line));
       } catch (error: unknown) {
-        throw new BbxArchiveIntegrityError(
+        throw new TekrionArchiveIntegrityError(
           `Archive entry ${path} has an invalid record at line ${index + 1}.`,
           { cause: error },
         );
@@ -826,7 +826,7 @@ function jsonLinesEntry<T>(
 
 function assertCount(name: string, actual: number, expected: number): void {
   if (actual !== expected) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       `Archive ${name} count ${actual} does not match manifest count ${expected}.`,
     );
   }
@@ -834,14 +834,14 @@ function assertCount(name: string, actual: number, expected: number): void {
 
 function assertUnique(values: readonly string[], label: string): void {
   if (new Set(values).size !== values.length) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       `Archive ${label} identifiers must be unique.`,
     );
   }
 }
 
 function assertNoIdentifierConflicts(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   table: "events" | "raw_exchanges" | "analysis_runs" | "redactions",
   ids: readonly string[],
 ): void {
@@ -856,7 +856,7 @@ function assertNoIdentifierConflicts(
       .prepare(`SELECT id FROM ${table} WHERE id IN (${placeholders}) LIMIT 1`)
       .get(...batch) as { id: string } | undefined;
     if (conflict !== undefined) {
-      throw new BbxArchiveConflictError(
+      throw new TekrionArchiveConflictError(
         `Archive record ${conflict.id} already exists; no data was overwritten.`,
       );
     }
@@ -895,29 +895,29 @@ function importedRawExchange(
 }
 
 function importedEvent(
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   blobs: ReadonlyMap<string, BlobReference>,
-): BlackBoxEvent {
+): TekrionEvent {
   if (event.payloadRef === undefined) {
     return event;
   }
-  return BlackBoxEventSchema.parse({
+  return TekrionEventSchema.parse({
     ...event,
     payloadRef: blobs.get(event.payloadRef.id),
   });
 }
 
-export async function importBbxArchive(
-  storage: BlackBoxStorage,
-  input: ImportBbxArchiveInput,
-): Promise<BbxArchiveImportResult> {
+export async function importTekrionArchive(
+  storage: TekrionStorage,
+  input: ImportTekrionArchiveInput,
+): Promise<TekrionArchiveImportResult> {
   if (storage.readOnly) {
-    throw new BbxArchiveConflictError(
+    throw new TekrionArchiveConflictError(
       "The destination evidence store is read-only.",
     );
   }
   const maximumBytes = input.maximumBytes ?? DEFAULT_MAXIMUM_ARCHIVE_BYTES;
-  const verified = verifyBbxArchive(input.bytes, maximumBytes);
+  const verified = verifyTekrionArchive(input.bytes, maximumBytes);
   const manifest = verified.archive.manifest;
   const session = jsonEntry(verified, RECORD_PATHS.session, SessionSchema);
   const eventRecords = jsonLinesEntry(
@@ -967,7 +967,7 @@ export async function importBbxArchive(
     report !== undefined &&
     utf8Entry(verified, RECORD_PATHS.reportMarkdown) !== report.markdown
   ) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       "The archived Markdown report does not match the JSON report.",
     );
   }
@@ -1012,30 +1012,30 @@ export async function importBbxArchive(
     verified.archive.entries.some((entry) => !allowedPaths.has(entry.path)) ||
     allowedPaths.size !== verified.archive.entries.length
   ) {
-    throw new BbxArchiveIntegrityError(
-      "The BBX archive contains missing or unexpected entries.",
+    throw new TekrionArchiveIntegrityError(
+      "The TKR archive contains missing or unexpected entries.",
     );
   }
   if (
     manifest.sourceSessionId !== session.id ||
     manifest.sourceSessionStatus !== session.status
   ) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       "The archive source session identity does not match its manifest.",
     );
   }
   if (session.counts.events !== eventRecords.length) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       "The archived session event count does not match its event records.",
     );
   }
   if (session.status === "active") {
-    throw new BbxArchiveIntegrityError(
-      "Active sessions cannot be imported from a BBX archive.",
+    throw new TekrionArchiveIntegrityError(
+      "Active sessions cannot be imported from a TKR archive.",
     );
   }
   if (report !== undefined && report.report.sessionId !== session.id) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       "The archived incident report belongs to another session.",
     );
   }
@@ -1047,7 +1047,7 @@ export async function importBbxArchive(
       redactions.length > 0 ||
       manifest.blobs.length > 0)
   ) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       "A share archive must not contain raw exchanges, stored analyses, redaction hashes, or payload blobs.",
     );
   }
@@ -1103,12 +1103,12 @@ export async function importBbxArchive(
         record.eventIds.some((eventId) => !eventIdSet.has(eventId)),
     )
   ) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       "The archive contains a cross-session or missing record relationship.",
     );
   }
   if (storage.sessions.get(session.id) !== undefined) {
-    throw new BbxArchiveConflictError(
+    throw new TekrionArchiveConflictError(
       `Session ${session.id} already exists; no data was overwritten.`,
     );
   }
@@ -1125,10 +1125,10 @@ export async function importBbxArchive(
     redactions.map((record) => record.id),
   );
 
-  const blobMetadataById = new Map<string, BbxArchiveBlob>();
+  const blobMetadataById = new Map<string, TekrionArchiveBlob>();
   for (const blob of manifest.blobs) {
     if (blobMetadataById.has(blob.reference.id)) {
-      throw new BbxArchiveIntegrityError(
+      throw new TekrionArchiveIntegrityError(
         `Blob ${blob.reference.id} is declared more than once.`,
       );
     }
@@ -1155,7 +1155,7 @@ export async function importBbxArchive(
     [...requiredBlobIds].some((blobId) => !blobMetadataById.has(blobId)) ||
     [...blobMetadataById.keys()].some((blobId) => !requiredBlobIds.has(blobId))
   ) {
-    throw new BbxArchiveIntegrityError(
+    throw new TekrionArchiveIntegrityError(
       "The archive blob manifest does not exactly cover record references.",
     );
   }
@@ -1165,7 +1165,7 @@ export async function importBbxArchive(
       declared === undefined ||
       canonicalJson(declared) !== canonicalJson(reference)
     ) {
-      throw new BbxArchiveIntegrityError(
+      throw new TekrionArchiveIntegrityError(
         `Record blob reference ${reference.id} conflicts with the blob manifest.`,
       );
     }
@@ -1179,7 +1179,7 @@ export async function importBbxArchive(
     for (const blob of manifest.blobs) {
       const bytes = verified.entries.get(blob.entryPath);
       if (bytes === undefined) {
-        throw new BbxArchiveIntegrityError(
+        throw new TekrionArchiveIntegrityError(
           `Archive blob entry ${blob.entryPath} is missing.`,
         );
       }
@@ -1196,7 +1196,7 @@ export async function importBbxArchive(
         stored.mediaType !== blob.reference.mediaType ||
         stored.truncated !== blob.reference.truncated
       ) {
-        throw new BbxArchiveIntegrityError(
+        throw new TekrionArchiveIntegrityError(
           `Imported blob ${blob.reference.id} changed content identity.`,
         );
       }
@@ -1299,7 +1299,7 @@ export async function importBbxArchive(
           resultBlobId: reportBlob.id,
         }).record;
         if (storedReportRun.resultBlobId !== reportBlob.id) {
-          throw new BbxArchiveIntegrityError(
+          throw new TekrionArchiveIntegrityError(
             "The archived report conflicts with its stored analysis result.",
           );
         }
@@ -1340,7 +1340,7 @@ export async function importBbxArchive(
       .catch(() => undefined);
     throw error;
   }
-  return BbxArchiveImportResultSchema.parse({
+  return TekrionArchiveImportResultSchema.parse({
     schemaVersion: 1,
     archiveId: manifest.archiveId,
     sessionId: session.id,

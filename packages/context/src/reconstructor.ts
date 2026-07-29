@@ -4,14 +4,14 @@ import {
   ContextResultSchema,
   CONTEXT_VISIBILITY_NOTICE,
   IdentifierSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type ContextCompleteness,
   type ContextItem,
   type ContextResult,
   type EvidenceKind,
   type ProvenanceReference,
   type RawExchange,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 type JsonRecord = Record<string, unknown>;
 type ContextAncestryNode = ContextResult["ancestry"]["nodes"][number];
@@ -25,14 +25,14 @@ export interface ContextEventOrigin {
 }
 
 export interface ContextEvidenceSource {
-  getEvent(eventId: string): BlackBoxEvent | undefined;
+  getEvent(eventId: string): TekrionEvent | undefined;
   getEventOrigin(eventId: string): ContextEventOrigin | undefined;
   getExchange(exchangeId: string): RawExchange | undefined;
-  getEventsForExchange(exchangeId: string): readonly BlackBoxEvent[];
+  getEventsForExchange(exchangeId: string): readonly TekrionEvent[];
   findResponseEvent(
     sessionId: string,
     responseId: string,
-  ): BlackBoxEvent | undefined;
+  ): TekrionEvent | undefined;
   getPayload(payloadId: string): Promise<Uint8Array>;
 }
 
@@ -57,9 +57,9 @@ export class ContextReconstructionError extends Error {
 }
 
 interface LoadedTurn {
-  readonly requestEvent: BlackBoxEvent;
+  readonly requestEvent: TekrionEvent;
   readonly exchange: RawExchange;
-  readonly events: readonly BlackBoxEvent[];
+  readonly events: readonly TekrionEvent[];
   readonly request?: JsonRecord;
   readonly limitations: readonly string[];
 }
@@ -176,7 +176,7 @@ function requestProvenance(turn: LoadedTurn): ProvenanceReference {
 }
 
 function eventProvenance(
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   exchangeId: string,
 ): ProvenanceReference {
   return {
@@ -621,7 +621,7 @@ function addResponseItems(turn: LoadedTurn, builder: ContextItemBuilder): void {
   }
 }
 
-function reportedInputTokens(events: readonly BlackBoxEvent[]): number | null {
+function reportedInputTokens(events: readonly TekrionEvent[]): number | null {
   for (const event of [...events].reverse()) {
     if (
       event.type === "model.usage" &&
@@ -989,7 +989,7 @@ export class ContextReconstructor {
     );
   }
 
-  private async loadTurn(requestEvent: BlackBoxEvent): Promise<LoadedTurn> {
+  private async loadTurn(requestEvent: TekrionEvent): Promise<LoadedTurn> {
     const origin = this.source.getEventOrigin(requestEvent.id);
     if (origin?.rawExchangeId === undefined) {
       throw new ContextReconstructionError(

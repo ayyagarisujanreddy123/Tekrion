@@ -20,7 +20,7 @@ A captured model request does not always contain its entire preceding conversati
 
 ## Consequences
 
-- Investigators can distinguish the exact client payload from a locally reconstructed chain and from remote context that Black Box cannot observe.
+- Investigators can distinguish the exact client payload from a locally reconstructed chain and from remote context that Tekrion cannot observe.
 - A missing response ID, corrupt ancestry, incomplete capture, reusable prompt, or provider Conversation visibly lowers the claim instead of silently disappearing.
 - Reconstruction remains deterministic and offline; it makes no provider call and does not require a tokenizer or model-metadata service.
 - The visible-token estimate is useful for comparison but is not presented as provider billing or an exact tokenizer count.

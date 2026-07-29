@@ -1,14 +1,14 @@
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   IsoTimestampSchema,
   RawExchangeOutcomeSchema,
   RawExchangeProtocolSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type EvidenceKind,
   type EvidenceSource,
   type JsonObjectSchema,
   type Redaction,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import { z } from "zod";
 
 const HeaderValueSchema = z.union([z.string(), z.array(z.string())]);
@@ -67,7 +67,7 @@ export const NormalizationResultSchema = z
     parserId: z.string().min(1).max(256),
     parserVersion: z.string().min(1).max(128),
     status: z.enum(["parsed", "malformed", "unsupported", "skipped"]),
-    events: z.array(BlackBoxEventSchema),
+    events: z.array(TekrionEventSchema),
     diagnostics: z.array(ParserDiagnosticSchema),
   })
   .strict();
@@ -108,4 +108,4 @@ export interface ExchangeNormalizer {
   ): NormalizationResult;
 }
 
-export type CanonicalEvents = readonly BlackBoxEvent[];
+export type CanonicalEvents = readonly TekrionEvent[];

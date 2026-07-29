@@ -54,7 +54,7 @@ async function bundledViewerPackages() {
     for (const match of source.matchAll(
       /node_modules\/((?:@[^/]+\/)?[^/]+)/g,
     )) {
-      if (!match[1].startsWith("@blackbox/")) {
+      if (!match[1].startsWith("@tekrion/")) {
         packages.add(match[1]);
       }
     }
@@ -76,7 +76,7 @@ async function thirdPartyNotices() {
   const sections = [
     "# Third-party notices",
     "",
-    "The Black Box browser assets include the following production dependencies.",
+    "The Tekrion browser assets include the following production dependencies.",
   ];
   for (const [text, group] of licenses) {
     sections.push(

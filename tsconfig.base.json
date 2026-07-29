@@ -17,13 +17,13 @@
     "noUncheckedIndexedAccess": true,
     "noUncheckedSideEffectImports": true,
     "paths": {
-      "@blackbox/analysis": ["./packages/analysis/src/index.ts"],
-      "@blackbox/context": ["./packages/context/src/index.ts"],
-      "@blackbox/daemon": ["./apps/daemon/src/index.ts"],
-      "@blackbox/normalizers": ["./packages/normalizers/src/index.ts"],
-      "@blackbox/test-fixtures": ["./packages/test-fixtures/src/index.ts"],
-      "@blackbox/protocol": ["./packages/protocol/src/index.ts"],
-      "@blackbox/storage": ["./packages/storage/src/index.ts"]
+      "@tekrion/analysis": ["./packages/analysis/src/index.ts"],
+      "@tekrion/context": ["./packages/context/src/index.ts"],
+      "@tekrion/daemon": ["./apps/daemon/src/index.ts"],
+      "@tekrion/normalizers": ["./packages/normalizers/src/index.ts"],
+      "@tekrion/test-fixtures": ["./packages/test-fixtures/src/index.ts"],
+      "@tekrion/protocol": ["./packages/protocol/src/index.ts"],
+      "@tekrion/storage": ["./packages/storage/src/index.ts"]
     },
     "skipLibCheck": false,
     "sourceMap": true,

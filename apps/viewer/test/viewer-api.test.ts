@@ -1,12 +1,12 @@
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   BlameAnalysisSchema,
   ContextResultSchema,
   CONTEXT_VISIBILITY_NOTICE,
   IncidentReportResultSchema,
   LiveEventReadySchema,
   ReportPreflightSchema,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -16,7 +16,7 @@ import {
 } from "../src/api.js";
 
 function event(sequence: number) {
-  return BlackBoxEventSchema.parse({
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id: `event-viewer-${sequence}`,
     sessionId: "session-viewer",
@@ -93,7 +93,7 @@ function incidentReportResult() {
         redactionRuleIds: [],
       },
     },
-    markdown: "# Black Box Incident Report\n",
+    markdown: "# Tekrion Incident Report\n",
     aiAttempt: { status: "not-requested" },
   });
 }
@@ -129,9 +129,9 @@ describe("viewer API transport", () => {
     const frames: ParsedServerEvent[] = [];
     for await (const frame of parseServerEvents(
       chunks([
-        "retry: 1000\r\nevent: blackbox.ready\r",
+        "retry: 1000\r\nevent: tekrion.ready\r",
         `\ndata: ${JSON.stringify(ready)}\r\n\r`,
-        `\nid: 2\nevent: blackbox.event\ndata: ${JSON.stringify(second)}\n`,
+        `\nid: 2\nevent: tekrion.event\ndata: ${JSON.stringify(second)}\n`,
         "\n: keepalive\r\n\r\n",
       ]),
     )) {
@@ -140,11 +140,11 @@ describe("viewer API transport", () => {
 
     expect(frames).toEqual([
       {
-        event: "blackbox.ready",
+        event: "tekrion.ready",
         data: JSON.stringify(ready),
       },
       {
-        event: "blackbox.event",
+        event: "tekrion.event",
         id: "2",
         data: JSON.stringify(second),
       },

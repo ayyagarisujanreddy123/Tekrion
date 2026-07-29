@@ -16,7 +16,7 @@ import {
   BlobReferenceSchema,
   MINIMUM_NODE_VERSION,
   type BlobReference,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import type Database from "better-sqlite3";
 
 import {

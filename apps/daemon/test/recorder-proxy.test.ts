@@ -12,15 +12,15 @@ import { join } from "node:path";
 
 import {
   ChunkManifestSchema,
-  openBlackBoxStorage,
-  type BlackBoxStorage,
-} from "@blackbox/storage";
+  openTekrionStorage,
+  type TekrionStorage,
+} from "@tekrion/storage";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
   DurableNormalizationRunner,
   RecorderProxy,
-  exportBbxArchive,
+  exportTekrionArchive,
   sessionScopedProxyBaseUrl,
 } from "../src/index.js";
 
@@ -38,7 +38,7 @@ interface UpstreamObservation {
 }
 
 const roots: string[] = [];
-const storages: BlackBoxStorage[] = [];
+const storages: TekrionStorage[] = [];
 const proxies: RecorderProxy[] = [];
 const upstreams: Server[] = [];
 
@@ -156,13 +156,13 @@ async function makeUpstream(): Promise<{
 }
 
 async function makeStorage(): Promise<{
-  storage: BlackBoxStorage;
+  storage: TekrionStorage;
   root: string;
 }> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-proxy-test-"));
+  const root = await mkdtemp(join(tmpdir(), "tekrion-proxy-test-"));
   roots.push(root);
-  const storage = await openBlackBoxStorage({
-    databasePath: join(root, "blackbox.sqlite"),
+  const storage = await openTekrionStorage({
+    databasePath: join(root, "tekrion.sqlite"),
     dataDirectory: join(root, "data"),
   });
   storages.push(storage);
@@ -171,7 +171,7 @@ async function makeStorage(): Promise<{
 
 async function makeProxy(
   upstream: string,
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   overrides: Partial<ConstructorParameters<typeof RecorderProxy>[0]> = {},
 ): Promise<RecorderProxy> {
   const proxy = new RecorderProxy({
@@ -252,7 +252,7 @@ function startHangingRequest(
   return request;
 }
 
-function latestRawExchange(storage: BlackBoxStorage) {
+function latestRawExchange(storage: TekrionStorage) {
   const row = storage.unsafeDatabase
     .prepare(
       "SELECT id FROM raw_exchanges ORDER BY created_at DESC, id DESC LIMIT 1",
@@ -265,7 +265,7 @@ function latestRawExchange(storage: BlackBoxStorage) {
 }
 
 function createCodexSession(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   id: string,
   upstreamOrigin: string,
 ): void {
@@ -338,7 +338,7 @@ describe("byte-faithful recorder proxy", () => {
         authorization: secret,
         "x-api-key": anthropicSecret,
         cookie,
-        "x-blackbox-session": "session-explicit",
+        "x-tekrion-session": "session-explicit",
         "content-type": "application/json",
       },
     );
@@ -359,7 +359,7 @@ describe("byte-faithful recorder proxy", () => {
     );
     expect(upstream.observations[0]?.headers.cookie).toBe(cookie);
     expect(
-      upstream.observations[0]?.headers["x-blackbox-session"],
+      upstream.observations[0]?.headers["x-tekrion-session"],
     ).toBeUndefined();
 
     const raw = latestRawExchange(storage);
@@ -398,6 +398,29 @@ describe("byte-faithful recorder proxy", () => {
     }
   });
 
+  it("accepts and strips pre-rebrand session headers", async () => {
+    const upstream = await makeUpstream();
+    const { storage } = await makeStorage();
+    const proxy = await makeProxy(upstream.origin, storage);
+    await requestBytes(
+      proxy.address()?.origin as string,
+      "/v1/responses",
+      Buffer.from('{"model":"fixture","input":"legacy"}'),
+      {
+        "content-type": "application/json",
+        "x-blackbox-session": "session-legacy-header",
+      },
+    );
+    await proxy.flush();
+
+    const raw = latestRawExchange(storage);
+    expect(raw.sessionId).toBe("session-legacy-header");
+    expect(raw.requestHeaders["x-blackbox-session"]).toBeUndefined();
+    expect(
+      upstream.observations[0]?.headers["x-blackbox-session"],
+    ).toBeUndefined();
+  });
+
   it("normalizes finalized exchanges durably and idempotently", async () => {
     const upstream = await makeUpstream();
     const { storage } = await makeStorage();
@@ -411,7 +434,7 @@ describe("byte-faithful recorder proxy", () => {
       body,
       {
         "content-type": "application/json",
-        "x-blackbox-session": "session-normalization",
+        "x-tekrion-session": "session-normalization",
       },
     );
     await proxy.flush();
@@ -477,7 +500,7 @@ describe("byte-faithful recorder proxy", () => {
       body,
       {
         "content-type": "application/json",
-        "x-blackbox-session": "session-ancestry",
+        "x-tekrion-session": "session-ancestry",
       },
     );
     await proxy.flush();
@@ -496,8 +519,8 @@ describe("byte-faithful recorder proxy", () => {
       ),
       {
         "content-type": "application/json",
-        "x-blackbox-response-ancestor": "resp_normalized",
-        "x-blackbox-client-id": "different-client",
+        "x-tekrion-response-ancestor": "resp_normalized",
+        "x-tekrion-client-id": "different-client",
       },
     );
     await proxy.flush();
@@ -514,13 +537,13 @@ describe("byte-faithful recorder proxy", () => {
       "session-ancestry",
     ]);
     expect(
-      exchanges[1]?.requestHeaders["x-blackbox-response-ancestor"],
+      exchanges[1]?.requestHeaders["x-tekrion-response-ancestor"],
     ).toBeUndefined();
     expect(
-      upstream.observations[1]?.headers["x-blackbox-response-ancestor"],
+      upstream.observations[1]?.headers["x-tekrion-response-ancestor"],
     ).toBeUndefined();
     expect(
-      upstream.observations[1]?.headers["x-blackbox-client-id"],
+      upstream.observations[1]?.headers["x-tekrion-client-id"],
     ).toBeUndefined();
     expect(
       storage.events
@@ -541,16 +564,16 @@ describe("byte-faithful recorder proxy", () => {
       proxy.address()?.origin as string,
       "/v1/future-operation",
       Buffer.from("investigated"),
-      { "x-blackbox-session": "session-investigated" },
+      { "x-tekrion-session": "session-investigated" },
     );
     await requestBytes(
       proxy.address()?.origin as string,
       "/v1/future-operation",
       Buffer.from("analysis"),
       {
-        "x-blackbox-session": "session-investigated",
-        "x-blackbox-analysis-session": "analysis-run-1",
-        "x-blackbox-analysis-target": "session-investigated",
+        "x-tekrion-session": "session-investigated",
+        "x-tekrion-analysis-session": "analysis-run-1",
+        "x-tekrion-analysis-target": "session-investigated",
       },
     );
     await proxy.flush();
@@ -577,13 +600,13 @@ describe("byte-faithful recorder proxy", () => {
       .get(analysis?.id) as { id: string };
     const analysisRaw = storage.rawExchanges.getRequired(analysisRawRow.id);
     expect(
-      analysisRaw.requestHeaders["x-blackbox-analysis-session"],
+      analysisRaw.requestHeaders["x-tekrion-analysis-session"],
     ).toBeUndefined();
     expect(
-      upstream.observations[1]?.headers["x-blackbox-analysis-session"],
+      upstream.observations[1]?.headers["x-tekrion-analysis-session"],
     ).toBeUndefined();
     expect(
-      upstream.observations[1]?.headers["x-blackbox-session"],
+      upstream.observations[1]?.headers["x-tekrion-session"],
     ).toBeUndefined();
   });
 
@@ -954,7 +977,7 @@ describe("transport failure evidence", () => {
       Buffer.from('{"model":"fixture","input":"shutdown"}'),
       {
         "content-type": "application/json",
-        "x-blackbox-session": "session-shutdown-settlement",
+        "x-tekrion-session": "session-shutdown-settlement",
       },
     );
     await eventually(() => proxy.health().activeRequests === 1);
@@ -984,7 +1007,7 @@ describe("transport failure evidence", () => {
       clientDisconnects: 1,
     });
     await expect(
-      exportBbxArchive(storage, {
+      exportTekrionArchive(storage, {
         sessionId: "session-shutdown-settlement",
         profile: "share",
       }),

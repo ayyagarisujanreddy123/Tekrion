@@ -1,16 +1,16 @@
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   BlameAnalysisSchema,
   BlameResultSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type BlameAnalysis,
   type BlameConfidence,
   type BlameResult,
   type BlameTarget,
   type ContextCompleteness,
   type FileLocation,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 import {
   assessUserIntent,
@@ -92,7 +92,7 @@ export class DeterministicAnalysisError extends Error {
 }
 
 interface CandidateDocument {
-  readonly event: BlackBoxEvent;
+  readonly event: TekrionEvent;
   readonly excerpt: string;
   readonly text: string;
   readonly tokens: readonly string[];
@@ -102,7 +102,7 @@ function unique<T>(values: readonly T[]): T[] {
   return [...new Set(values)];
 }
 
-function normalizedVerb(event: BlackBoxEvent): string {
+function normalizedVerb(event: TekrionEvent): string {
   const operation = event.summary.operation;
   if (typeof operation === "string" && operation.trim().length > 0) {
     return operation.trim().toLowerCase();
@@ -131,7 +131,7 @@ function normalizedVerb(event: BlackBoxEvent): string {
   return suffix === undefined || suffix.length === 0 ? "act" : suffix;
 }
 
-function targetResult(event: BlackBoxEvent): string | undefined {
+function targetResult(event: TekrionEvent): string | undefined {
   if (typeof event.summary.success === "boolean") {
     return event.summary.success ? "succeeded" : "failed";
   }
@@ -145,7 +145,7 @@ function targetResult(event: BlackBoxEvent): string | undefined {
 }
 
 function normalizeTarget(
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   scope: string | undefined,
 ): BlameTarget {
   const verb = normalizedVerb(event);
@@ -178,10 +178,10 @@ function normalizeTarget(
 }
 
 function matchingInvocationScore(
-  call: BlackBoxEvent,
-  target: BlackBoxEvent,
+  call: TekrionEvent,
+  target: TekrionEvent,
   targetPath: string | undefined,
-  parent: BlackBoxEvent | undefined,
+  parent: TekrionEvent | undefined,
 ): number {
   let score = 0;
   if (
@@ -208,9 +208,9 @@ function matchingInvocationScore(
 }
 
 function findInvocation(
-  events: readonly BlackBoxEvent[],
-  target: BlackBoxEvent,
-): BlackBoxEvent {
+  events: readonly TekrionEvent[],
+  target: TekrionEvent,
+): TekrionEvent {
   if (target.type === "tool.call") {
     return target;
   }
@@ -235,7 +235,7 @@ function findInvocation(
   return calls[0]?.event ?? target;
 }
 
-function isEligibleCandidate(event: BlackBoxEvent): boolean {
+function isEligibleCandidate(event: TekrionEvent): boolean {
   return (
     ELIGIBLE_CANDIDATE_TYPES.has(event.type) ||
     event.type.startsWith("message.") ||
@@ -244,10 +244,10 @@ function isEligibleCandidate(event: BlackBoxEvent): boolean {
 }
 
 function candidateAvailable(
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   excerpt: string,
   input: DeterministicAnalysisInput,
-  events: readonly BlackBoxEvent[],
+  events: readonly TekrionEvent[],
 ): boolean {
   const context = input.context;
   if (
@@ -355,7 +355,7 @@ function instructionLikelihood(text: string, target: BlameTarget): number {
 
 function entityPathOverlap(
   text: string,
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   target: BlameTarget,
 ): number {
   const candidatePath = eventPath(event);
@@ -386,9 +386,9 @@ function entityPathOverlap(
 }
 
 function hardRelations(
-  event: BlackBoxEvent,
-  targetEvent: BlackBoxEvent,
-  invocation: BlackBoxEvent,
+  event: TekrionEvent,
+  targetEvent: TekrionEvent,
+  invocation: TekrionEvent,
   target: BlameTarget,
   contextIds: ReadonlySet<string>,
   suppliedEdges: readonly ProvenanceEdgeInput[],
@@ -482,7 +482,7 @@ function provenanceScore(relations: readonly string[]): number {
 }
 
 function candidateIntentConflict(
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   text: string,
   target: BlameTarget,
   userIntent: ReturnType<typeof assessUserIntent>,
@@ -519,10 +519,10 @@ function targetQuery(target: BlameTarget): string {
 
 function assessCandidates(
   documents: readonly CandidateDocument[],
-  targetEvent: BlackBoxEvent,
-  invocation: BlackBoxEvent,
+  targetEvent: TekrionEvent,
+  invocation: TekrionEvent,
   target: BlameTarget,
-  userEvents: readonly BlackBoxEvent[],
+  userEvents: readonly TekrionEvent[],
   input: DeterministicAnalysisInput,
 ): CandidateAssessment[] {
   const queryTokens = tokenize(targetQuery(target));
@@ -609,7 +609,7 @@ function assessCandidates(
     );
 }
 
-function candidateLocation(event: BlackBoxEvent): FileLocation | undefined {
+function candidateLocation(event: TekrionEvent): FileLocation | undefined {
   const path = eventPath(event);
   const startLine = event.summary.startLine;
   const endLine = event.summary.endLine;
@@ -632,7 +632,7 @@ function candidateLocation(event: BlackBoxEvent): FileLocation | undefined {
 
 function inferredContextCompleteness(
   input: DeterministicAnalysisInput,
-  invocation: BlackBoxEvent,
+  invocation: TekrionEvent,
   candidates: readonly CandidateAssessment[],
 ): ContextCompleteness {
   if (input.context !== undefined) {
@@ -711,9 +711,9 @@ function confidenceReasons(
 }
 
 function invocationToTargetRelation(
-  invocation: BlackBoxEvent,
-  target: BlackBoxEvent,
-  events: readonly BlackBoxEvent[],
+  invocation: TekrionEvent,
+  target: TekrionEvent,
+  events: readonly TekrionEvent[],
 ): string {
   const parent =
     target.parentId === undefined
@@ -733,9 +733,9 @@ function invocationToTargetRelation(
 
 function propagationFor(
   top: CandidateAssessment | undefined,
-  invocation: BlackBoxEvent,
-  target: BlackBoxEvent,
-  events: readonly BlackBoxEvent[],
+  invocation: TekrionEvent,
+  target: TekrionEvent,
+  events: readonly TekrionEvent[],
   suppliedEdges: readonly ProvenanceEdgeInput[],
 ): BlameResult["propagation"] {
   const propagation = suppliedEdges
@@ -798,12 +798,12 @@ function conclusionFor(
 
 function buildBlameResult(
   input: DeterministicAnalysisInput,
-  events: readonly BlackBoxEvent[],
-  targetEvent: BlackBoxEvent,
+  events: readonly TekrionEvent[],
+  targetEvent: TekrionEvent,
   target: BlameTarget,
-  invocation: BlackBoxEvent,
+  invocation: TekrionEvent,
   candidates: readonly CandidateAssessment[],
-  userEvents: readonly BlackBoxEvent[],
+  userEvents: readonly TekrionEvent[],
   candidateWindowTruncated: boolean,
 ): BlameResult {
   const top = candidates[0];
@@ -930,7 +930,7 @@ export class DeterministicAnalyzer {
   analyze(input: DeterministicAnalysisInput): BlameAnalysis {
     const session = SessionSchema.parse(input.session);
     const events = input.events
-      .map((event) => BlackBoxEventSchema.parse(event))
+      .map((event) => TekrionEventSchema.parse(event))
       .filter((event) => event.sessionId === session.id)
       .sort(
         (left, right) =>
@@ -1031,7 +1031,7 @@ export function analyzeDeterministically(
   return new DeterministicAnalyzer().analyze(input);
 }
 
-export function isAnalyzableTarget(event: BlackBoxEvent): boolean {
+export function isAnalyzableTarget(event: TekrionEvent): boolean {
   if (event.type === "tool.call" || event.type.startsWith("file.")) {
     return true;
   }
@@ -1040,14 +1040,12 @@ export function isAnalyzableTarget(event: BlackBoxEvent): boolean {
 }
 
 export function normalizedTargetForEvent(
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   scope?: string,
 ): BlameTarget {
-  return normalizeTarget(BlackBoxEventSchema.parse(event), scope);
+  return normalizeTarget(TekrionEventSchema.parse(event), scope);
 }
 
-export function eventContainsStructuredArguments(
-  event: BlackBoxEvent,
-): boolean {
+export function eventContainsStructuredArguments(event: TekrionEvent): boolean {
   return isRecord(event.summary.arguments) || isRecord(event.summary.args);
 }

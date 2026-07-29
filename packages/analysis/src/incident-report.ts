@@ -3,14 +3,14 @@ import { createHash } from "node:crypto";
 import {
   IncidentReportResultSchema,
   IncidentReportSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type BlameAnalysis,
   type ContextCompleteness,
   type IncidentReport,
   type IncidentReportResult,
   type ReportEvidenceReference,
   type Session,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 import {
   isAnalyzableTarget,
@@ -22,7 +22,7 @@ export const DETERMINISTIC_REPORT_VERSION = "deterministic-report-v1";
 
 export interface DeterministicReportInput {
   readonly session: Session;
-  readonly events: readonly BlackBoxEvent[];
+  readonly events: readonly TekrionEvent[];
   readonly blame?: BlameAnalysis;
   readonly generatedAt?: string;
   readonly limitations?: readonly string[];
@@ -34,7 +34,7 @@ function unique<T>(values: readonly T[]): T[] {
   return [...new Set(values)];
 }
 
-function targetPriority(event: BlackBoxEvent): number {
+function targetPriority(event: TekrionEvent): number {
   if (!isAnalyzableTarget(event)) {
     return -1;
   }
@@ -60,9 +60,9 @@ function targetPriority(event: BlackBoxEvent): number {
 }
 
 export function selectIncidentTarget(
-  events: readonly BlackBoxEvent[],
+  events: readonly TekrionEvent[],
   requestedEventId?: string,
-): BlackBoxEvent | undefined {
+): TekrionEvent | undefined {
   if (requestedEventId !== undefined) {
     const requested = events.find((event) => event.id === requestedEventId);
     if (requested === undefined) {
@@ -87,7 +87,7 @@ export function selectIncidentTarget(
     )[0];
 }
 
-function factualStatement(event: BlackBoxEvent): string {
+function factualStatement(event: TekrionEvent): string {
   const excerpt = eventExcerpt(event, 260);
   const path = eventPath(event);
   const operation =
@@ -140,9 +140,9 @@ function factualStatement(event: BlackBoxEvent): string {
 }
 
 function relevantTimelineEvents(
-  events: readonly BlackBoxEvent[],
+  events: readonly TekrionEvent[],
   blame: BlameAnalysis | undefined,
-): BlackBoxEvent[] {
+): TekrionEvent[] {
   if (blame === undefined) {
     return events
       .filter((event) => new Set(["observed", "derived"]).has(event.evidence))
@@ -373,7 +373,7 @@ function preventionActions(
 }
 
 function containmentAndRecovery(
-  events: readonly BlackBoxEvent[],
+  events: readonly TekrionEvent[],
   blame: BlameAnalysis | undefined,
 ): ReportEvidenceReference[] {
   if (blame === undefined || blame.blame.target.path === undefined) {
@@ -501,7 +501,7 @@ function escapeMarkdown(value: string): string {
 }
 
 function eventLink(eventId: string): string {
-  return `[\`${escapeMarkdown(eventId)}\`](blackbox://event/${encodeURIComponent(eventId)})`;
+  return `[\`${escapeMarkdown(eventId)}\`](tekrion://event/${encodeURIComponent(eventId)})`;
 }
 
 function referenceList(
@@ -518,7 +518,7 @@ function referenceList(
 
 export function renderIncidentReportMarkdown(report: IncidentReport): string {
   const lines = [
-    "# Black Box Incident Report",
+    "# Tekrion Incident Report",
     "",
     `> Session \`${escapeMarkdown(report.sessionId)}\` · generated ${escapeMarkdown(report.generatedAt)}`,
     "",

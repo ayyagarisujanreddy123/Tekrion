@@ -14,7 +14,7 @@ import { join } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 
-import { openBlackBoxStorage } from "@blackbox/storage";
+import { openTekrionStorage } from "@tekrion/storage";
 import { expect, it } from "vitest";
 
 const execute = promisify(execFile);
@@ -108,9 +108,9 @@ async function eventuallyStopped(pid: number): Promise<void> {
 }
 
 it("runs the packaged CLI and detached recorder end to end", async () => {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-packaged-e2e-"));
+  const root = await mkdtemp(join(tmpdir(), "tekrion-packaged-e2e-"));
   const workspace = await mkdtemp(
-    join(tmpdir(), "blackbox-packaged-workspace-e2e-"),
+    join(tmpdir(), "tekrion-packaged-workspace-e2e-"),
   );
   await writeFile(join(workspace, "delete-me.txt"), "tracked deletion\n");
   await execute("git", ["-C", workspace, "init", "--quiet"]);
@@ -119,15 +119,9 @@ it("runs the packaged CLI and detached recorder end to end", async () => {
     workspace,
     "config",
     "user.email",
-    "blackbox@example.test",
+    "tekrion@example.test",
   ]);
-  await execute("git", [
-    "-C",
-    workspace,
-    "config",
-    "user.name",
-    "Black Box E2E",
-  ]);
+  await execute("git", ["-C", workspace, "config", "user.name", "Tekrion E2E"]);
   await execute("git", ["-C", workspace, "add", "."]);
   await execute("git", [
     "-C",
@@ -221,7 +215,7 @@ it("runs the packaged CLI and detached recorder end to end", async () => {
     expect(viewerResponse.headers.get("content-security-policy")).toContain(
       "default-src 'none'",
     );
-    expect(viewerHtml).toContain("Black Box Cockpit");
+    expect(viewerHtml).toContain("Tekrion Cockpit");
     expect(viewerHtml).not.toContain(token);
     const viewerScriptPath = /<script[^>]+src="([^"]+\.js)"/u.exec(
       viewerHtml,
@@ -346,8 +340,8 @@ it("runs the packaged CLI and detached recorder end to end", async () => {
         fs.unlinkSync("delete-me.txt");
         fs.writeFileSync("created.txt", "packaged creation\\n");
         process.stdout.write(JSON.stringify({
-          sessionId: process.env.BLACKBOX_SESSION_ID,
-          proxyOrigin: process.env.BLACKBOX_PROXY_ORIGIN
+          sessionId: process.env.TEKRION_SESSION_ID,
+          proxyOrigin: process.env.TEKRION_PROXY_ORIGIN
         }));
       })().catch((error) => {
         process.stderr.write(String(error));
@@ -433,7 +427,7 @@ it("runs the packaged CLI and detached recorder end to end", async () => {
       aiAttempt: { status: "not-requested" },
     });
     expect(packagedReport.report.targetEventId).toBeDefined();
-    expect(packagedReport.markdown).toContain("# Black Box Incident Report");
+    expect(packagedReport.markdown).toContain("# Tekrion Incident Report");
 
     const stopped = await runCli(["stop", "--home", root]);
     expect(stopped.stderr).toBe("");
@@ -443,8 +437,8 @@ it("runs the packaged CLI and detached recorder end to end", async () => {
       code: "ENOENT",
     });
 
-    const storage = await openBlackBoxStorage({
-      databasePath: join(root, "blackbox.sqlite"),
+    const storage = await openTekrionStorage({
+      databasePath: join(root, "tekrion.sqlite"),
       dataDirectory: join(root, "data"),
       recoverIncompleteExchanges: false,
     });
@@ -558,7 +552,7 @@ it("runs the packaged CLI and detached recorder end to end", async () => {
 
 it("runs the packaged offline fallback demo twice from a clean reset", async () => {
   const outputRoot = await mkdtemp(
-    join(tmpdir(), "blackbox-demo-packaged-e2e-"),
+    join(tmpdir(), "tekrion-demo-packaged-e2e-"),
   );
   try {
     for (let run = 0; run < 2; run += 1) {
@@ -571,12 +565,12 @@ it("runs the packaged offline fallback demo twice from a clean reset", async () 
           maxBuffer: 16 * 1024 * 1024,
         },
       );
-      expect(result.stdout).toContain("# Black Box Incident Report");
+      expect(result.stdout).toContain("# Tekrion Incident Report");
       expect(result.stdout).toContain("event-read-result");
       expect(result.stderr).toContain("Offline fixture ready");
       await expect(
         readFile(join(outputRoot, "incident-report.md"), "utf8"),
-      ).resolves.toContain("# Black Box Incident Report");
+      ).resolves.toContain("# Tekrion Incident Report");
       await expect(
         readFile(join(outputRoot, "incident-report.json"), "utf8"),
       ).resolves.toContain('"schemaVersion": 1');

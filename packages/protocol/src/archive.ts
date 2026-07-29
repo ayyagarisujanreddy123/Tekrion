@@ -9,9 +9,13 @@ import {
 } from "./common.js";
 import { SessionStatusSchema } from "./session.js";
 
-export const BbxArchiveProfileSchema = z.enum(["share", "forensic"]);
+export const TekrionArchiveProfileSchema = z.enum(["share", "forensic"]);
+export const TekrionArchiveFormatSchema = z.enum([
+  "tekrion-tkr",
+  "blackbox-bbx",
+]);
 
-export const BbxArchiveEntryPathSchema = z
+export const TekrionArchiveEntryPathSchema = z
   .string()
   .min(1)
   .max(512)
@@ -28,23 +32,23 @@ export const BbxArchiveEntryPathSchema = z
     "Archive entry paths must be normalized relative paths.",
   );
 
-export const BbxArchiveEntryDescriptorSchema = z
+export const TekrionArchiveEntryDescriptorSchema = z
   .object({
-    path: BbxArchiveEntryPathSchema,
+    path: TekrionArchiveEntryPathSchema,
     mediaType: z.string().trim().min(1).max(256),
     byteLength: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
     sha256: Sha256Schema,
   })
   .strict();
 
-export const BbxArchiveBlobSchema = z
+export const TekrionArchiveBlobSchema = z
   .object({
-    entryPath: BbxArchiveEntryPathSchema,
+    entryPath: TekrionArchiveEntryPathSchema,
     reference: BlobReferenceSchema,
   })
   .strict();
 
-export const BbxArchiveRecordCountsSchema = z
+export const TekrionArchiveRecordCountsSchema = z
   .object({
     sessions: z.literal(1),
     events: z.number().int().nonnegative(),
@@ -59,19 +63,19 @@ export const BbxArchiveRecordCountsSchema = z
   })
   .strict();
 
-export const BbxArchiveManifestSchema = z
+export const TekrionArchiveManifestSchema = z
   .object({
     schemaVersion: SchemaVersionSchema,
-    format: z.literal("blackbox-bbx"),
+    format: TekrionArchiveFormatSchema,
     archiveId: IdentifierSchema,
     exportedAt: IsoTimestampSchema,
-    profile: BbxArchiveProfileSchema,
+    profile: TekrionArchiveProfileSchema,
     sourceSessionId: IdentifierSchema,
     sourceSessionStatus: SessionStatusSchema,
     storageSchemaVersion: z.number().int().nonnegative(),
-    entries: z.array(BbxArchiveEntryDescriptorSchema).max(100_000),
-    blobs: z.array(BbxArchiveBlobSchema).max(100_000),
-    counts: BbxArchiveRecordCountsSchema,
+    entries: z.array(TekrionArchiveEntryDescriptorSchema).max(100_000),
+    blobs: z.array(TekrionArchiveBlobSchema).max(100_000),
+    counts: TekrionArchiveRecordCountsSchema,
     totalBytes: z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER),
     redaction: z
       .object({
@@ -128,20 +132,20 @@ export const BbxArchiveManifestSchema = z
     }
   });
 
-export const BbxArchiveEntrySchema = z
+export const TekrionArchiveEntrySchema = z
   .object({
-    path: BbxArchiveEntryPathSchema,
+    path: TekrionArchiveEntryPathSchema,
     encoding: z.literal("base64"),
     data: z.string().max(750_000_000),
   })
   .strict();
 
-export const BbxArchiveSchema = z
+export const TekrionArchiveSchema = z
   .object({
     schemaVersion: SchemaVersionSchema,
-    manifest: BbxArchiveManifestSchema,
+    manifest: TekrionArchiveManifestSchema,
     manifestSha256: Sha256Schema,
-    entries: z.array(BbxArchiveEntrySchema).max(100_000),
+    entries: z.array(TekrionArchiveEntrySchema).max(100_000),
   })
   .strict()
   .superRefine((archive, context) => {
@@ -167,12 +171,12 @@ export const BbxArchiveSchema = z
     }
   });
 
-export const BbxArchiveImportResultSchema = z
+export const TekrionArchiveImportResultSchema = z
   .object({
     schemaVersion: SchemaVersionSchema,
     archiveId: IdentifierSchema,
     sessionId: IdentifierSchema,
-    profile: BbxArchiveProfileSchema,
+    profile: TekrionArchiveProfileSchema,
     importedAt: IsoTimestampSchema,
     readOnly: z.literal(true),
     eventCount: z.number().int().nonnegative(),
@@ -180,14 +184,16 @@ export const BbxArchiveImportResultSchema = z
   })
   .strict();
 
-export type BbxArchive = z.infer<typeof BbxArchiveSchema>;
-export type BbxArchiveBlob = z.infer<typeof BbxArchiveBlobSchema>;
-export type BbxArchiveEntry = z.infer<typeof BbxArchiveEntrySchema>;
-export type BbxArchiveEntryDescriptor = z.infer<
-  typeof BbxArchiveEntryDescriptorSchema
+export type TekrionArchive = z.infer<typeof TekrionArchiveSchema>;
+export type TekrionArchiveBlob = z.infer<typeof TekrionArchiveBlobSchema>;
+export type TekrionArchiveEntry = z.infer<typeof TekrionArchiveEntrySchema>;
+export type TekrionArchiveEntryDescriptor = z.infer<
+  typeof TekrionArchiveEntryDescriptorSchema
 >;
-export type BbxArchiveImportResult = z.infer<
-  typeof BbxArchiveImportResultSchema
+export type TekrionArchiveImportResult = z.infer<
+  typeof TekrionArchiveImportResultSchema
 >;
-export type BbxArchiveManifest = z.infer<typeof BbxArchiveManifestSchema>;
-export type BbxArchiveProfile = z.infer<typeof BbxArchiveProfileSchema>;
+export type TekrionArchiveManifest = z.infer<
+  typeof TekrionArchiveManifestSchema
+>;
+export type TekrionArchiveProfile = z.infer<typeof TekrionArchiveProfileSchema>;

@@ -13,12 +13,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
-  BlackBoxDaemon,
+  TekrionDaemon,
   readControlToken,
   resolveDaemonPaths,
   type DaemonPaths,
-} from "@blackbox/daemon";
-import { openBlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/daemon";
+import { openTekrionStorage } from "@tekrion/storage";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -50,11 +50,11 @@ class CapturedOutput implements CliOutput {
 }
 
 const roots: string[] = [];
-const daemons: BlackBoxDaemon[] = [];
+const daemons: TekrionDaemon[] = [];
 const servers: Server[] = [];
 
 async function temporaryRoot(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-cli-test-"));
+  const root = await mkdtemp(join(tmpdir(), "tekrion-cli-test-"));
   roots.push(root);
   return root;
 }
@@ -153,18 +153,23 @@ describe("CLI initialization and configuration", () => {
     expect((await stat(paths.databasePath)).mode & 0o777).toBe(0o600);
   });
 
-  it("uses BLACKBOX_UPSTREAM_URL but never reuses OPENAI_BASE_URL", () => {
+  it("uses Tekrion upstream configuration and accepts the legacy alias", () => {
     const parsed = parseCliArguments(["start", "--proxy-port", "0"]);
     const ignored = resolveStartConfiguration(parsed.flags, {
       OPENAI_BASE_URL: "http://127.0.0.1:9",
     });
     const selected = resolveStartConfiguration(parsed.flags, {
-      BLACKBOX_UPSTREAM_URL: "http://127.0.0.1:8080",
+      TEKRION_UPSTREAM_URL: "http://127.0.0.1:8080",
+      BLACKBOX_UPSTREAM_URL: "http://127.0.0.1:8081",
       OPENAI_BASE_URL: "http://127.0.0.1:9",
+    });
+    const legacy = resolveStartConfiguration(parsed.flags, {
+      BLACKBOX_UPSTREAM_URL: "http://127.0.0.1:8081",
     });
 
     expect(ignored.proxy.upstream.origin).toBe("https://api.openai.com");
     expect(selected.proxy.upstream.origin).toBe("http://127.0.0.1:8080");
+    expect(legacy.proxy.upstream.origin).toBe("http://127.0.0.1:8081");
   });
 
   it("returns a usage error for unknown flags", async () => {
@@ -175,7 +180,7 @@ describe("CLI initialization and configuration", () => {
       2,
     );
     expect(stderr.value).toContain("Unknown flag --mystery");
-    expect(stderr.value).toContain("blackbox --help");
+    expect(stderr.value).toContain("tekrion --help");
   });
 
   it("makes quota and dry-run retention controls visible in help", async () => {
@@ -185,8 +190,8 @@ describe("CLI initialization and configuration", () => {
     expect(await runCli(["--help"], runtime(stdout, stderr))).toBe(0);
     expect(stderr.value).toBe("");
     expect(stdout.value).toContain("--max-stored-bytes N");
-    expect(stdout.value).toContain("blackbox delete <session-id> [--yes]");
-    expect(stdout.value).toContain("blackbox prune [--older-than-days N]");
+    expect(stdout.value).toContain("tekrion delete <session-id> [--yes]");
+    expect(stdout.value).toContain("tekrion prune [--older-than-days N]");
     expect(stdout.value).toContain("Apply a displayed delete/prune plan");
   });
 });
@@ -200,7 +205,7 @@ describe("CLI daemon lifecycle", () => {
     let launches = 0;
     const launch = async (configuration: ResolvedStartConfiguration) => {
       launches += 1;
-      const daemon = new BlackBoxDaemon({
+      const daemon = new TekrionDaemon({
         homeDirectory: configuration.paths.homeDirectory,
         proxy: {
           ...configuration.proxy,
@@ -301,7 +306,7 @@ describe("CLI daemon lifecycle", () => {
     const stdout = new CapturedOutput();
     const stderr = new CapturedOutput();
     const launch = async (configuration: ResolvedStartConfiguration) => {
-      const daemon = new BlackBoxDaemon({
+      const daemon = new TekrionDaemon({
         homeDirectory: configuration.paths.homeDirectory,
         proxy: {
           ...configuration.proxy,
@@ -330,7 +335,7 @@ describe("CLI daemon lifecycle", () => {
         await new Promise((resolve) => setTimeout(resolve, 100));
         process.stdout.write(JSON.stringify({
           base: process.env.OPENAI_BASE_URL,
-          session: process.env.BLACKBOX_SESSION_ID,
+          session: process.env.TEKRION_SESSION_ID,
           status: response.status,
           body
         }));
@@ -374,12 +379,12 @@ describe("CLI daemon lifecycle", () => {
       status: 200,
       body: '{"upstream":true}',
     });
-    expect(childOutput.base).toContain("/.blackbox/session/");
+    expect(childOutput.base).toContain("/.tekrion/session/");
     expect(childOutput.base).toMatch(/\/v1$/u);
     expect(stderr.value).toBe("child-stderr\n");
 
     const paths = resolveDaemonPaths(root);
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath: paths.databasePath,
       dataDirectory: paths.dataDirectory,
       recoverIncompleteExchanges: false,
@@ -457,14 +462,16 @@ describe("CLI daemon lifecycle", () => {
     const root = await temporaryRoot();
     const workspace = await temporaryRoot();
     const upstreamOrigin = await listen(
-      createServer((request) => {
+      createServer((request, response) => {
         request.resume();
+        response.writeHead(200, { "content-type": "text/event-stream" });
+        response.write('data: {"type":"response.created"}\n\n');
       }),
     );
     const stdout = new CapturedOutput();
     const stderr = new CapturedOutput();
     const launch = async (configuration: ResolvedStartConfiguration) => {
-      const daemon = new BlackBoxDaemon({
+      const daemon = new TekrionDaemon({
         homeDirectory: configuration.paths.homeDirectory,
         proxy: {
           ...configuration.proxy,
@@ -491,10 +498,14 @@ describe("CLI daemon lifecycle", () => {
           "content-length": body.length
         }
       });
-      request.on("error", () => undefined);
+      request.on("response", (response) => {
+        response.once("data", () => process.exit(0));
+        response.resume();
+      });
+      request.on("error", () => process.exit(2));
       request.end(body);
-      process.stdout.write(process.env.BLACKBOX_SESSION_ID);
-      setTimeout(() => process.exit(0), 100);
+      process.stdout.write(process.env.TEKRION_SESSION_ID);
+      setTimeout(() => process.exit(3), 10000);
     `;
 
     expect(
@@ -524,7 +535,7 @@ describe("CLI daemon lifecycle", () => {
     expect(sessionId).toMatch(/^session-run-/u);
     expect(stderr.value).toBe("");
     const paths = resolveDaemonPaths(root);
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath: paths.databasePath,
       dataDirectory: paths.dataDirectory,
       recoverIncompleteExchanges: false,
@@ -555,7 +566,7 @@ describe("CLI daemon lifecycle", () => {
     }
 
     stdout.clear();
-    const archivePath = join(root, "settled-run.bbx");
+    const archivePath = join(root, "settled-run.tkr");
     expect(
       await runCli(
         [
@@ -574,7 +585,7 @@ describe("CLI daemon lifecycle", () => {
     expect(stdout.value).toContain("Exported share archive");
     expect((await stat(archivePath)).size).toBeGreaterThan(0);
     expect(stderr.value).toBe("");
-  }, 15_000);
+  }, 20_000);
 
   it("routes a Claude session to its own upstream through an existing daemon", async () => {
     const root = await temporaryRoot();
@@ -616,7 +627,7 @@ describe("CLI daemon lifecycle", () => {
     const stdout = new CapturedOutput();
     const stderr = new CapturedOutput();
     const launch = async (configuration: ResolvedStartConfiguration) => {
-      const daemon = new BlackBoxDaemon({
+      const daemon = new TekrionDaemon({
         homeDirectory: configuration.paths.homeDirectory,
         proxy: configuration.proxy,
         control: {
@@ -665,8 +676,8 @@ describe("CLI daemon lifecycle", () => {
         });
         process.stdout.write(JSON.stringify({
           base: process.env.ANTHROPIC_BASE_URL,
-          session: process.env.BLACKBOX_SESSION_ID,
-          agent: process.env.BLACKBOX_AGENT,
+          session: process.env.TEKRION_SESSION_ID,
+          agent: process.env.TEKRION_AGENT,
           status: response.status,
           body: await response.json()
         }));
@@ -711,7 +722,7 @@ describe("CLI daemon lifecycle", () => {
       agent: "claude",
       status: 200,
     });
-    expect(childOutput.base).toContain("/.blackbox/session/");
+    expect(childOutput.base).toContain("/.tekrion/session/");
     expect(childOutput.base).not.toMatch(/\/v1$/u);
     expect(openAiRequests).toBe(0);
     expect(anthropicPath).toBe("/v1/messages");
@@ -719,7 +730,7 @@ describe("CLI daemon lifecycle", () => {
     expect(stderr.value).toBe("");
 
     const paths = resolveDaemonPaths(root);
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath: paths.databasePath,
       dataDirectory: paths.dataDirectory,
       recoverIncompleteExchanges: false,
@@ -764,7 +775,7 @@ describe("CLI daemon lifecycle", () => {
     const stderr = new CapturedOutput();
     const signalSource = new EventEmitter();
     const launch = async (configuration: ResolvedStartConfiguration) => {
-      const daemon = new BlackBoxDaemon({
+      const daemon = new TekrionDaemon({
         homeDirectory: configuration.paths.homeDirectory,
         proxy: configuration.proxy,
         control: {
@@ -821,7 +832,7 @@ describe("CLI daemon lifecycle", () => {
     expect(signalSource.listenerCount("SIGTERM")).toBe(0);
 
     const paths = resolveDaemonPaths(root);
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath: paths.databasePath,
       dataDirectory: paths.dataDirectory,
       recoverIncompleteExchanges: false,
@@ -865,7 +876,7 @@ describe("CLI cockpit opening", () => {
     let launches = 0;
     const launch = async (configuration: ResolvedStartConfiguration) => {
       launches += 1;
-      const daemon = new BlackBoxDaemon({
+      const daemon = new TekrionDaemon({
         homeDirectory: configuration.paths.homeDirectory,
         proxy: configuration.proxy,
         control: {
@@ -887,7 +898,7 @@ describe("CLI cockpit opening", () => {
     };
 
     expect(await runCli(["init", "--home", root], cliRuntime)).toBe(0);
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath: paths.databasePath,
       dataDirectory: paths.dataDirectory,
       recoverIncompleteExchanges: false,
@@ -949,7 +960,7 @@ describe("CLI cockpit opening", () => {
       new URLSearchParams({ token, session: "session-cockpit" }),
     );
     expect(stdout.value).toBe(
-      "Opened Black Box cockpit for session session-cockpit.\n",
+      "Opened Tekrion cockpit for session session-cockpit.\n",
     );
     expect(stdout.value).not.toContain(token);
     expect(stderr.value).toBe("");
@@ -958,7 +969,7 @@ describe("CLI cockpit opening", () => {
   it("refuses to place a control token in a non-loopback viewer URL", () => {
     expect(() =>
       createViewerUrl("https://attacker.example", "a".repeat(43)),
-    ).toThrow("Refusing to open a non-loopback Black Box control origin");
+    ).toThrow("Refusing to open a non-loopback Tekrion control origin");
   });
 });
 
@@ -972,7 +983,7 @@ describe("CLI canonical inspection", () => {
     const startedAt = "2026-07-16T12:00:00.000Z";
 
     expect(await runCli(["init", "--home", root], cliRuntime)).toBe(0);
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath: paths.databasePath,
       dataDirectory: paths.dataDirectory,
       recoverIncompleteExchanges: false,
@@ -1133,7 +1144,7 @@ describe("CLI canonical inspection", () => {
     const startedAt = "2026-07-18T12:00:00.000Z";
 
     expect(await runCli(["init", "--home", root], cliRuntime)).toBe(0);
-    const storage = await openBlackBoxStorage({
+    const storage = await openTekrionStorage({
       databasePath: paths.databasePath,
       dataDirectory: paths.dataDirectory,
       recoverIncompleteExchanges: false,
@@ -1215,8 +1226,8 @@ describe("CLI canonical inspection", () => {
         cliRuntime,
       ),
     ).toBe(0);
-    expect(stdout.value).toContain("# Black Box Incident Report");
-    expect(stdout.value).toContain("blackbox://event/event-report-delete");
+    expect(stdout.value).toContain("# Tekrion Incident Report");
+    expect(stdout.value).toContain("tekrion://event/event-report-delete");
 
     stdout.clear();
     stderr.clear();
@@ -1255,9 +1266,9 @@ describe("CLI canonical inspection", () => {
         {
           ...cliRuntime,
           environment: {
-            BLACKBOX_ANALYSIS_API_KEY: "dedicated-analysis-key",
-            BLACKBOX_ANALYSIS_MODEL: "fixture-model",
-            BLACKBOX_ANALYSIS_BASE_URL:
+            TEKRION_ANALYSIS_API_KEY: "dedicated-analysis-key",
+            TEKRION_ANALYSIS_MODEL: "fixture-model",
+            TEKRION_ANALYSIS_BASE_URL:
               "https://user:password@analysis.example/v1/",
           },
         },
@@ -1298,7 +1309,7 @@ describe("CLI canonical inspection", () => {
     const sourceRoot = await temporaryRoot();
     const destinationRoot = await temporaryRoot();
     const outputRoot = await temporaryRoot();
-    const archivePath = join(outputRoot, "fixture.bbx");
+    const archivePath = join(outputRoot, "fixture.tkr");
     const stdout = new CapturedOutput();
     const stderr = new CapturedOutput();
     const cliRuntime: Partial<CliRuntime> = {
@@ -1310,7 +1321,7 @@ describe("CLI canonical inspection", () => {
       0,
     );
     const sourcePaths = resolveDaemonPaths(sourceRoot);
-    const source = await openBlackBoxStorage({
+    const source = await openTekrionStorage({
       databasePath: sourcePaths.databasePath,
       dataDirectory: sourcePaths.dataDirectory,
       recoverIncompleteExchanges: false,
@@ -1423,7 +1434,7 @@ describe("CLI canonical inspection", () => {
       ),
     ).toBe(0);
     expect(JSON.parse(stdout.value)).toMatchObject({ applied: false });
-    let destination = await openBlackBoxStorage({
+    let destination = await openTekrionStorage({
       databasePath: resolveDaemonPaths(destinationRoot).databasePath,
       dataDirectory: resolveDaemonPaths(destinationRoot).dataDirectory,
       recoverIncompleteExchanges: false,
@@ -1445,7 +1456,7 @@ describe("CLI canonical inspection", () => {
         cliRuntime,
       ),
     ).toBe(0);
-    destination = await openBlackBoxStorage({
+    destination = await openTekrionStorage({
       databasePath: resolveDaemonPaths(destinationRoot).databasePath,
       dataDirectory: resolveDaemonPaths(destinationRoot).dataDirectory,
       recoverIncompleteExchanges: false,
@@ -1488,15 +1499,15 @@ describe("CLI canonical inspection", () => {
         "export",
         "session-id",
         "--output",
-        "fixture.bbx",
+        "fixture.tkr",
         "--profile",
         "forensic",
         "--force",
       ]),
     ).toMatchObject({ command: "export", positionals: ["session-id"] });
-    expect(parseCliArguments(["import", "fixture.bbx"])).toMatchObject({
+    expect(parseCliArguments(["import", "fixture.tkr"])).toMatchObject({
       command: "import",
-      positionals: ["fixture.bbx"],
+      positionals: ["fixture.tkr"],
     });
     expect(parseCliArguments(["delete", "session-id", "--yes"])).toMatchObject({
       command: "delete",
@@ -1506,7 +1517,7 @@ describe("CLI canonical inspection", () => {
       parseCliArguments(["prune", "--max-bytes", "1024", "--yes"]),
     ).toMatchObject({ command: "prune", positionals: [] });
     expect(() =>
-      parseCliArguments(["import", "fixture.bbx", "--force"]),
+      parseCliArguments(["import", "fixture.tkr", "--force"]),
     ).toThrow("not valid for import");
   });
 });

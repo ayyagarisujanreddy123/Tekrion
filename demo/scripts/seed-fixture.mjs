@@ -14,13 +14,13 @@ const transcriptPath = join(
 );
 
 export async function seedFixture(home) {
-  const [{ resolveDaemonPaths }, { openBlackBoxStorage }] = await Promise.all([
+  const [{ resolveDaemonPaths }, { openTekrionStorage }] = await Promise.all([
     import("../../apps/daemon/dist/index.js"),
     import("../../packages/storage/dist/index.js"),
   ]);
   const transcript = JSON.parse(await readFile(transcriptPath, "utf8"));
   const paths = resolveDaemonPaths(resolve(home));
-  const storage = await openBlackBoxStorage({
+  const storage = await openTekrionStorage({
     databasePath: paths.databasePath,
     dataDirectory: paths.dataDirectory,
     recoverIncompleteExchanges: false,
@@ -84,7 +84,7 @@ if (
     );
   } catch (error) {
     process.stderr.write(
-      `blackbox demo seed: ${error instanceof Error ? error.message : String(error)}\n`,
+      `tekrion demo seed: ${error instanceof Error ? error.message : String(error)}\n`,
     );
     process.exitCode = 1;
   }

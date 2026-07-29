@@ -1,6 +1,6 @@
 # npm release runbook
 
-This runbook covers the first public release of the seven Black Box runtime
+This runbook covers the first public release of the seven Tekrion runtime
 packages. It is an operational procedure, not authorization to publish, push,
 create credentials, change package settings, or create a release.
 
@@ -11,20 +11,20 @@ workspaces are development-only and must remain private.
 
 Publish the runtime packages in dependency order:
 
-1. `@blackbox/protocol`
-2. `@blackbox/storage`
-3. `@blackbox/normalizers`
-4. `@blackbox/context`
-5. `@blackbox/analysis`
-6. `@blackbox/daemon`
-7. `@blackbox/cli`
+1. `@tekrion/protocol`
+2. `@tekrion/storage`
+3. `@tekrion/normalizers`
+4. `@tekrion/context`
+5. `@tekrion/analysis`
+6. `@tekrion/daemon`
+7. `@tekrion/cli`
 
 All seven packages use one version and exact internal dependency versions. The CLI
 must be published last.
 
 ## Hard gate: confirm the npm namespace
 
-The package names require ownership of, or write access to, the npm `@blackbox`
+The package names require ownership of, or write access to, the npm `@tekrion`
 scope. A registry `E404` only shows that a package version is not public; it does
 not prove permission to create it.
 
@@ -32,7 +32,7 @@ Before changing any runtime `private` flag:
 
 1. Sign in with `npm login` and verify the intended identity with `npm whoami`.
 2. In npm organization settings, confirm that identity owns or administers the
-   `blackbox` organization, or belongs to a team with package read/write access.
+   `tekrion` organization, or belongs to a team with package read/write access.
 3. Enable two-factor authentication and store the recovery codes safely.
 4. If the scope is not controlled, choose a controlled scope and rename all seven
    packages, internal dependencies, TypeScript imports, lockfile entries, scripts,
@@ -112,10 +112,10 @@ Verify the CLI from a clean temporary installation:
 
 ```bash
 verify_dir="$(mktemp -d)"
-npm install --prefix "$verify_dir" @blackbox/cli@next
-"$verify_dir/node_modules/.bin/blackbox" --version
-"$verify_dir/node_modules/.bin/blackbox" init --home "$verify_dir/home"
-"$verify_dir/node_modules/.bin/blackbox" sessions --home "$verify_dir/home" --json
+npm install --prefix "$verify_dir" @tekrion/cli@next
+"$verify_dir/node_modules/.bin/tekrion" --version
+"$verify_dir/node_modules/.bin/tekrion" init --home "$verify_dir/home"
+"$verify_dir/node_modules/.bin/tekrion" sessions --home "$verify_dir/home" --json
 (cd "$verify_dir" && npm audit signatures)
 ```
 
@@ -129,14 +129,14 @@ After registry and platform verification, and only with explicit authorization:
 
 1. Create and verify a signed `v0.1.0` tag on the exact tested SHA.
 2. Push that tag.
-3. Promote `@blackbox/protocol`, storage, normalizers, context, analysis, daemon,
+3. Promote `@tekrion/protocol`, storage, normalizers, context, analysis, daemon,
    and finally CLI from `next` to `latest`.
-4. Install `@blackbox/cli@latest` in another clean directory and repeat the CLI
+4. Install `@tekrion/cli@latest` in another clean directory and repeat the CLI
    checks.
 5. Publish the GitHub release with the supported protocols, capture levels, privacy
    warning, Node requirement, limitations, changelog, and security links.
 
-Never attach real `.bbx` evidence, local databases, credentials, recordings, or
+Never attach real `.tkr` evidence, local databases, credentials, recordings, or
 machine-specific configuration to a release.
 
 ## Replace bootstrap credentials with trusted publishing
@@ -150,13 +150,13 @@ Immediately after the first successful publication:
 
    - provider: GitHub Actions;
    - owner: `ayyagarisujanreddy123`;
-   - repository: `Black-Box`;
+   - repository: `Tekrion`;
    - workflow filename: `publish.yml`;
    - environment: `npm-production`;
    - allowed action: `npm publish`.
 
 5. Use a GitHub-hosted runner, `id-token: write`, Node.js 22.15 or newer, and npm
-   11.5.1 or newer. This satisfies both Black Box's runtime contract and npm's
+   11.5.1 or newer. This satisfies both Tekrion's runtime contract and npm's
    lower trusted-publishing minimum. The permanent publishing job must not receive
    `NODE_AUTH_TOKEN` or another write credential.
 6. Verify one trusted publication before configuring packages to disallow ordinary

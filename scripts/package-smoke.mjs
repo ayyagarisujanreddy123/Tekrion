@@ -22,6 +22,7 @@ const npmCliPath = process.env.npm_execpath;
 const runtimePackageNames = new Set(runtimePackages.map(({ name }) => name));
 const forbiddenPackagePaths = [
   /(^|\/)(?:src|test|tests|__tests__)(\/|$)/,
+  /(?:blackbox|bbx)/i,
   /\.map$/,
   /\.tsbuildinfo$/,
   /(^|\/)\.env(?:\.|$)/,
@@ -70,7 +71,7 @@ function validatePackageContents(result) {
     `${result.name} lacks dist/index.d.ts`,
   );
 
-  if (result.name === "@blackbox/cli") {
+  if (result.name === "@tekrion/cli") {
     assert.ok(
       paths.includes("dist/THIRD_PARTY_NOTICES"),
       "CLI lacks bundled dependency notices",
@@ -142,7 +143,7 @@ async function validatePackageManifests() {
     for (const [dependency, version] of Object.entries(
       manifest.dependencies ?? {},
     )) {
-      if (!dependency.startsWith("@blackbox/")) {
+      if (!dependency.startsWith("@tekrion/")) {
         continue;
       }
       assert.ok(
@@ -163,9 +164,7 @@ async function run() {
   const rootManifest = JSON.parse(
     await readFile(join(repositoryRoot, "package.json"), "utf8"),
   );
-  const temporaryRoot = await mkdtemp(
-    join(tmpdir(), "blackbox-package-smoke-"),
-  );
+  const temporaryRoot = await mkdtemp(join(tmpdir(), "tekrion-package-smoke-"));
   try {
     const packDirectory = join(temporaryRoot, "packages");
     const installDirectory = join(temporaryRoot, "install");
@@ -194,7 +193,7 @@ async function run() {
 
     await writeFile(
       join(installDirectory, "package.json"),
-      `${JSON.stringify({ name: "blackbox-package-smoke", private: true }, null, 2)}\n`,
+      `${JSON.stringify({ name: "tekrion-package-smoke", private: true }, null, 2)}\n`,
     );
     await executeNpm(
       [
@@ -212,13 +211,13 @@ async function run() {
       installDirectory,
       "node_modules",
       ".bin",
-      process.platform === "win32" ? "blackbox.cmd" : "blackbox",
+      process.platform === "win32" ? "tekrion.cmd" : "tekrion",
     );
     await access(binaryShim);
     const installedCli = join(
       installDirectory,
       "node_modules",
-      "@blackbox",
+      "@tekrion",
       "cli",
       "dist",
       "bin.js",
@@ -227,7 +226,7 @@ async function run() {
       cwd: installDirectory,
       maxBuffer: 20 * 1024 * 1024,
     });
-    assert.match(help.stdout, /Usage:\s+blackbox/);
+    assert.match(help.stdout, /Usage:\s+tekrion/);
     const version = await execute(
       process.execPath,
       [installedCli, "--version"],
@@ -241,10 +240,10 @@ async function run() {
     const installedBin = await readFile(installedCli, "utf8");
     assert.match(installedBin, /^#!\/usr\/bin\/env node\r?\n/u);
 
-    const blackBoxHome = join(temporaryRoot, "home");
+    const tekrionHome = join(temporaryRoot, "home");
     await execute(
       process.execPath,
-      [installedCli, "init", "--home", blackBoxHome],
+      [installedCli, "init", "--home", tekrionHome],
       {
         cwd: installDirectory,
         maxBuffer: 20 * 1024 * 1024,
@@ -252,7 +251,7 @@ async function run() {
     );
     const sessions = await execute(
       process.execPath,
-      [installedCli, "sessions", "--home", blackBoxHome, "--json"],
+      [installedCli, "sessions", "--home", tekrionHome, "--json"],
       { cwd: installDirectory, maxBuffer: 20 * 1024 * 1024 },
     );
     assert.deepEqual(JSON.parse(sessions.stdout), []);

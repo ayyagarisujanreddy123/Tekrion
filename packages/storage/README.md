@@ -1,16 +1,16 @@
-# `@blackbox/storage`
+# `@tekrion/storage`
 
-The storage package is the durable local Black Box evidence journal. It can be used
-independently of the daemon and viewer, although it is primarily a Black Box
+The storage package is the durable local Tekrion evidence journal. It can be used
+independently of the daemon and viewer, although it is primarily a Tekrion
 runtime component. Most users should install
-[`@blackbox/cli`](https://www.npmjs.com/package/@blackbox/cli) instead.
+[`@tekrion/cli`](https://www.npmjs.com/package/@tekrion/cli) instead.
 
 ```ts
-import { openBlackBoxStorage } from "@blackbox/storage";
+import { openTekrionStorage } from "@tekrion/storage";
 
-const storage = await openBlackBoxStorage({
-  databasePath: "/path/to/blackbox.sqlite",
-  dataDirectory: "/path/to/blackbox-data",
+const storage = await openTekrionStorage({
+  databasePath: "/path/to/tekrion.sqlite",
+  dataDirectory: "/path/to/tekrion-data",
 });
 
 try {
@@ -35,7 +35,7 @@ directory from another process.
 
 ## Project links
 
-- [Black Box repository](https://github.com/ayyagarisujanreddy123/Black-Box)
-- [Storage architecture](https://github.com/ayyagarisujanreddy123/Black-Box/blob/main/docs/decisions/0002-crash-safe-local-journal.md)
-- [Security policy](https://github.com/ayyagarisujanreddy123/Black-Box/security/policy)
-- [Apache-2.0 license](https://github.com/ayyagarisujanreddy123/Black-Box/blob/main/LICENSE)
+- [Tekrion repository](https://github.com/ayyagarisujanreddy123/Tekrion)
+- [Storage architecture](https://github.com/ayyagarisujanreddy123/Tekrion/blob/main/docs/decisions/0002-crash-safe-local-journal.md)
+- [Security policy](https://github.com/ayyagarisujanreddy123/Tekrion/security/policy)
+- [Apache-2.0 license](https://github.com/ayyagarisujanreddy123/Tekrion/blob/main/LICENSE)

@@ -4,13 +4,13 @@ import {
   type NormalizationExchange,
   type NormalizationOptions,
   type NormalizationResult,
-} from "@blackbox/normalizers";
-import { BlackBoxEventSchema, type BlackBoxEvent } from "@blackbox/protocol";
+} from "@tekrion/normalizers";
+import { TekrionEventSchema, type TekrionEvent } from "@tekrion/protocol";
 import {
   StorageIntegrityError,
-  type BlackBoxStorage,
+  type TekrionStorage,
   type StoredNormalization,
-} from "@blackbox/storage";
+} from "@tekrion/storage";
 
 export interface NormalizerEngine {
   normalize(
@@ -41,23 +41,23 @@ export function normalizationVersion(result: NormalizationResult): string {
 }
 
 function applySequences(
-  events: readonly BlackBoxEvent[],
+  events: readonly TekrionEvent[],
   sequences: readonly number[],
-): BlackBoxEvent[] {
+): TekrionEvent[] {
   if (events.length !== sequences.length) {
     throw new StorageIntegrityError(
       "Canonical event count does not match its sequence reservation.",
     );
   }
   return events.map((event, index) =>
-    BlackBoxEventSchema.parse({ ...event, sequence: sequences[index] }),
+    TekrionEventSchema.parse({ ...event, sequence: sequences[index] }),
   );
 }
 
 function applyStoredSequences(
-  events: readonly BlackBoxEvent[],
+  events: readonly TekrionEvent[],
   stored: StoredNormalization,
-): BlackBoxEvent[] {
+): TekrionEvent[] {
   if (
     events.length !== stored.events.length ||
     events.some((event, index) => event.id !== stored.events[index]?.id)
@@ -76,7 +76,7 @@ export class DurableNormalizationRunner implements ExchangeNormalizationRunner {
   private readonly normalizer: NormalizerEngine;
 
   constructor(
-    private readonly storage: BlackBoxStorage,
+    private readonly storage: TekrionStorage,
     private readonly options: NormalizationRunnerOptions = {},
   ) {
     this.normalizer = options.normalizer ?? new DefaultNormalizerRegistry();
@@ -142,8 +142,8 @@ export class DurableNormalizationRunner implements ExchangeNormalizationRunner {
 
   private reserveSequences(
     sessionId: string,
-    events: readonly BlackBoxEvent[],
-  ): BlackBoxEvent[] {
+    events: readonly TekrionEvent[],
+  ): TekrionEvent[] {
     if (events.length === 0) {
       return [];
     }

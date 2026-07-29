@@ -1,15 +1,15 @@
 export const runtimePackages = Object.freeze([
-  Object.freeze({ name: "@blackbox/protocol", directory: "packages/protocol" }),
-  Object.freeze({ name: "@blackbox/storage", directory: "packages/storage" }),
+  Object.freeze({ name: "@tekrion/protocol", directory: "packages/protocol" }),
+  Object.freeze({ name: "@tekrion/storage", directory: "packages/storage" }),
   Object.freeze({
-    name: "@blackbox/normalizers",
+    name: "@tekrion/normalizers",
     directory: "packages/normalizers",
   }),
-  Object.freeze({ name: "@blackbox/context", directory: "packages/context" }),
+  Object.freeze({ name: "@tekrion/context", directory: "packages/context" }),
   Object.freeze({
-    name: "@blackbox/analysis",
+    name: "@tekrion/analysis",
     directory: "packages/analysis",
   }),
-  Object.freeze({ name: "@blackbox/daemon", directory: "apps/daemon" }),
-  Object.freeze({ name: "@blackbox/cli", directory: "apps/cli" }),
+  Object.freeze({ name: "@tekrion/daemon", directory: "apps/daemon" }),
+  Object.freeze({ name: "@tekrion/cli", directory: "apps/cli" }),
 ]);

@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 
-import { LiveEventReadySchema, type BlackBoxEvent } from "@blackbox/protocol";
+import { LiveEventReadySchema, type TekrionEvent } from "@tekrion/protocol";
 import { z } from "zod";
 
 import type { EvidenceQueryService } from "./evidence-query-service.js";
@@ -38,8 +38,8 @@ export class LiveEventStreamCapacityError extends Error {
   }
 }
 
-function eventFrame(event: BlackBoxEvent): string {
-  return `id: ${event.sequence}\nevent: blackbox.event\ndata: ${JSON.stringify(event)}\n\n`;
+function eventFrame(event: TekrionEvent): string {
+  return `id: ${event.sequence}\nevent: tekrion.event\ndata: ${JSON.stringify(event)}\n\n`;
 }
 
 function readyFrame(sessionId: string, afterSequence: number): string {
@@ -48,7 +48,7 @@ function readyFrame(sessionId: string, afterSequence: number): string {
     sessionId,
     afterSequence,
   });
-  return `event: blackbox.ready\ndata: ${JSON.stringify(ready)}\n\n`;
+  return `event: tekrion.ready\ndata: ${JSON.stringify(ready)}\n\n`;
 }
 
 function abortableDelay(

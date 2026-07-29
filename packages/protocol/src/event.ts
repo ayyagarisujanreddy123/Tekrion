@@ -11,7 +11,7 @@ import {
   SchemaVersionSchema,
 } from "./common.js";
 
-export const BlackBoxEventSchema = z
+export const TekrionEventSchema = z
   .object({
     schemaVersion: SchemaVersionSchema,
     id: IdentifierSchema,
@@ -31,4 +31,4 @@ export const BlackBoxEventSchema = z
   })
   .strict();
 
-export type BlackBoxEvent = z.infer<typeof BlackBoxEventSchema>;
+export type TekrionEvent = z.infer<typeof TekrionEventSchema>;

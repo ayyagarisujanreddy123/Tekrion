@@ -7,10 +7,7 @@ import { promisify } from "node:util";
 
 import { describe, expect, it } from "vitest";
 
-import {
-  BlackBoxEventSchema,
-  SessionSchema,
-} from "../../protocol/src/index.js";
+import { TekrionEventSchema, SessionSchema } from "../../protocol/src/index.js";
 
 interface RogueTranscript {
   readonly session: unknown;
@@ -59,14 +56,14 @@ describe("deterministic rogue demo fixture", () => {
     expect(transcript.events).toHaveLength(9);
 
     for (const event of transcript.events) {
-      expect(BlackBoxEventSchema.safeParse(event).success).toBe(true);
+      expect(TekrionEventSchema.safeParse(event).success).toBe(true);
     }
   });
 
   it("links the exact poisoned line to a later deletion target", async () => {
     const transcript = await loadTranscript();
     const events = transcript.events.map((event) =>
-      BlackBoxEventSchema.parse(event),
+      TekrionEventSchema.parse(event),
     );
     const readResult = events.find(
       (event) =>
@@ -87,7 +84,7 @@ describe("deterministic rogue demo fixture", () => {
 
   it("resets and cleans the offline demo repeatedly", async () => {
     const outputRoot = await mkdtemp(
-      join(tmpdir(), "blackbox-demo-reset-test-"),
+      join(tmpdir(), "tekrion-demo-reset-test-"),
     );
     try {
       for (let run = 0; run < 2; run += 1) {

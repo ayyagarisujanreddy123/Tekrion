@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { IdentifierSchema, Sha256Schema } from "@blackbox/protocol";
+import { IdentifierSchema, Sha256Schema } from "@tekrion/protocol";
 import { z } from "zod";
 
 import type { BlobStore } from "./blob-store.js";
@@ -159,7 +159,7 @@ export class ChunkManifestBuilder {
   async persist(blobStore: BlobStore, completed: boolean) {
     const manifest = this.build(completed);
     return blobStore.put(JSON.stringify(manifest), {
-      mediaType: "application/vnd.blackbox.chunk-manifest+json",
+      mediaType: "application/vnd.tekrion.chunk-manifest+json",
     });
   }
 }

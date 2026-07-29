@@ -2,13 +2,13 @@ import { createHash } from "node:crypto";
 
 import {
   ReportPreflightSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type BlameAnalysis,
   type IncidentReport,
   type ReportPreflight,
   type ReportTransmissionCategory,
   type Session,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 import { eventExcerpt, stableJson } from "./text.js";
 
@@ -36,7 +36,7 @@ export interface MinimizedEvidenceItem {
   readonly eventId: string;
   readonly type: string;
   readonly occurredAt: string;
-  readonly evidence: BlackBoxEvent["evidence"];
+  readonly evidence: TekrionEvent["evidence"];
   readonly excerpt: string;
 }
 
@@ -61,7 +61,7 @@ export interface MinimizedReportEvidence {
 
 export interface EvidenceMinimizerInput {
   readonly session: Session;
-  readonly events: readonly BlackBoxEvent[];
+  readonly events: readonly TekrionEvent[];
   readonly report: IncidentReport;
   readonly blame?: BlameAnalysis;
   readonly provider: string;
@@ -212,7 +212,7 @@ export function redactSensitiveValue<T>(
   };
 }
 
-function compactEvent(event: BlackBoxEvent): MinimizedEvidenceItem {
+function compactEvent(event: TekrionEvent): MinimizedEvidenceItem {
   return {
     eventId: event.id,
     type: event.type,
@@ -224,12 +224,12 @@ function compactEvent(event: BlackBoxEvent): MinimizedEvidenceItem {
 }
 
 function evidenceFor(
-  eventsById: ReadonlyMap<string, BlackBoxEvent>,
+  eventsById: ReadonlyMap<string, TekrionEvent>,
   ids: readonly string[],
 ): MinimizedEvidenceItem[] {
   return [...new Set(ids)]
     .map((id) => eventsById.get(id))
-    .filter((event): event is BlackBoxEvent => event !== undefined)
+    .filter((event): event is TekrionEvent => event !== undefined)
     .sort(
       (left, right) =>
         left.sequence - right.sequence || left.id.localeCompare(right.id),

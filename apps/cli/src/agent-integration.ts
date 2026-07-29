@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { basename } from "node:path";
 
-import type { SessionUpstreamRoute } from "@blackbox/protocol";
+import type { SessionUpstreamRoute } from "@tekrion/protocol";
 
 import { CliUsageError } from "./configuration.js";
 
@@ -81,7 +81,7 @@ function codexRecorderProvider(sessionProxyOrigin: string): string {
     .update(sessionProxyOrigin)
     .digest("hex")
     .slice(0, 16);
-  return `blackbox_recorder_${suffix}`;
+  return `tekrion_recorder_${suffix}`;
 }
 
 function codexConfigurationInsertionIndex(
@@ -118,6 +118,7 @@ export function prepareAgentLaunch(
 ): PreparedAgentLaunch {
   const openAiBaseUrl = `${sessionProxyOrigin}/v1`;
   const common = {
+    TEKRION_AGENT: agent,
     BLACKBOX_AGENT: agent,
   };
   if (agent === "claude") {
@@ -134,7 +135,7 @@ export function prepareAgentLaunch(
     const providerPrefix = `model_providers.${provider}`;
     const overrides = [
       `model_provider=${tomlString(provider)}`,
-      `${providerPrefix}.name=${tomlString("Black Box Recorder")}`,
+      `${providerPrefix}.name=${tomlString("Tekrion Recorder")}`,
       `${providerPrefix}.base_url=${tomlString(openAiBaseUrl)}`,
       `${providerPrefix}.wire_api=${tomlString("responses")}`,
       `${providerPrefix}.requires_openai_auth=true`,

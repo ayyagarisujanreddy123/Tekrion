@@ -3,13 +3,13 @@ import { readFile } from "node:fs/promises";
 import {
   analyzeDeterministically,
   DeterministicAnalyzer,
-} from "@blackbox/analysis";
+} from "@tekrion/analysis";
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type Session,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import { describe, expect, it } from "vitest";
 
 interface RogueTranscript {
@@ -19,7 +19,7 @@ interface RogueTranscript {
 
 async function rogueTranscript(): Promise<{
   readonly session: Session;
-  readonly events: BlackBoxEvent[];
+  readonly events: TekrionEvent[];
 }> {
   const source = JSON.parse(
     await readFile(
@@ -29,7 +29,7 @@ async function rogueTranscript(): Promise<{
   ) as RogueTranscript;
   return {
     session: SessionSchema.parse(source.session),
-    events: source.events.map((event) => BlackBoxEventSchema.parse(event)),
+    events: source.events.map((event) => TekrionEventSchema.parse(event)),
   };
 }
 
@@ -38,11 +38,11 @@ function fixtureEvent(input: {
   readonly sequence: number;
   readonly type: string;
   readonly summary: Record<string, unknown>;
-  readonly source?: BlackBoxEvent["source"];
+  readonly source?: TekrionEvent["source"];
   readonly parentId?: string;
   readonly correlationId?: string;
-}): BlackBoxEvent {
-  return BlackBoxEventSchema.parse({
+}): TekrionEvent {
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id: input.id,
     sessionId: "session-analysis",
@@ -149,7 +149,7 @@ describe("deterministic blame and anomaly analysis", () => {
     const fixture = await rogueTranscript();
     const events = fixture.events.map((event) =>
       event.id === "event-read-result"
-        ? BlackBoxEventSchema.parse({
+        ? TekrionEventSchema.parse({
             ...event,
             summary: {
               ...event.summary,

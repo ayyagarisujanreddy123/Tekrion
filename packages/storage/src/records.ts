@@ -4,7 +4,7 @@ import {
   IsoTimestampSchema,
   JsonObjectSchema,
   SchemaVersionSchema,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import { z } from "zod";
 
 export const FileChangeRecordSchema = z

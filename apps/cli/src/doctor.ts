@@ -12,12 +12,12 @@ import {
   readControlToken,
   readDaemonLockRecord,
   type DaemonLockRecord,
-} from "@blackbox/daemon";
-import { MINIMUM_NODE_VERSION } from "@blackbox/protocol";
-import { LATEST_SCHEMA_VERSION, openBlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/daemon";
+import { MINIMUM_NODE_VERSION } from "@tekrion/protocol";
+import { LATEST_SCHEMA_VERSION, openTekrionStorage } from "@tekrion/storage";
 
 import type { ResolvedStartConfiguration } from "./configuration.js";
-import { BLACK_BOX_VERSION } from "./version.js";
+import { TEKRION_VERSION } from "./version.js";
 
 export type DoctorCheckStatus = "pass" | "warn" | "fail";
 
@@ -86,7 +86,7 @@ async function storageCheck(
     await ensureInstallLayout(paths);
     const handle = await open(probePath, "wx", 0o600);
     try {
-      await handle.writeFile("blackbox-doctor\n", "utf8");
+      await handle.writeFile("tekrion-doctor\n", "utf8");
       await handle.sync();
     } finally {
       await handle.close();
@@ -161,7 +161,7 @@ async function tokenCheck(
       id: "control-token",
       status: missing ? "warn" : "fail",
       message: missing
-        ? "not initialized; run blackbox init"
+        ? "not initialized; run tekrion init"
         : error instanceof Error
           ? error.message
           : String(error),
@@ -184,16 +184,16 @@ async function databaseCheck(
       id: "database",
       status: missing ? "warn" : "fail",
       message: missing
-        ? "not initialized; run blackbox init"
+        ? "not initialized; run tekrion init"
         : error instanceof Error
           ? error.message
           : String(error),
     };
   }
 
-  let storage: Awaited<ReturnType<typeof openBlackBoxStorage>> | undefined;
+  let storage: Awaited<ReturnType<typeof openTekrionStorage>> | undefined;
   try {
-    storage = await openBlackBoxStorage({
+    storage = await openTekrionStorage({
       databasePath: configuration.paths.databasePath,
       dataDirectory: configuration.paths.dataDirectory,
       readOnly: true,
@@ -313,7 +313,7 @@ async function portCheck(
     return {
       id,
       status: "pass",
-      message: `${host}:${port} is owned by the running Black Box daemon`,
+      message: `${host}:${port} is owned by the running Tekrion daemon`,
     };
   }
   if (port === 0) {
@@ -354,7 +354,7 @@ async function upstreamCheck(upstream: URL): Promise<DoctorCheck> {
         upstream,
         {
           method: "HEAD",
-          headers: { "user-agent": `blackbox-doctor/${BLACK_BOX_VERSION}` },
+          headers: { "user-agent": `tekrion-doctor/${TEKRION_VERSION}` },
         },
         (response) => {
           response.resume();

@@ -1,10 +1,10 @@
-# Black Box Execution Plan
+# Tekrion Execution Plan
 
 Status: M0–M9 source implementation complete; public release operations pending
 
 Version: 0.1
 
-Last updated: 2026-07-20
+Last updated: 2026-07-28
 
 Companion: [design.md](./design.md)
 
@@ -33,9 +33,9 @@ The plan assumes one primary engineer for a five-day Build Week. With two or thr
 The MVP is complete only when a fresh clone can:
 
 1. install and build with documented commands;
-2. run `blackbox doctor` successfully;
+2. run `tekrion doctor` successfully;
 3. start the localhost proxy and viewer;
-4. run the deterministic rogue demo through `blackbox run`;
+4. run the deterministic rogue demo through `tekrion run`;
 5. record an OpenAI Responses-style JSON/SSE session without changing response bytes or event order;
 6. store raw exchanges and canonical events in SQLite;
 7. show messages, tool calls/results, errors, reported tokens, and file changes on a synchronized timeline;
@@ -55,7 +55,7 @@ These are decided unless new evidence invalidates them:
 | Decision | Choice |
 |---|---|
 | Product form | CLI-managed local daemon plus localhost React viewer |
-| Primary onboarding | `blackbox run -- <agent>`; base URL alone remains supported |
+| Primary onboarding | `tekrion run -- <agent>`; base URL alone remains supported |
 | MVP protocols | HTTP JSON and SSE for Responses and Chat Completions |
 | Source of truth | Append-only raw exchanges plus versioned normalized events |
 | Storage | SQLite WAL, FTS5, content-addressed compressed blobs |
@@ -132,7 +132,7 @@ Goal: record real HTTP traffic without breaking the caller.
 
 Tasks:
 
-- Implement `blackbox init/start/stop/status/doctor`.
+- Implement `tekrion init/start/stop/status/doctor`.
 - Manage PID/lock files and stale-daemon recovery.
 - Implement loopback proxy with configurable upstream and proxy-loop detection.
 - Implement safe header forwarding and mandatory credential/header exclusion.
@@ -188,13 +188,13 @@ Goal: connect API activity to actual coding effects.
 
 Tasks:
 
-- Implement `blackbox run -- <cmd...>` with environment injection and explicit session header/config where possible.
+- Implement `tekrion run -- <cmd...>` with environment injection and explicit session header/config where possible.
 - Capture command metadata, cwd, PID, signal, exit code, and timestamped stdout/stderr frames.
 - Detect Git repository and record baseline status/HEAD.
 - At completion, compute tracked binary-capable diff and bounded untracked-file manifest/content.
 - Add debounced filesystem watching for approximate event timing.
 - Emit create/modify/delete/rename events with hashes and timing precision.
-- Apply path exclusions (`.git`, `node_modules`, build output, Black Box data directory) and symlink boundary checks.
+- Apply path exclusions (`.git`, `node_modules`, build output, Tekrion data directory) and symlink boundary checks.
 - Detect writes outside repository scope only when the wrapper can observe them safely; do not claim full OS auditing.
 - Ensure Ctrl-C is forwarded and cleanup/final snapshot has a bounded grace period.
 
@@ -225,7 +225,7 @@ Tasks:
 - Build inspector tabs: summary, normalized payload, raw payload, headers, provenance.
 - Add diff view and tool call/result links.
 - Add keyboard navigation, accessible event list fallback, and timestamp mode.
-- Implement `blackbox open` and route directly to a session.
+- Implement `tekrion open` and route directly to a session.
 
 Acceptance:
 
@@ -326,7 +326,7 @@ Goal: make the project easy to judge and safe to demonstrate.
 
 Tasks:
 
-- Define `.bbx` archive: manifest, schema version, redacted SQLite subset or JSONL, blobs, hashes, and report.
+- Define `.tkr` archive: manifest, schema version, redacted SQLite subset or JSONL, blobs, hashes, and report.
 - Implement export profiles and read-only import.
 - Add session deletion and retention/size controls.
 - Add README quickstart, architecture image, supported/unsupported matrix, privacy statement, and troubleshooting.
@@ -384,7 +384,7 @@ End-of-day gate:
 
 Morning:
 
-- Complete `blackbox run`, Git baseline/final diff, file events.
+- Complete `tekrion run`, Git baseline/final diff, file events.
 
 Afternoon:
 
@@ -576,10 +576,10 @@ Implementation and regression references are recorded in the [security verificat
 
 README should answer in this order:
 
-1. what Black Box does;
+1. what Tekrion does;
 2. a 30-second GIF/screenshot;
 3. install and deterministic demo;
-4. `blackbox run` recommended setup;
+4. `tekrion run` recommended setup;
 5. base-URL-only setup and its limitations;
 6. supported protocols/agents matrix;
 7. privacy behavior and optional analysis disclosure;
@@ -592,7 +592,7 @@ Additional docs before public release:
 - `docs/capture-model.md`: L1/L2/L3 and completeness semantics;
 - `docs/privacy.md`: stored fields, redaction, analysis transmission, deletion;
 - `docs/protocol-support.md`: endpoints/transports and known incompatibilities;
-- `docs/archive-format.md`: `.bbx` schema and integrity;
+- `docs/archive-format.md`: `.tkr` schema and integrity;
 - `docs/adapter-authoring.md`: lifecycle and event contracts;
 - `SECURITY.md`: vulnerability reporting and threat boundaries;
 - `CONTRIBUTING.md`: fixtures, schema changes, verification.
@@ -601,7 +601,7 @@ Additional docs before public release:
 
 ### 11.1 Three-minute script
 
-1. Run `blackbox demo rogue` and show the terminal command plus browser opening.
+1. Run `tekrion demo rogue` and show the terminal command plus browser opening.
 2. State the original task: fix the build, not delete tests.
 3. Watch the live timeline populate and tests disappear.
 4. Select `file.delete tests/...`.
@@ -616,14 +616,14 @@ Additional docs before public release:
 - Show tool `call_id` linking.
 - Explain base URL versus wrapped capture levels.
 - Show offline deterministic report, then optional AI enrichment disclosure.
-- Export a redacted `.bbx` archive.
+- Export a redacted `.tkr` archive.
 
 ### 11.3 Failure fallbacks
 
 | Failure | Fallback |
 |---|---|
 | Provider/network unavailable | fixture demo, which is the default |
-| Browser fails to open | print viewer URL and use `blackbox inspect` |
+| Browser fails to open | print viewer URL and use `tekrion inspect` |
 | Port occupied | automatic free port for demo and explicit URL |
 | Live model ignores injected line | do not depend on live model; switch to known fixture |
 | AI report fails | deterministic report remains complete |

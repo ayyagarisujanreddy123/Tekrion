@@ -1,9 +1,9 @@
-import { analyzeDeterministically } from "@blackbox/analysis";
+import { analyzeDeterministically } from "@tekrion/analysis";
 import {
   incidentFixtures,
   REQUIRED_INCIDENT_COVERAGE,
-} from "@blackbox/test-fixtures";
-import type { BlameConfidence } from "@blackbox/protocol";
+} from "@tekrion/test-fixtures";
+import type { BlameConfidence } from "@tekrion/protocol";
 import { describe, expect, it } from "vitest";
 
 const CONFIDENCE_ORDER: Readonly<Record<BlameConfidence, number>> = {

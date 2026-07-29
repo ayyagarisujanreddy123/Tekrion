@@ -1,5 +1,5 @@
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   BlameAnalysisSchema,
   ContextResultSchema,
   EventDetailSchema,
@@ -11,7 +11,7 @@ import {
   ReportPreflightSchema,
   SessionDetailSchema,
   SessionPageSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type BlameAnalysis,
   type ContextResult,
   type EventDetail,
@@ -22,7 +22,7 @@ import {
   type ReportPreflight,
   type SessionDetail,
   type SessionPage,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 export interface ParsedServerEvent {
   readonly event: string;
@@ -32,7 +32,7 @@ export interface ParsedServerEvent {
 
 export interface LiveEventHandlers {
   readonly onReady?: (afterSequence: number) => void;
-  readonly onEvent: (event: BlackBoxEvent) => void;
+  readonly onEvent: (event: TekrionEvent) => void;
 }
 
 interface Schema<T> {
@@ -44,9 +44,7 @@ export class ViewerApiError extends Error {
     readonly status: number,
     readonly code: string,
   ) {
-    super(
-      status === 0 ? code : `Black Box API returned HTTP ${status}: ${code}`,
-    );
+    super(status === 0 ? code : `Tekrion API returned HTTP ${status}: ${code}`);
     this.name = "ViewerApiError";
   }
 }
@@ -291,11 +289,14 @@ export class ViewerApiClient {
       throw new ViewerApiError(0, "Live response body is unavailable.");
     }
     for await (const frame of parseServerEvents(response.body)) {
-      if (frame.event === "blackbox.ready") {
+      if (frame.event === "tekrion.ready" || frame.event === "blackbox.ready") {
         const value = LiveEventReadySchema.parse(JSON.parse(frame.data));
         handlers.onReady?.(value.afterSequence);
-      } else if (frame.event === "blackbox.event") {
-        handlers.onEvent(BlackBoxEventSchema.parse(JSON.parse(frame.data)));
+      } else if (
+        frame.event === "tekrion.event" ||
+        frame.event === "blackbox.event"
+      ) {
+        handlers.onEvent(TekrionEventSchema.parse(JSON.parse(frame.data)));
       }
     }
   }

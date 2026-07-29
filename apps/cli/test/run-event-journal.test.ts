@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { openBlackBoxStorage, type BlackBoxStorage } from "@blackbox/storage";
+import { openTekrionStorage, type TekrionStorage } from "@tekrion/storage";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -13,13 +13,13 @@ import {
 const STARTED_AT = "2026-07-16T12:00:00.000Z";
 const ENDED_AT = "2026-07-16T12:00:01.000Z";
 const roots: string[] = [];
-const storages: BlackBoxStorage[] = [];
+const storages: TekrionStorage[] = [];
 
-async function testStorage(): Promise<BlackBoxStorage> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-run-journal-test-"));
+async function testStorage(): Promise<TekrionStorage> {
+  const root = await mkdtemp(join(tmpdir(), "tekrion-run-journal-test-"));
   roots.push(root);
-  const storage = await openBlackBoxStorage({
-    databasePath: join(root, "blackbox.sqlite"),
+  const storage = await openTekrionStorage({
+    databasePath: join(root, "tekrion.sqlite"),
     dataDirectory: join(root, "data"),
     recoverIncompleteExchanges: false,
   });
@@ -212,7 +212,7 @@ describe("durable process event journal", () => {
       },
       observedAt: ENDED_AT,
       payload: Buffer.from('{"delta":true}'),
-      mediaType: "application/vnd.blackbox.file-delta+json",
+      mediaType: "application/vnd.tekrion.file-delta+json",
     });
     await journal.recordWorkspaceSnapshot({
       summary: {

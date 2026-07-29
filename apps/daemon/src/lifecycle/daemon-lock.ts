@@ -53,7 +53,7 @@ export interface DaemonLockRecovery {
 export class DaemonAlreadyRunningError extends Error {
   constructor(readonly record: DaemonLockRecord) {
     super(
-      `Black Box daemon ${record.instanceId} is already running as PID ${record.pid}.`,
+      `Tekrion daemon ${record.instanceId} is already running as PID ${record.pid}.`,
     );
     this.name = "DaemonAlreadyRunningError";
   }

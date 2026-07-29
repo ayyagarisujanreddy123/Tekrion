@@ -7,7 +7,7 @@ import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
-import { BlackBoxDaemon } from "../apps/daemon/dist/index.js";
+import { TekrionDaemon } from "../apps/daemon/dist/index.js";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const viewerDirectory = join(
@@ -20,16 +20,16 @@ const viewerDirectory = join(
 const sampleCount = 100;
 const warmupCount = 10;
 const requestBody = JSON.stringify({
-  model: "blackbox-benchmark",
+  model: "tekrion-benchmark",
   input: "ping",
   stream: false,
 });
 const responseBody = JSON.stringify({
-  id: "resp_blackbox_benchmark",
+  id: "resp_tekrion_benchmark",
   object: "response",
   created_at: 0,
   status: "completed",
-  model: "blackbox-benchmark",
+  model: "tekrion-benchmark",
   output: [],
   usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
 });
@@ -127,7 +127,7 @@ async function productionAssets(directory) {
   };
 }
 
-const temporaryRoot = await mkdtemp(join(tmpdir(), "blackbox-benchmark-"));
+const temporaryRoot = await mkdtemp(join(tmpdir(), "tekrion-benchmark-"));
 await mkdir(temporaryRoot, { recursive: true, mode: 0o700 });
 const upstream = createServer((request, response) => {
   request.resume();
@@ -141,7 +141,7 @@ let daemon;
 
 try {
   const upstreamOrigin = await listen(upstream);
-  daemon = new BlackBoxDaemon({
+  daemon = new TekrionDaemon({
     homeDirectory: temporaryRoot,
     proxy: { listenPort: 0, upstream: upstreamOrigin },
     control: { listenPort: 0 },

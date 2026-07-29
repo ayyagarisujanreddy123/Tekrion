@@ -9,7 +9,7 @@ import {
   type IncidentReportResult,
   type ReportAnalysisUsage,
   type ReportPreflight,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 import {
   REPORT_PROMPT_VERSION,

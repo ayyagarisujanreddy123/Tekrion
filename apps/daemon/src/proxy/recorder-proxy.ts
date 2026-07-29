@@ -16,21 +16,22 @@ import {
   CHAT_COMPLETIONS_NORMALIZER_VERSION,
   RESPONSES_NORMALIZER_VERSION,
   UNKNOWN_NORMALIZER_VERSION,
-} from "@blackbox/normalizers";
+} from "@tekrion/normalizers";
 import {
   RawExchangeSchema,
   SessionSchema,
   type RawExchangeOutcome,
   type SafeHeaders,
   type Session,
-} from "@blackbox/protocol";
-import { ChunkManifestBuilder, type BlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/protocol";
+import { ChunkManifestBuilder, type TekrionStorage } from "@tekrion/storage";
 
 import {
   DurableNormalizationRunner,
   type ExchangeNormalizationRunner,
 } from "../normalization/normalization-runner.js";
 import {
+  LEGACY_SESSION_SIGNAL_HEADERS,
   SESSION_SIGNAL_HEADER_NAMES,
   SESSION_SIGNAL_HEADERS,
   Sessionizer,
@@ -45,10 +46,13 @@ import {
   type ProxyConfigurationInput,
 } from "./config.js";
 import { headersForForwarding, headersForPersistence } from "./headers.js";
-import { parseSessionScopedPath } from "./session-route.js";
+import {
+  hasSessionScopedRoutePrefix,
+  parseSessionScopedPath,
+} from "./session-route.js";
 
 export interface RecorderProxyOptions extends ProxyConfigurationInput {
-  readonly storage: BlackBoxStorage;
+  readonly storage: TekrionStorage;
   readonly now?: () => Date;
   readonly sensitiveHeaderNames?: readonly string[];
   readonly normalizationRunner?: ExchangeNormalizationRunner;
@@ -147,12 +151,9 @@ function parseRequestTarget(
   // Parse absolute-form proxy targets against a sentinel, then carry only their
   // path and query to the operator-configured upstream. The request target's
   // origin must never replace the configured provider origin.
-  const parsed = new URL(rawTarget, "http://blackbox.invalid");
+  const parsed = new URL(rawTarget, "http://tekrion.invalid");
   const scoped = parseSessionScopedPath(parsed.pathname);
-  if (
-    parsed.pathname.startsWith("/.blackbox/session/") &&
-    scoped === undefined
-  ) {
+  if (hasSessionScopedRoutePrefix(parsed.pathname) && scoped === undefined) {
     throw new TypeError("Invalid session-scoped proxy path.");
   }
   const path = scoped?.path ?? parsed.pathname;
@@ -179,6 +180,24 @@ function headerValue(
 ): string | undefined {
   const value = headers[name];
   return Array.isArray(value) ? value[0] : value;
+}
+
+function sessionSignalHeader(
+  headers: IncomingHttpHeaders,
+  signal: keyof typeof SESSION_SIGNAL_HEADERS,
+): string | undefined {
+  const current = headerValue(headers, SESSION_SIGNAL_HEADERS[signal]);
+  const legacy = headerValue(headers, LEGACY_SESSION_SIGNAL_HEADERS[signal]);
+  if (
+    current !== undefined &&
+    legacy !== undefined &&
+    current.trim() !== legacy.trim()
+  ) {
+    throw new Error(
+      `Conflicting ${SESSION_SIGNAL_HEADERS[signal]} and ${LEGACY_SESSION_SIGNAL_HEADERS[signal]} headers.`,
+    );
+  }
+  return current ?? legacy;
 }
 
 function codexChatGptPath(path: string): string {
@@ -464,35 +483,23 @@ export class RecorderProxy {
     request: IncomingMessage,
     target: RequestTarget,
   ): SessionizationDecision {
-    const ancestorHeader = headerValue(
+    const ancestorHeader = sessionSignalHeader(request.headers, "ancestry");
+    const analysisSessionId = sessionSignalHeader(request.headers, "analysis");
+    const analysisTargetSessionId = sessionSignalHeader(
       request.headers,
-      SESSION_SIGNAL_HEADERS.ancestry,
+      "analysisTarget",
     );
-    const analysisSessionId = headerValue(
-      request.headers,
-      SESSION_SIGNAL_HEADERS.analysis,
-    );
-    const analysisTargetSessionId = headerValue(
-      request.headers,
-      SESSION_SIGNAL_HEADERS.analysisTarget,
-    );
-    const explicitSessionId = headerValue(
-      request.headers,
-      SESSION_SIGNAL_HEADERS.explicit,
-    );
+    const explicitSessionId = sessionSignalHeader(request.headers, "explicit");
     if (
       explicitSessionId !== undefined &&
       target.sessionId !== undefined &&
       explicitSessionId.trim() !== target.sessionId
     ) {
       throw new Error(
-        "The session-scoped proxy route conflicts with X-Blackbox-Session.",
+        "The session-scoped proxy route conflicts with the explicit Tekrion session header.",
       );
     }
-    const adapterSessionId = headerValue(
-      request.headers,
-      SESSION_SIGNAL_HEADERS.adapter,
-    );
+    const adapterSessionId = sessionSignalHeader(request.headers, "adapter");
     const decision = this.sessionizer.resolve(
       {
         ...(analysisSessionId === undefined ? {} : { analysisSessionId }),
@@ -512,7 +519,7 @@ export class RecorderProxy {
                 .filter((value) => value.length > 0),
             }),
         clientFingerprint:
-          headerValue(request.headers, SESSION_SIGNAL_HEADERS.client) ??
+          sessionSignalHeader(request.headers, "client") ??
           `${request.socket.remoteAddress ?? "unknown"}|${headerValue(request.headers, "user-agent") ?? "unknown"}`,
       },
       Date.parse(this.nowIso()),
@@ -817,14 +824,14 @@ export class RecorderProxy {
     if (this.configuration.upstreamTimeoutMs !== undefined) {
       upstreamRequest.setTimeout(this.configuration.upstreamTimeoutMs, () => {
         upstreamTimedOut = true;
-        upstreamRequest.destroy(new Error("Black Box upstream timeout"));
+        upstreamRequest.destroy(new Error("Tekrion upstream timeout"));
       });
     }
     upstreamRequest.on("error", (error) => {
       if (!terminal) {
         if (!response.headersSent) {
           const body = Buffer.from(
-            JSON.stringify({ error: { type: "blackbox_upstream_error" } }),
+            JSON.stringify({ error: { type: "tekrion_upstream_error" } }),
           );
           state.responseStatus = 502;
           state.responseHeaders = { "content-type": ["application/json"] };

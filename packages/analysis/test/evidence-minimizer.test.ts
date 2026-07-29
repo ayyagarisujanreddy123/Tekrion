@@ -7,8 +7,8 @@ import {
   minimizeReportEvidence,
   redactSensitiveValue,
   snapshotEvidenceById,
-} from "@blackbox/analysis";
-import { BlackBoxEventSchema } from "@blackbox/protocol";
+} from "@tekrion/analysis";
+import { TekrionEventSchema } from "@tekrion/protocol";
 import { describe, expect, it } from "vitest";
 
 import { REPORT_TIME, reportFixture } from "./report-fixture.js";
@@ -134,7 +134,7 @@ describe("AI report evidence minimization", () => {
     const partialPrivateKey = `-----BEGIN PRIVATE KEY-----\n${"A".repeat(64)}`;
     const events = fixture.events.map((event) =>
       event.id === "event-read-result"
-        ? BlackBoxEventSchema.parse({
+        ? TekrionEventSchema.parse({
             ...event,
             summary: {
               ...event.summary,

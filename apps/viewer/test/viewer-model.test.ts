@@ -1,13 +1,13 @@
 import { Buffer } from "node:buffer";
 
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   BlameAnalysisSchema,
   ContextResultSchema,
   CONTEXT_VISIBILITY_NOTICE,
   IncidentReportResultSchema,
-  type BlackBoxEvent,
-} from "@blackbox/protocol";
+  type TekrionEvent,
+} from "@tekrion/protocol";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -33,12 +33,12 @@ const TIME = "2026-07-16T12:00:00.000Z";
 function event(
   sequence: number,
   input: {
-    readonly source?: BlackBoxEvent["source"];
+    readonly source?: TekrionEvent["source"];
     readonly type?: string;
     readonly summary?: Record<string, unknown>;
   } = {},
-): BlackBoxEvent {
-  return BlackBoxEventSchema.parse({
+): TekrionEvent {
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id: `event-view-${sequence}`,
     sessionId: "session-view",
@@ -350,7 +350,7 @@ describe("viewer evidence model", () => {
           redactionRuleIds: [],
         },
       },
-      markdown: "# Black Box Incident Report\n",
+      markdown: "# Tekrion Incident Report\n",
       aiAttempt: { status: "not-requested" },
     });
 

@@ -1,6 +1,11 @@
-import { IdentifierSchema } from "@blackbox/protocol";
+import { IdentifierSchema } from "@tekrion/protocol";
 
-const SESSION_ROUTE_PREFIX = "/.blackbox/session/";
+const SESSION_ROUTE_PREFIX = "/.tekrion/session/";
+const LEGACY_SESSION_ROUTE_PREFIX = "/.blackbox/session/";
+const SESSION_ROUTE_PREFIXES = [
+  SESSION_ROUTE_PREFIX,
+  LEGACY_SESSION_ROUTE_PREFIX,
+] as const;
 
 export interface SessionScopedPath {
   readonly sessionId: string;
@@ -38,10 +43,13 @@ export function sessionScopedProxyBaseUrl(
 export function parseSessionScopedPath(
   path: string,
 ): SessionScopedPath | undefined {
-  if (!path.startsWith(SESSION_ROUTE_PREFIX)) {
+  const prefix = SESSION_ROUTE_PREFIXES.find((candidate) =>
+    path.startsWith(candidate),
+  );
+  if (prefix === undefined) {
     return undefined;
   }
-  const remainder = path.slice(SESSION_ROUTE_PREFIX.length);
+  const remainder = path.slice(prefix.length);
   const separator = remainder.indexOf("/");
   if (separator <= 0) {
     return undefined;
@@ -65,4 +73,8 @@ export function parseSessionScopedPath(
     return undefined;
   }
   return { sessionId, path: providerPath };
+}
+
+export function hasSessionScopedRoutePrefix(path: string): boolean {
+  return SESSION_ROUTE_PREFIXES.some((prefix) => path.startsWith(prefix));
 }

@@ -6,7 +6,7 @@
 
 ## Context
 
-Black Box needs to explain why a selected tool or filesystem action is suspicious without sending recorded source, prompts, or tool output to another model. A useful attribution must rank only evidence that could precede the target invocation, preserve hard provenance separately from similarity, expose its feature calculation, and remain appropriately uncertain when client-visible context is incomplete. Anomaly signals must also remain inspectable rules rather than opaque pseudo-probabilities.
+Tekrion needs to explain why a selected tool or filesystem action is suspicious without sending recorded source, prompts, or tool output to another model. A useful attribution must rank only evidence that could precede the target invocation, preserve hard provenance separately from similarity, expose its feature calculation, and remain appropriately uncertain when client-visible context is incomplete. Anomaly signals must also remain inspectable rules rather than opaque pseudo-probabilities.
 
 ## Decision
 

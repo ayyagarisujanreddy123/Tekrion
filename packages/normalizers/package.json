@@ -1,12 +1,11 @@
 {
-  "name": "@blackbox/normalizers",
+  "name": "@tekrion/normalizers",
   "version": "0.1.0",
-  "private": true,
-  "description": "OpenAI and Anthropic evidence normalization for Black Box",
+  "description": "OpenAI and Anthropic evidence normalization for Tekrion",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayyagarisujanreddy123/Black-Box.git",
+    "url": "git+https://github.com/ayyagarisujanreddy123/Tekrion.git",
     "directory": "packages/normalizers"
   },
   "publishConfig": {
@@ -24,10 +23,10 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@blackbox/protocol": "0.1.0",
+    "@tekrion/protocol": "0.1.0",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@blackbox/test-fixtures": "0.1.0"
+    "@tekrion/test-fixtures": "0.1.0"
   }
 }

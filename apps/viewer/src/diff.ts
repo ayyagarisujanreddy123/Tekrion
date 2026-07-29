@@ -1,7 +1,7 @@
 import {
   FileDeltaPayloadSchema,
   type FileDeltaPayload,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 export interface DecodedFileState {
   readonly kind: "text" | "binary" | "absent";

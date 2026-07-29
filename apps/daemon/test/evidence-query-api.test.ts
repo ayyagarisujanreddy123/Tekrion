@@ -6,16 +6,16 @@ import { join } from "node:path";
 import type {
   AiReportProvider,
   AiReportProviderRequest,
-} from "@blackbox/analysis";
+} from "@tekrion/analysis";
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   RawExchangeSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type BlobReference,
   type Session,
-} from "@blackbox/protocol";
-import { openBlackBoxStorage, type BlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/protocol";
+import { openTekrionStorage, type TekrionStorage } from "@tekrion/storage";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -34,7 +34,7 @@ const TOKEN = "a".repeat(43);
 const TIME = "2026-07-16T12:00:00.000Z";
 const LATER = "2026-07-16T12:00:01.000Z";
 const roots: string[] = [];
-const storages: BlackBoxStorage[] = [];
+const storages: TekrionStorage[] = [];
 const controls: ControlServer[] = [];
 
 function fixtureStatus(): DaemonStatus {
@@ -93,8 +93,8 @@ function event(input: {
   readonly type: string;
   readonly summary: Record<string, unknown>;
   readonly payloadRef?: BlobReference;
-}): BlackBoxEvent {
-  return BlackBoxEventSchema.parse({
+}): TekrionEvent {
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id: input.id,
     sessionId: "session-query",
@@ -110,11 +110,11 @@ function event(input: {
   });
 }
 
-async function testStorage(): Promise<BlackBoxStorage> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-query-api-test-"));
+async function testStorage(): Promise<TekrionStorage> {
+  const root = await mkdtemp(join(tmpdir(), "tekrion-query-api-test-"));
   roots.push(root);
-  const storage = await openBlackBoxStorage({
-    databasePath: join(root, "blackbox.sqlite"),
+  const storage = await openTekrionStorage({
+    databasePath: join(root, "tekrion.sqlite"),
     dataDirectory: join(root, "data"),
     recoverIncompleteExchanges: false,
   });
@@ -123,7 +123,7 @@ async function testStorage(): Promise<BlackBoxStorage> {
 }
 
 async function startControl(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   maximumQueryPayloadBytes = 64 * 1024 * 1024,
   aiReportProvider?: AiReportProvider,
 ): Promise<string> {
@@ -577,14 +577,14 @@ describe("authenticated evidence query API", () => {
     expect(result.body).toEqual(captured);
     expect(result.headers["content-type"]).toBe("application/octet-stream");
     expect(result.headers["content-disposition"]).toBe(
-      'attachment; filename="blackbox-payload.bin"',
+      'attachment; filename="tekrion-payload.bin"',
     );
     expect(result.headers["cache-control"]).toBe("no-store");
     expect(result.headers["x-content-type-options"]).toBe("nosniff");
     expect(result.headers["content-security-policy"]).toContain(
       "default-src 'none'",
     );
-    expect(result.headers["x-blackbox-sha256"]).toBe(reference.sha256);
+    expect(result.headers["x-tekrion-sha256"]).toBe(reference.sha256);
   });
 
   it("rejects malformed queries and bounds payload reads", async () => {

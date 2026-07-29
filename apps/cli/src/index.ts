@@ -13,27 +13,27 @@ import {
   executeEvidenceDeletion,
   ensureControlToken,
   ensureInstallLayout,
-  exportBbxArchive,
-  importBbxArchive,
+  exportTekrionArchive,
+  importTekrionArchive,
   isProcessAlive,
   planEvidencePrune,
   planSessionDeletion,
-  readBbxArchiveFile,
+  readTekrionArchiveFile,
   readControlToken,
   readDaemonLockRecord,
   openAiReportProviderFromEnvironment,
   sessionScopedProxyOrigin,
-  writeBbxArchiveFile,
+  writeTekrionArchiveFile,
   type DaemonLockRecord,
   type DaemonPaths,
   type DaemonStatus,
-} from "@blackbox/daemon";
+} from "@tekrion/daemon";
 import {
-  BbxArchiveProfileSchema,
+  TekrionArchiveProfileSchema,
   IdentifierSchema,
   type ReportPreflight,
-} from "@blackbox/protocol";
-import { openBlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/protocol";
+import { openTekrionStorage } from "@tekrion/storage";
 
 import {
   defaultUpstreamForAgent,
@@ -73,33 +73,33 @@ import {
   type SignalEventSource,
 } from "./run/signal-forwarder.js";
 import { WorkspaceObserver } from "./run/workspace-observer.js";
-import { BLACK_BOX_VERSION } from "./version.js";
+import { TEKRION_VERSION } from "./version.js";
 
-const HELP = `Black Box — the flight recorder for AI coding agents
+const HELP = `Tekrion — the flight recorder for AI coding agents
 
 Usage:
-  blackbox init [--home PATH]
-  blackbox start [--upstream URL] [--proxy-port PORT] [--control-port PORT]
-  blackbox open [session-id] [--upstream URL] [--control-port PORT]
-  blackbox stop [--timeout-ms MS]
-  blackbox status [--json]
-  blackbox doctor [--upstream URL] [--websocket] [--json]
-  blackbox sessions [--limit N] [--json]
-  blackbox inspect <session-id> [--limit N] [--type EVENT_TYPE] [--json]
-  blackbox report <session-id> [--target-event EVENT_ID] [--ai] [--json]
-  blackbox export <session-id> --output PATH [--profile share|forensic]
-  blackbox import <archive.bbx> [--json]
-  blackbox delete <session-id> [--yes] [--json]
-  blackbox prune [--older-than-days N] [--max-bytes N] [--yes] [--json]
-  blackbox run [--agent auto|codex|claude|openai-compatible] [--cwd PATH] -- <command...>
+  tekrion init [--home PATH]
+  tekrion start [--upstream URL] [--proxy-port PORT] [--control-port PORT]
+  tekrion open [session-id] [--upstream URL] [--control-port PORT]
+  tekrion stop [--timeout-ms MS]
+  tekrion status [--json]
+  tekrion doctor [--upstream URL] [--websocket] [--json]
+  tekrion sessions [--limit N] [--json]
+  tekrion inspect <session-id> [--limit N] [--type EVENT_TYPE] [--json]
+  tekrion report <session-id> [--target-event EVENT_ID] [--ai] [--json]
+  tekrion export <session-id> --output PATH [--profile share|forensic]
+  tekrion import <archive.tkr> [--json]
+  tekrion delete <session-id> [--yes] [--json]
+  tekrion prune [--older-than-days N] [--max-bytes N] [--yes] [--json]
+  tekrion run [--agent auto|codex|claude|openai-compatible] [--cwd PATH] -- <command...>
 
 Common options:
-  --home PATH                     Override the private Black Box data directory
+  --home PATH                     Override the private Tekrion data directory
   --help, -h                      Show this help
-  --version, -v                   Show the Black Box version
+  --version, -v                   Show the Tekrion version
 
 Start and doctor options:
-  --upstream URL                  Provider origin (or BLACKBOX_UPSTREAM_URL)
+  --upstream URL                  Provider origin (or TEKRION_UPSTREAM_URL)
   --proxy-host HOST               Proxy listener (default 127.0.0.1)
   --proxy-port PORT               Proxy port (default 4141; 0 selects one)
   --control-host HOST             Control listener (loopback only)
@@ -124,7 +124,7 @@ Report options:
   --json                          Emit the versioned report result as JSON
 
 Archive and retention options:
-  --output PATH                   Destination for a .bbx export
+  --output PATH                   Destination for a .tkr export
   --profile share|forensic       Redacted share archive (default) or full evidence
   --max-bytes N                  Archive safety limit or retained evidence target
   --older-than-days N            Select terminal sessions older than N days
@@ -175,7 +175,7 @@ function timeoutFromArguments(
 async function initialize(paths: DaemonPaths): Promise<void> {
   await ensureInstallLayout(paths);
   await ensureControlToken(paths.homeDirectory, paths.tokenPath);
-  const storage = await openBlackBoxStorage({
+  const storage = await openTekrionStorage({
     databasePath: paths.databasePath,
     dataDirectory: paths.dataDirectory,
     recoverIncompleteExchanges: false,
@@ -194,7 +194,7 @@ function writeStatus(
   output: CliOutput,
   status: DaemonStatus,
   json: boolean,
-  prefix = "Black Box daemon",
+  prefix = "Tekrion daemon",
 ): void {
   if (json) {
     output.write(`${JSON.stringify(status)}\n`);
@@ -300,7 +300,7 @@ async function commandInit(
 ): Promise<number> {
   const paths = pathsFromFlags(parsed.flags);
   await initialize(paths);
-  runtime.stdout.write(`Initialized Black Box at ${paths.homeDirectory}\n`);
+  runtime.stdout.write(`Initialized Tekrion at ${paths.homeDirectory}\n`);
   return 0;
 }
 
@@ -321,8 +321,8 @@ async function commandStart(
     status,
     false,
     alreadyRunning
-      ? "Black Box daemon already running"
-      : "Black Box daemon started",
+      ? "Tekrion daemon already running"
+      : "Tekrion daemon started",
   );
   return 0;
 }
@@ -362,8 +362,8 @@ async function commandOpen(
   await runtime.openBrowser(url);
   runtime.stdout.write(
     sessionId === undefined
-      ? `Opened Black Box cockpit at ${url.origin}.\n`
-      : `Opened Black Box cockpit for session ${sessionId}.\n`,
+      ? `Opened Tekrion cockpit at ${url.origin}.\n`
+      : `Opened Tekrion cockpit for session ${sessionId}.\n`,
   );
   return 0;
 }
@@ -453,6 +453,7 @@ async function commandRun(
   );
   const hasExplicitUpstream =
     stringFlag(parsed.flags, "upstream") !== undefined ||
+    runtime.environment.TEKRION_UPSTREAM_URL !== undefined ||
     runtime.environment.BLACKBOX_UPSTREAM_URL !== undefined;
   const hasPerRunUpstream =
     hasExplicitUpstream || defaultUpstream !== undefined;
@@ -473,7 +474,7 @@ async function commandRun(
     executable,
   );
   const startedAt = runtime.now().toISOString();
-  const storage = await openBlackBoxStorage({
+  const storage = await openTekrionStorage({
     databasePath: configuration.paths.databasePath,
     dataDirectory: configuration.paths.dataDirectory,
     recoverIncompleteExchanges: false,
@@ -577,6 +578,10 @@ async function commandRun(
         env: {
           ...runtime.environment,
           ...launch.environment,
+          TEKRION_PROXY_ORIGIN: status.proxyOrigin,
+          TEKRION_SESSION_ID: sessionId,
+          TEKRION_CAPTURE_LEVEL: "wrapped-process",
+          // Transitional aliases keep pre-Tekrion adapters functional.
           BLACKBOX_PROXY_ORIGIN: status.proxyOrigin,
           BLACKBOX_SESSION_ID: sessionId,
           BLACKBOX_CAPTURE_LEVEL: "wrapped-process",
@@ -594,7 +599,7 @@ async function commandRun(
         })
         .catch(() => undefined);
       runtime.stderr.write(
-        `blackbox: failed to spawn ${executable}: ${errorMessage(error)}\n`,
+        `tekrion: failed to spawn ${executable}: ${errorMessage(error)}\n`,
       );
       return 127;
     }
@@ -662,7 +667,7 @@ async function commandRun(
           recordingFailure ??= error;
         });
       runtime.stderr.write(
-        `blackbox: failed to spawn ${executable}: ${errorMessage(result.error)}\n`,
+        `tekrion: failed to spawn ${executable}: ${errorMessage(result.error)}\n`,
       );
       return 127;
     }
@@ -735,7 +740,7 @@ async function commandRun(
       });
     if (recordingFailure !== undefined) {
       runtime.stderr.write(
-        `blackbox: process evidence is incomplete: ${errorMessage(recordingFailure)}\n`,
+        `tekrion: process evidence is incomplete: ${errorMessage(recordingFailure)}\n`,
       );
     }
     return childExitStatus(result.exitCode, result.signal);
@@ -765,7 +770,7 @@ async function commandStatus(
     if (json) {
       runtime.stdout.write('{"state":"stopped"}\n');
     } else {
-      runtime.stdout.write("Black Box daemon: stopped\n");
+      runtime.stdout.write("Tekrion daemon: stopped\n");
     }
     return 1;
   }
@@ -775,9 +780,7 @@ async function commandStatus(
         `${JSON.stringify({ state: "stale", pid: record.pid })}\n`,
       );
     } else {
-      runtime.stdout.write(
-        `Black Box daemon: stale lock (PID ${record.pid})\n`,
-      );
+      runtime.stdout.write(`Tekrion daemon: stale lock (PID ${record.pid})\n`);
     }
     return 1;
   }
@@ -786,7 +789,7 @@ async function commandStatus(
     runtime.stdout.write(
       json
         ? `${JSON.stringify(value)}\n`
-        : `Black Box daemon: ${record.state} (PID ${record.pid})\n`,
+        : `Tekrion daemon: ${record.state} (PID ${record.pid})\n`,
     );
     return 0;
   }
@@ -817,13 +820,13 @@ async function commandStop(
     runtime.stdout.write(
       json
         ? '{"state":"stopped","recovered":"corrupt-lock"}\n'
-        : "Black Box daemon was not running; removed corrupt lock.\n",
+        : "Tekrion daemon was not running; removed corrupt lock.\n",
     );
     return 0;
   }
   if (record === undefined) {
     runtime.stdout.write(
-      json ? '{"state":"stopped"}\n' : "Black Box daemon is already stopped.\n",
+      json ? '{"state":"stopped"}\n' : "Tekrion daemon is already stopped.\n",
     );
     return 0;
   }
@@ -839,7 +842,7 @@ async function commandStop(
   if (record.state === "stopping") {
     await waitForStopped(paths, record, timeoutMilliseconds);
     runtime.stdout.write(
-      json ? '{"state":"stopped"}\n' : "Black Box daemon stopped.\n",
+      json ? '{"state":"stopped"}\n' : "Tekrion daemon stopped.\n",
     );
     return 0;
   }
@@ -849,7 +852,7 @@ async function commandStop(
   const readyRecord = await readDaemonLockRecord(paths.lockPath);
   if (readyRecord === undefined) {
     runtime.stdout.write(
-      json ? '{"state":"stopped"}\n' : "Black Box daemon stopped.\n",
+      json ? '{"state":"stopped"}\n' : "Tekrion daemon stopped.\n",
     );
     return 0;
   }
@@ -860,7 +863,7 @@ async function commandStop(
   );
   await waitForStopped(paths, readyRecord, timeoutMilliseconds);
   runtime.stdout.write(
-    json ? '{"state":"stopped"}\n' : "Black Box daemon stopped.\n",
+    json ? '{"state":"stopped"}\n' : "Tekrion daemon stopped.\n",
   );
   return 0;
 }
@@ -899,11 +902,11 @@ async function openInspectionStorage(paths: DaemonPaths) {
     await access(paths.databasePath);
   } catch (error: unknown) {
     throw new Error(
-      `Black Box is not initialized at ${paths.homeDirectory}. Run 'blackbox init' first.`,
+      `Tekrion is not initialized at ${paths.homeDirectory}. Run 'tekrion init' first.`,
       { cause: error },
     );
   }
-  return openBlackBoxStorage({
+  return openTekrionStorage({
     databasePath: paths.databasePath,
     dataDirectory: paths.dataDirectory,
     recoverIncompleteExchanges: false,
@@ -1106,7 +1109,7 @@ async function commandExport(
   if (output === undefined) {
     throw new CliUsageError("export requires --output PATH.");
   }
-  const parsedProfile = BbxArchiveProfileSchema.safeParse(
+  const parsedProfile = TekrionArchiveProfileSchema.safeParse(
     stringFlag(parsed.flags, "profile") ?? "share",
   );
   if (!parsedProfile.success) {
@@ -1118,7 +1121,7 @@ async function commandExport(
     const report = await new EvidenceQueryService(storage, {
       now: runtime.now,
     }).getReport(sessionId);
-    const exported = await exportBbxArchive(storage, {
+    const exported = await exportTekrionArchive(storage, {
       sessionId,
       profile: parsedProfile.data,
       report,
@@ -1126,7 +1129,7 @@ async function commandExport(
       maximumBytes: archiveMaximumBytes(parsed.flags),
     });
     const outputPath = resolve(output);
-    await writeBbxArchiveFile(
+    await writeTekrionArchiveFile(
       outputPath,
       exported.bytes,
       parsed.flags.has("force"),
@@ -1167,11 +1170,11 @@ async function commandImport(
   }
   const maximumBytes = archiveMaximumBytes(parsed.flags);
   const resolvedArchivePath = resolve(archivePath);
-  const bytes = await readBbxArchiveFile(resolvedArchivePath, maximumBytes);
+  const bytes = await readTekrionArchiveFile(resolvedArchivePath, maximumBytes);
   const paths = pathsFromFlags(parsed.flags);
   const storage = await openInspectionStorage(paths);
   try {
-    const result = await importBbxArchive(storage, {
+    const result = await importTekrionArchive(storage, {
       bytes,
       importedAt: runtime.now().toISOString(),
       maximumBytes,
@@ -1303,7 +1306,7 @@ export async function runCli(
       arguments_.length === 1 &&
       (arguments_[0] === "--version" || arguments_[0] === "-v")
     ) {
-      runtime.stdout.write(`${BLACK_BOX_VERSION}\n`);
+      runtime.stdout.write(`${TEKRION_VERSION}\n`);
       return 0;
     }
     const parsed = parseCliArguments(arguments_);
@@ -1344,9 +1347,9 @@ export async function runCli(
   } catch (error: unknown) {
     const usage = error instanceof CliUsageError;
     const message = error instanceof Error ? error.message : String(error);
-    runtime.stderr.write(`blackbox: ${message}\n`);
+    runtime.stderr.write(`tekrion: ${message}\n`);
     if (usage) {
-      runtime.stderr.write("Run 'blackbox --help' for usage.\n");
+      runtime.stderr.write("Run 'tekrion --help' for usage.\n");
     }
     return usage ? 2 : 1;
   }

@@ -1,12 +1,11 @@
 {
-  "name": "@blackbox/protocol",
+  "name": "@tekrion/protocol",
   "version": "0.1.0",
-  "private": true,
-  "description": "Versioned evidence and query contracts for Black Box",
+  "description": "Versioned evidence and query contracts for Tekrion",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayyagarisujanreddy123/Black-Box.git",
+    "url": "git+https://github.com/ayyagarisujanreddy123/Tekrion.git",
     "directory": "packages/protocol"
   },
   "publishConfig": {

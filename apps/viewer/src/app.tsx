@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 
-import type { BlackBoxEvent, EventDetail, Session } from "@blackbox/protocol";
+import type { TekrionEvent, EventDetail, Session } from "@tekrion/protocol";
 
 import type { ViewerApiClient } from "./api.js";
 import { Inspector } from "./inspector.js";
@@ -64,7 +64,7 @@ function SessionRail(props: {
       props.error === undefined ? (
         <div className="rail-state">
           <strong>No recordings yet</strong>
-          <span>Run an agent through Black Box to populate this index.</span>
+          <span>Run an agent through Tekrion to populate this index.</span>
         </div>
       ) : null}
       <nav>
@@ -132,7 +132,7 @@ export function MissingAuthentication(): React.JSX.Element {
       <span>LOCAL AUTH REQUIRED</span>
       <h1>The cockpit is sealed.</h1>
       <p>
-        Open this viewer through <code>blackbox open</code>. The CLI transfers a
+        Open this viewer through <code>tekrion open</code>. The CLI transfers a
         private local credential in the URL fragment; recordings never become
         anonymously readable on localhost.
       </p>
@@ -140,7 +140,7 @@ export function MissingAuthentication(): React.JSX.Element {
   );
 }
 
-export function BlackBoxCockpit(props: CockpitProps): React.JSX.Element {
+export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionCursor, setSessionCursor] = useState<string>();
   const [sessionsLoading, setSessionsLoading] = useState(true);
@@ -149,7 +149,7 @@ export function BlackBoxCockpit(props: CockpitProps): React.JSX.Element {
     props.initialSessionId,
   );
   const [session, setSession] = useState<Session>();
-  const [events, setEvents] = useState<BlackBoxEvent[]>([]);
+  const [events, setEvents] = useState<TekrionEvent[]>([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
   const [timelineError, setTimelineError] = useState<string>();
   const [selectedEventId, setSelectedEventId] = useState<string>();
@@ -206,7 +206,7 @@ export function BlackBoxCockpit(props: CockpitProps): React.JSX.Element {
       try {
         const loadedSession = (await props.api.getSession(selectedSessionId))
           .session;
-        const loadedEvents: BlackBoxEvent[] = [];
+        const loadedEvents: TekrionEvent[] = [];
         let cursor: string | undefined;
         do {
           const page = await props.api.listEvents(selectedSessionId, {
@@ -393,7 +393,7 @@ export function BlackBoxCockpit(props: CockpitProps): React.JSX.Element {
             BB
           </span>
           <div>
-            <strong>BLACK BOX</strong>
+            <strong>TEKRION</strong>
             <span>LOCAL EVIDENCE COCKPIT</span>
           </div>
         </div>

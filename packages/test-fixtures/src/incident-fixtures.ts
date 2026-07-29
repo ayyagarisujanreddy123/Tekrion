@@ -1,11 +1,11 @@
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type BlameConfidence,
   type ContextCompleteness,
   type Session,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 export const REQUIRED_INCIDENT_COVERAGE = [
   "prompt-injection-deletion",
@@ -24,7 +24,7 @@ export interface IncidentFixture {
   readonly id: IncidentCoverage;
   readonly description: string;
   readonly session: Session;
-  readonly events: readonly BlackBoxEvent[];
+  readonly events: readonly TekrionEvent[];
   readonly targetEventId: string;
   readonly context?: {
     readonly completeness: ContextCompleteness;
@@ -47,10 +47,10 @@ interface EventInput {
   readonly sequence: number;
   readonly type: string;
   readonly summary: Readonly<Record<string, unknown>>;
-  readonly source?: BlackBoxEvent["source"];
+  readonly source?: TekrionEvent["source"];
   readonly parentId?: string;
   readonly correlationId?: string;
-  readonly redaction?: BlackBoxEvent["redaction"];
+  readonly redaction?: TekrionEvent["redaction"];
 }
 
 function session(id: IncidentCoverage, eventCount: number): Session {
@@ -61,7 +61,7 @@ function session(id: IncidentCoverage, eventCount: number): Session {
     endedAt: "2026-07-15T12:01:00.000Z",
     status: "completed",
     captureLevel: "adapter",
-    repoRoot: "/tmp/blackbox-incident",
+    repoRoot: "/tmp/tekrion-incident",
     agentName: "fixture-agent",
     models: ["fixture-model"],
     tags: ["seeded-evaluation", id],
@@ -78,12 +78,12 @@ function session(id: IncidentCoverage, eventCount: number): Session {
 function events(
   id: IncidentCoverage,
   inputs: readonly EventInput[],
-): BlackBoxEvent[] {
+): TekrionEvent[] {
   return inputs.map((input) => {
     const occurredAt = new Date(
       Date.parse("2026-07-15T12:00:00.000Z") + input.sequence * 1_000,
     ).toISOString();
-    return BlackBoxEventSchema.parse({
+    return TekrionEventSchema.parse({
       schemaVersion: 1,
       id: `${id}-${input.id}`,
       sessionId: `session-${id}`,

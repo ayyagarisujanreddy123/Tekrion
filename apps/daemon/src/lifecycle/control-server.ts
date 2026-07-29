@@ -7,7 +7,7 @@ import {
 } from "node:http";
 import type { AddressInfo } from "node:net";
 
-import { IdentifierSchema } from "@blackbox/protocol";
+import { IdentifierSchema } from "@tekrion/protocol";
 import { z } from "zod";
 
 import { isLoopbackHost } from "../proxy/config.js";
@@ -238,7 +238,7 @@ export class ControlServer {
       return;
     }
 
-    const url = new URL(request.url ?? "/", "http://blackbox.invalid");
+    const url = new URL(request.url ?? "/", "http://tekrion.invalid");
     if (this.options.viewerAssets?.handle(request, response, url) === true) {
       return;
     }

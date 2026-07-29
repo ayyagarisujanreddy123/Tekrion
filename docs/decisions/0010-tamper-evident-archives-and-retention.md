@@ -10,7 +10,7 @@ An investigation must be portable without quietly broadening the privacy boundar
 
 ## Decision
 
-1. Use a versioned, self-contained `.bbx` JSON container with a canonical manifest, ordered entry descriptors, base64 payloads, per-entry SHA-256 hashes, and a SHA-256 hash of the manifest. Bound the encoded file and decoded entry total before importing it, and reject unexpected, missing, duplicate, non-canonical, or traversal-capable paths.
+1. Use a versioned, self-contained `.tkr` JSON container with a canonical manifest, ordered entry descriptors, base64 payloads, per-entry SHA-256 hashes, and a SHA-256 hash of the manifest. Bound the encoded file and decoded entry total before importing it, and reject unexpected, missing, duplicate, non-canonical, or traversal-capable paths.
 2. Make `share` the default export profile. It removes raw exchanges and payload bytes, clears filesystem scope and upstream identifiers, strips payload references, and applies the shared secret-redaction rules to the retained session, events, context, and deterministic report. Include a disclosure describing omitted evidence and applied rules.
 3. Require an explicit `forensic` profile for full-fidelity transfer. Preserve exact raw exchange records, normalization runs, stored analysis and redaction records, and every referenced content-addressed blob. Warn that this profile can contain prompts, source, paths, output, and credentials that were present in payload bodies.
 4. Export only settled sessions. Refuse to overwrite an archive unless `--force` is explicit, write through a private temporary file, and publish atomically. Generate both JSON and Markdown forms of the same deterministic report inside the archive.
@@ -22,7 +22,7 @@ An investigation must be portable without quietly broadening the privacy boundar
 ## Consequences
 
 - A recipient can detect accidental corruption and modifications to a self-contained archive before any record is imported.
-- SHA-256 integrity is not authorship or authenticity. Because `.bbx` archives are not signed, an attacker who can rewrite an archive can also recompute its hashes; provenance still depends on a trusted transfer channel or an external signature.
+- SHA-256 integrity is not authorship or authenticity. Because `.tkr` archives are not signed, an attacker who can rewrite an archive can also recompute its hashes; provenance still depends on a trusted transfer channel or an external signature.
 - The default artifact is useful for review while materially reducing disclosure, but redaction is necessarily rule-based and cannot guarantee that arbitrary secrets or sensitive prose are absent. Investigators must inspect an archive before sharing it.
-- Full-fidelity imports preserve evidence without turning Black Box into an action-replay system, and database-level guards cover callers outside the CLI.
+- Full-fidelity imports preserve evidence without turning Tekrion into an action-replay system, and database-level guards cover callers outside the CLI.
 - Capacity pressure is visible and explicit. Operators choose what to remove, while active captures and blobs shared by retained sessions remain protected.

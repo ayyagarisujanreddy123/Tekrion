@@ -1,9 +1,9 @@
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type Session,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 import { analyzeDeterministically } from "../src/index.js";
 
@@ -12,16 +12,16 @@ export const REPORT_TIME = "2026-07-18T12:00:00.000Z";
 function reportEvent(input: {
   readonly id: string;
   readonly sequence: number;
-  readonly source: BlackBoxEvent["source"];
+  readonly source: TekrionEvent["source"];
   readonly type: string;
   readonly summary: Record<string, unknown>;
   readonly parentId?: string;
   readonly correlationId?: string;
-}): BlackBoxEvent {
+}): TekrionEvent {
   const timestamp = new Date(
     Date.parse(REPORT_TIME) + input.sequence * 1_000,
   ).toISOString();
-  return BlackBoxEventSchema.parse({
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id: input.id,
     sessionId: "session-report",
@@ -42,7 +42,7 @@ function reportEvent(input: {
 
 export function reportFixture(): {
   readonly session: Session;
-  readonly events: BlackBoxEvent[];
+  readonly events: TekrionEvent[];
   readonly analysis: ReturnType<typeof analyzeDeterministically>;
 } {
   const session = SessionSchema.parse({

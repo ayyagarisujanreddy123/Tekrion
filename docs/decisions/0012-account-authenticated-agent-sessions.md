@@ -8,7 +8,7 @@
 
 Codex and Claude Code can authenticate with either usage-billed API credentials
 or a signed-in subscription account. Requiring a separate provider API key for
-Black Box would break the native account experience and unnecessarily duplicate
+Tekrion would break the native account experience and unnecessarily duplicate
 credentials. Codex also prefers the Responses WebSocket transport when its
 provider advertises support, while the recorder currently guarantees fidelity
 only for HTTP JSON and SSE.
@@ -20,7 +20,7 @@ value nor the account identifier belongs in durable evidence.
 
 ## Decision
 
-1. Launch Codex with a temporary `blackbox_recorder` model provider supplied
+1. Launch Codex with a temporary `tekrion_recorder` model provider supplied
    only through command-line configuration. The provider uses the
    session-scoped recorder URL, the Responses wire API,
    `requires_openai_auth = true`, and `supports_websockets = false`. Codex
@@ -31,7 +31,7 @@ value nor the account identifier belongs in durable evidence.
    `ChatGPT-Account-ID` header. Route account traffic to
    `https://chatgpt.com/backend-api/codex/*`; route API-key traffic to
    `https://api.openai.com/v1/*`.
-3. Keep an explicit `--upstream` or `BLACKBOX_UPSTREAM_URL` authoritative.
+3. Keep an explicit `--upstream` or `TEKRION_UPSTREAM_URL` authoritative.
    Such a session uses direct routing and is never silently redirected to a
    first-party backend.
 4. Continue launching Claude Code with a session-scoped `ANTHROPIC_BASE_URL`.
@@ -43,7 +43,7 @@ value nor the account identifier belongs in durable evidence.
    boundaries. Add a forward migration that removes historically retained
    ChatGPT account identifiers from active raw-exchange records.
 6. Limit the support statement to local CLI sessions launched through
-   `blackbox run` and first-party OpenAI/Anthropic HTTP transports. Hosted web
+   `tekrion run` and first-party OpenAI/Anthropic HTTP transports. Hosted web
    or cloud sessions do not traverse the localhost recorder. Bedrock, Vertex
    AI, Microsoft Foundry, Realtime, and other provider-native transports still
    require dedicated integrations.
@@ -51,9 +51,9 @@ value nor the account identifier belongs in durable evidence.
 ## Consequences
 
 - Interactive, non-interactive, resumed, and forked local Codex sessions work
-  with either a ChatGPT plan or an API key without a Black Box credential.
+  with either a ChatGPT plan or an API key without a Tekrion credential.
 - Local Claude Code sessions retain Claude's selected API-key or subscription
-  authentication without a Black Box credential.
+  authentication without a Tekrion credential.
 - The Codex wrapper deliberately uses HTTP even when the native provider can use
   WebSockets. Standalone WebSocket and Realtime clients remain unsupported.
 - The account identifier is used transiently only as a routing signal and is

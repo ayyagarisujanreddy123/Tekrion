@@ -5,7 +5,7 @@ import {
   WorkspaceFileChangeSummarySchema,
   type WorkspaceFileChangeSummary,
   type WorkspaceManifestEntry,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 const MAX_PENDING_PATHS = 10_000;
 const MAX_SAMPLES_PER_PATH = 32;

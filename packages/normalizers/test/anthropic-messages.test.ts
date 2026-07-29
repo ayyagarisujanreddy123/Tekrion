@@ -1,9 +1,6 @@
 import { Buffer } from "node:buffer";
 
-import {
-  protocolFixtures,
-  type ProtocolFixture,
-} from "@blackbox/test-fixtures";
+import { protocolFixtures, type ProtocolFixture } from "@tekrion/test-fixtures";
 import { describe, expect, it } from "vitest";
 
 import {

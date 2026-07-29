@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { BlackBoxEventSchema, type BlackBoxEvent } from "@blackbox/protocol";
+import { TekrionEventSchema, type TekrionEvent } from "@tekrion/protocol";
 
 import type {
   CanonicalEventDraft,
@@ -26,7 +26,7 @@ export function materializeCanonicalEvents(
   exchange: NormalizationExchange,
   drafts: readonly CanonicalEventDraft[],
   options: NormalizationOptions = {},
-): BlackBoxEvent[] {
+): TekrionEvent[] {
   const firstSequence = options.firstSequence ?? 1;
   if (!Number.isInteger(firstSequence) || firstSequence < 1) {
     throw new RangeError("First canonical event sequence must be positive.");
@@ -48,7 +48,7 @@ export function materializeCanonicalEvents(
         "A canonical event parent must refer to an earlier draft.",
       );
     }
-    return BlackBoxEventSchema.parse({
+    return TekrionEventSchema.parse({
       schemaVersion: 1,
       id: identifiers[index],
       sessionId: exchange.sessionId,

@@ -16,7 +16,7 @@ import { prepareDaemonLog } from "../src/daemon-launcher.js";
 const roots: string[] = [];
 
 async function temporaryRoot(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-daemon-log-test-"));
+  const root = await mkdtemp(join(tmpdir(), "tekrion-daemon-log-test-"));
   roots.push(root);
   return root;
 }

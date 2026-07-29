@@ -51,7 +51,7 @@ one session's request to another session's upstream. Anthropic commonly uses the
   one wrapper and one daemon when they use the supported HTTP provider paths.
 - Provider selection is explicit and testable instead of inferred from payload
   shape or a daemon-wide mutable upstream.
-- Native Anthropic semantics remain intact; Black Box does not translate Claude
+- Native Anthropic semantics remain intact; Tekrion does not translate Claude
   traffic into an OpenAI request shape.
 - An older database may create a private migration backup containing an
   `x-api-key` value that the active store has scrubbed. Operators must protect or

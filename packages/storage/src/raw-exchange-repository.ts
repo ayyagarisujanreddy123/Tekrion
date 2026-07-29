@@ -1,4 +1,4 @@
-import { RawExchangeSchema, type RawExchange } from "@blackbox/protocol";
+import { RawExchangeSchema, type RawExchange } from "@tekrion/protocol";
 import type Database from "better-sqlite3";
 
 import { ImmutableEvidenceError } from "./errors.js";

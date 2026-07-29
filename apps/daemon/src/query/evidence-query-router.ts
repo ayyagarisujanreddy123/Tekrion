@@ -6,7 +6,7 @@ import {
   LiveEventResumeQuerySchema,
   QueryErrorSchema,
   type EvidenceSource,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import { z } from "zod";
 
 import type { DaemonStatus } from "../lifecycle/status.js";

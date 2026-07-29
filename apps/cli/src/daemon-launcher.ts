@@ -114,12 +114,16 @@ function daemonEnvironment(): NodeJS.ProcessEnv {
     "NODE_EXTRA_CA_CERTS",
     "SSL_CERT_FILE",
     "SSL_CERT_DIR",
+    "TEKRION_ANALYSIS_API_KEY",
+    "TEKRION_ANALYSIS_MODEL",
+    "TEKRION_ANALYSIS_BASE_URL",
+    "TEKRION_ANALYSIS_PROVIDER",
     "BLACKBOX_ANALYSIS_API_KEY",
     "BLACKBOX_ANALYSIS_MODEL",
     "BLACKBOX_ANALYSIS_BASE_URL",
     "BLACKBOX_ANALYSIS_PROVIDER",
   ];
-  const environment: NodeJS.ProcessEnv = { BLACKBOX_DAEMON_CHILD: "1" };
+  const environment: NodeJS.ProcessEnv = { TEKRION_DAEMON_CHILD: "1" };
   for (const name of names) {
     if (process.env[name] !== undefined) {
       environment[name] = process.env[name];

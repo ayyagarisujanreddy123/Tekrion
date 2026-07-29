@@ -1,4 +1,4 @@
-import { SessionSchema, type Session } from "@blackbox/protocol";
+import { SessionSchema, type Session } from "@tekrion/protocol";
 import type Database from "better-sqlite3";
 
 import { ImmutableEvidenceError, SequenceAllocationError } from "./errors.js";

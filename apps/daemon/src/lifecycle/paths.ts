@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { isAbsolute, join, resolve } from "node:path";
 
@@ -17,42 +18,74 @@ export interface DefaultHomeOptions {
   readonly environment?: NodeJS.ProcessEnv;
   readonly platform?: NodeJS.Platform;
   readonly userHome?: string;
+  readonly pathExists?: (path: string) => boolean;
 }
 
-export function defaultBlackBoxHome(options: DefaultHomeOptions = {}): string {
+export function defaultTekrionHome(options: DefaultHomeOptions = {}): string {
   const environment = options.environment ?? process.env;
   const platform = options.platform ?? process.platform;
   const userHome = options.userHome ?? homedir();
+  const pathExists = options.pathExists ?? existsSync;
 
+  if (environment.TEKRION_HOME !== undefined) {
+    return resolve(environment.TEKRION_HOME);
+  }
   if (environment.BLACKBOX_HOME !== undefined) {
     return resolve(environment.BLACKBOX_HOME);
   }
+
+  let currentHome: string;
+  let legacyHome: string;
   if (platform === "darwin") {
-    return join(userHome, "Library", "Application Support", "BlackBox");
-  }
-  if (platform === "win32") {
-    return resolve(
+    const applicationSupport = join(userHome, "Library", "Application Support");
+    currentHome = join(applicationSupport, "Tekrion");
+    legacyHome = join(applicationSupport, "BlackBox");
+  } else if (platform === "win32") {
+    const localAppData = resolve(
       environment.LOCALAPPDATA ?? join(userHome, "AppData", "Local"),
-      "BlackBox",
     );
+    currentHome = join(localAppData, "Tekrion");
+    legacyHome = join(localAppData, "BlackBox");
+  } else {
+    const dataHome =
+      environment.XDG_DATA_HOME !== undefined &&
+      isAbsolute(environment.XDG_DATA_HOME)
+        ? environment.XDG_DATA_HOME
+        : join(userHome, ".local", "share");
+    currentHome = join(dataHome, "tekrion");
+    legacyHome = join(dataHome, "blackbox");
   }
-  const xdgDataHome = environment.XDG_DATA_HOME;
-  return join(
-    xdgDataHome !== undefined && isAbsolute(xdgDataHome)
-      ? xdgDataHome
-      : join(userHome, ".local", "share"),
-    "blackbox",
-  );
+
+  const currentDatabase = join(currentHome, "tekrion.sqlite");
+  const legacyDatabase = join(legacyHome, "blackbox.sqlite");
+  return !pathExists(currentDatabase) && pathExists(legacyDatabase)
+    ? legacyHome
+    : currentHome;
 }
 
-export function resolveDaemonPaths(homeDirectory?: string): DaemonPaths {
-  const resolvedHome = resolve(homeDirectory ?? defaultBlackBoxHome());
+export interface ResolveDaemonPathsOptions {
+  readonly pathExists?: (path: string) => boolean;
+}
+
+export function resolveDaemonPaths(
+  homeDirectory?: string,
+  options: ResolveDaemonPathsOptions = {},
+): DaemonPaths {
+  const pathExists = options.pathExists ?? existsSync;
+  const resolvedHome = resolve(
+    homeDirectory ?? defaultTekrionHome({ pathExists }),
+  );
   const logDirectory = join(resolvedHome, "logs");
+  const currentDatabase = join(resolvedHome, "tekrion.sqlite");
+  const legacyDatabase = join(resolvedHome, "blackbox.sqlite");
   return {
     homeDirectory: resolvedHome,
     tokenPath: join(resolvedHome, "control.token"),
     lockPath: join(resolvedHome, "daemon.lock"),
-    databasePath: join(resolvedHome, "blackbox.sqlite"),
+    databasePath:
+      !pathExists(currentDatabase) && pathExists(legacyDatabase)
+        ? legacyDatabase
+        : currentDatabase,
     dataDirectory: join(resolvedHome, "data"),
     logDirectory,
     logPath: join(logDirectory, "daemon.log"),

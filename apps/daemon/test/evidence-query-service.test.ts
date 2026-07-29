@@ -5,15 +5,15 @@ import { join } from "node:path";
 import type {
   AiReportProvider,
   AiReportProviderRequest,
-} from "@blackbox/analysis";
+} from "@tekrion/analysis";
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   RawExchangeSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type Session,
-} from "@blackbox/protocol";
-import { openBlackBoxStorage, type BlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/protocol";
+import { openTekrionStorage, type TekrionStorage } from "@tekrion/storage";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -22,18 +22,18 @@ import {
 } from "../src/index.js";
 
 const roots: string[] = [];
-const storages: BlackBoxStorage[] = [];
+const storages: TekrionStorage[] = [];
 const TIMES = [
   "2026-07-16T12:00:00.000Z",
   "2026-07-16T12:00:01.000Z",
   "2026-07-16T12:00:02.000Z",
 ] as const;
 
-async function testStorage(): Promise<BlackBoxStorage> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-query-service-test-"));
+async function testStorage(): Promise<TekrionStorage> {
+  const root = await mkdtemp(join(tmpdir(), "tekrion-query-service-test-"));
   roots.push(root);
-  const storage = await openBlackBoxStorage({
-    databasePath: join(root, "blackbox.sqlite"),
+  const storage = await openTekrionStorage({
+    databasePath: join(root, "tekrion.sqlite"),
     dataDirectory: join(root, "data"),
     recoverIncompleteExchanges: false,
   });
@@ -70,8 +70,8 @@ function event(
   occurredAt: string,
   source: "proxy" | "filesystem",
   text: string,
-): BlackBoxEvent {
-  return BlackBoxEventSchema.parse({
+): TekrionEvent {
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id,
     sessionId: "session-newest",
@@ -89,16 +89,16 @@ function event(
 function analysisEvent(input: {
   readonly id: string;
   readonly sequence: number;
-  readonly source: BlackBoxEvent["source"];
+  readonly source: TekrionEvent["source"];
   readonly type: string;
   readonly summary: Record<string, unknown>;
   readonly parentId?: string;
   readonly correlationId?: string;
-}): BlackBoxEvent {
+}): TekrionEvent {
   const occurredAt = new Date(
     Date.parse(TIMES[0]) + input.sequence * 1_000,
   ).toISOString();
-  return BlackBoxEventSchema.parse({
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id: input.id,
     sessionId: "session-newest",
@@ -118,12 +118,12 @@ function analysisEvent(input: {
 }
 
 function seedReportIncident(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   options: {
     readonly active?: boolean;
     readonly includeSecret?: boolean;
   } = {},
-): BlackBoxEvent[] {
+): TekrionEvent[] {
   storage.sessions.create(
     SessionSchema.parse({
       ...session("session-newest", TIMES[0]),
@@ -462,7 +462,7 @@ describe("evidence query service", () => {
       exchangeId: "exchange-context",
       parserVersion: "context-test-v1",
       events: [
-        BlackBoxEventSchema.parse({
+        TekrionEventSchema.parse({
           schemaVersion: 1,
           id: "event-context-request",
           sessionId: "session-newest",
@@ -475,7 +475,7 @@ describe("evidence query service", () => {
           summary: { endpoint: "/v1/chat/completions" },
           redaction: { applied: false, ruleIds: [] },
         }),
-        BlackBoxEventSchema.parse({
+        TekrionEventSchema.parse({
           schemaVersion: 1,
           id: "event-context-usage",
           sessionId: "session-newest",
@@ -802,7 +802,7 @@ describe("evidence query service", () => {
       expect.objectContaining({
         type: "analysis.report.error",
         payloadRef: expect.objectContaining({
-          mediaType: "application/vnd.blackbox.ai-report-narrative+json",
+          mediaType: "application/vnd.tekrion.ai-report-narrative+json",
         }),
         summary: expect.objectContaining({
           externalEvidenceSent: true,

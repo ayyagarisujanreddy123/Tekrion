@@ -8,13 +8,14 @@ import type { AddressInfo } from "node:net";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
-  BlackBoxDaemon,
+  TekrionDaemon,
   ControlServer,
   CorruptDaemonLockError,
   DaemonAlreadyRunningError,
   DaemonLock,
   UnsafeControlBindError,
   ViewerAssets,
+  defaultTekrionHome,
   ensureControlToken,
   readControlToken,
   readDaemonLockRecord,
@@ -29,11 +30,11 @@ interface ControlResult {
 }
 
 const roots: string[] = [];
-const daemons: BlackBoxDaemon[] = [];
+const daemons: TekrionDaemon[] = [];
 const servers: Server[] = [];
 
 async function temporaryRoot(): Promise<string> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-lifecycle-test-"));
+  const root = await mkdtemp(join(tmpdir(), "tekrion-lifecycle-test-"));
   roots.push(root);
   return root;
 }
@@ -153,6 +154,47 @@ afterEach(async () => {
   await Promise.all(
     roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
   );
+});
+
+describe("Tekrion path compatibility", () => {
+  it("prefers the new home and honors the legacy environment alias", () => {
+    expect(
+      defaultTekrionHome({
+        environment: {
+          TEKRION_HOME: "/current/home",
+          BLACKBOX_HOME: "/legacy/home",
+        },
+        platform: "linux",
+        userHome: "/users/fixture",
+        pathExists: () => false,
+      }),
+    ).toBe("/current/home");
+    expect(
+      defaultTekrionHome({
+        environment: { BLACKBOX_HOME: "/legacy/home" },
+        platform: "linux",
+        userHome: "/users/fixture",
+        pathExists: () => false,
+      }),
+    ).toBe("/legacy/home");
+  });
+
+  it("discovers a pre-rebrand default home and database", () => {
+    const legacyDatabase =
+      "/users/fixture/.local/share/blackbox/blackbox.sqlite";
+    const pathExists = (path: string) => path === legacyDatabase;
+    const home = defaultTekrionHome({
+      environment: {},
+      platform: "linux",
+      userHome: "/users/fixture",
+      pathExists,
+    });
+
+    expect(home).toBe("/users/fixture/.local/share/blackbox");
+    expect(resolveDaemonPaths(home, { pathExists }).databasePath).toBe(
+      legacyDatabase,
+    );
+  });
 });
 
 describe("private install credentials", () => {
@@ -490,7 +532,7 @@ describe("daemon lifecycle integration", () => {
   it("publishes ready state without exposing its token and stops through control", async () => {
     const root = await temporaryRoot();
     const upstream = await makeUpstream();
-    const daemon = new BlackBoxDaemon({
+    const daemon = new TekrionDaemon({
       homeDirectory: root,
       proxy: { listenPort: 0, upstream },
       control: { listenPort: 0 },
@@ -541,12 +583,12 @@ describe("daemon lifecycle integration", () => {
   it("rejects a second daemon and permits a clean restart after release", async () => {
     const root = await temporaryRoot();
     const upstream = await makeUpstream();
-    const first = new BlackBoxDaemon({
+    const first = new TekrionDaemon({
       homeDirectory: root,
       proxy: { listenPort: 0, upstream },
       control: { listenPort: 0 },
     });
-    const second = new BlackBoxDaemon({
+    const second = new TekrionDaemon({
       homeDirectory: root,
       proxy: { listenPort: 0, upstream },
       control: { listenPort: 0 },
@@ -559,7 +601,7 @@ describe("daemon lifecycle integration", () => {
     );
     await first.stop();
 
-    const restarted = new BlackBoxDaemon({
+    const restarted = new TekrionDaemon({
       homeDirectory: root,
       proxy: { listenPort: 0, upstream },
       control: { listenPort: 0 },
@@ -571,7 +613,7 @@ describe("daemon lifecycle integration", () => {
   it("forces lingering proxy connections closed within the shutdown grace", async () => {
     const root = await temporaryRoot();
     const upstream = await makeUpstream();
-    const daemon = new BlackBoxDaemon({
+    const daemon = new TekrionDaemon({
       homeDirectory: root,
       proxy: { listenPort: 0, upstream },
       control: { listenPort: 0 },
@@ -593,7 +635,7 @@ describe("daemon lifecycle integration", () => {
   it("serializes an early stop request behind startup", async () => {
     const root = await temporaryRoot();
     const upstream = await makeUpstream();
-    const daemon = new BlackBoxDaemon({
+    const daemon = new TekrionDaemon({
       homeDirectory: root,
       proxy: { listenPort: 0, upstream },
       control: { listenPort: 0 },

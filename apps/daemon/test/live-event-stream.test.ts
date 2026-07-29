@@ -8,12 +8,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import {
-  BlackBoxEventSchema,
+  TekrionEventSchema,
   SessionSchema,
-  type BlackBoxEvent,
+  type TekrionEvent,
   type Session,
-} from "@blackbox/protocol";
-import { openBlackBoxStorage, type BlackBoxStorage } from "@blackbox/storage";
+} from "@tekrion/protocol";
+import { openTekrionStorage, type TekrionStorage } from "@tekrion/storage";
 import { afterEach, describe, expect, it } from "vitest";
 
 import {
@@ -37,7 +37,7 @@ interface HttpResult {
 const TOKEN = "b".repeat(43);
 const TIME = "2026-07-16T12:00:00.000Z";
 const roots: string[] = [];
-const storages: BlackBoxStorage[] = [];
+const storages: TekrionStorage[] = [];
 const controls: ControlServer[] = [];
 const clients: ClientRequest[] = [];
 
@@ -90,8 +90,8 @@ function session(): Session {
   });
 }
 
-function event(sequence: number): BlackBoxEvent {
-  return BlackBoxEventSchema.parse({
+function event(sequence: number): TekrionEvent {
+  return TekrionEventSchema.parse({
     schemaVersion: 1,
     id: `event-live-${sequence}`,
     sessionId: "session-live",
@@ -106,11 +106,11 @@ function event(sequence: number): BlackBoxEvent {
   });
 }
 
-async function testStorage(): Promise<BlackBoxStorage> {
-  const root = await mkdtemp(join(tmpdir(), "blackbox-live-api-test-"));
+async function testStorage(): Promise<TekrionStorage> {
+  const root = await mkdtemp(join(tmpdir(), "tekrion-live-api-test-"));
   roots.push(root);
-  const storage = await openBlackBoxStorage({
-    databasePath: join(root, "blackbox.sqlite"),
+  const storage = await openTekrionStorage({
+    databasePath: join(root, "tekrion.sqlite"),
     dataDirectory: join(root, "data"),
     recoverIncompleteExchanges: false,
   });
@@ -119,9 +119,9 @@ async function testStorage(): Promise<BlackBoxStorage> {
 }
 
 async function secondConnection(
-  storage: BlackBoxStorage,
-): Promise<BlackBoxStorage> {
-  const second = await openBlackBoxStorage({
+  storage: TekrionStorage,
+): Promise<TekrionStorage> {
+  const second = await openTekrionStorage({
     databasePath: storage.databasePath,
     dataDirectory: storage.dataDirectory,
     recoverIncompleteExchanges: false,
@@ -131,7 +131,7 @@ async function secondConnection(
 }
 
 async function startControl(
-  storage: BlackBoxStorage,
+  storage: TekrionStorage,
   maximumConnections = 2,
 ): Promise<string> {
   const control = new ControlServer({
@@ -350,21 +350,21 @@ describe("live event stream", () => {
     expect(initial.response.headers["x-content-type-options"]).toBe("nosniff");
     expect(
       JSON.parse(
-        (await initial.next((frame) => frame.event === "blackbox.ready")).data,
+        (await initial.next((frame) => frame.event === "tekrion.ready")).data,
       ),
     ).toMatchObject({
       sessionId: "session-live",
       afterSequence: 0,
     });
     const first = await initial.next(
-      (frame) => frame.event === "blackbox.event",
+      (frame) => frame.event === "tekrion.event",
     );
     expect(first.id).toBe("1");
     expect(JSON.parse(first.data)).toMatchObject({ id: "event-live-1" });
 
     writer.events.insert(event(2));
     const second = await initial.next(
-      (frame) => frame.event === "blackbox.event",
+      (frame) => frame.event === "tekrion.event",
     );
     expect(second.id).toBe("2");
     expect(JSON.parse(second.data)).toMatchObject({ id: "event-live-2" });
@@ -378,13 +378,13 @@ describe("live event stream", () => {
     );
     expect(
       JSON.parse(
-        (await resumed.next((frame) => frame.event === "blackbox.ready")).data,
+        (await resumed.next((frame) => frame.event === "tekrion.ready")).data,
       ),
     ).toMatchObject({
       afterSequence: 2,
     });
     const third = await resumed.next(
-      (frame) => frame.event === "blackbox.event",
+      (frame) => frame.event === "tekrion.event",
     );
     expect(third.id).toBe("3");
     expect(JSON.parse(third.data)).toMatchObject({ id: "event-live-3" });
@@ -396,7 +396,7 @@ describe("live event stream", () => {
     storage.sessions.create(session());
     const origin = await startControl(storage, 1);
     const active = await openSse(origin, "/v1/sessions/session-live/live");
-    await active.next((frame) => frame.event === "blackbox.ready");
+    await active.next((frame) => frame.event === "tekrion.ready");
 
     expect(
       (

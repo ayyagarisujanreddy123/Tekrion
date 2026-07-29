@@ -3,11 +3,11 @@ import {
   type AiReportProvider,
   type AiReportProviderRequest,
   type AiReportProviderResponse,
-} from "@blackbox/analysis";
+} from "@tekrion/analysis";
 import {
   ReportAnalysisUsageSchema,
   type ReportAnalysisUsage,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 import { z } from "zod";
 
 const TimeoutSchema = z
@@ -250,7 +250,7 @@ export class OpenAiReportProvider implements AiReportProvider {
         text: {
           format: {
             type: "json_schema",
-            name: "blackbox_incident_report",
+            name: "tekrion_incident_report",
             strict: true,
             schema: request.jsonSchema,
           },
@@ -285,20 +285,25 @@ export function openAiReportProviderFromEnvironment(
   environment: NodeJS.ProcessEnv,
   fetcher?: typeof fetch,
 ): OpenAiReportProvider | undefined {
-  const apiKey = environment.BLACKBOX_ANALYSIS_API_KEY;
-  const model = environment.BLACKBOX_ANALYSIS_MODEL;
+  const apiKey =
+    environment.TEKRION_ANALYSIS_API_KEY ??
+    environment.BLACKBOX_ANALYSIS_API_KEY;
+  const model =
+    environment.TEKRION_ANALYSIS_MODEL ?? environment.BLACKBOX_ANALYSIS_MODEL;
+  const baseUrl =
+    environment.TEKRION_ANALYSIS_BASE_URL ??
+    environment.BLACKBOX_ANALYSIS_BASE_URL;
+  const provider =
+    environment.TEKRION_ANALYSIS_PROVIDER ??
+    environment.BLACKBOX_ANALYSIS_PROVIDER;
   if (apiKey === undefined || model === undefined) {
     return undefined;
   }
   return new OpenAiReportProvider({
     apiKey,
     model,
-    ...(environment.BLACKBOX_ANALYSIS_BASE_URL === undefined
-      ? {}
-      : { baseUrl: environment.BLACKBOX_ANALYSIS_BASE_URL }),
-    ...(environment.BLACKBOX_ANALYSIS_PROVIDER === undefined
-      ? {}
-      : { provider: environment.BLACKBOX_ANALYSIS_PROVIDER }),
+    ...(baseUrl === undefined ? {} : { baseUrl }),
+    ...(provider === undefined ? {} : { provider }),
     ...(fetcher === undefined ? {} : { fetcher }),
   });
 }

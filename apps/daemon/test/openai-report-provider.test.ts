@@ -3,7 +3,7 @@ import {
   REPORT_AI_INSTRUCTIONS,
   REPORT_PROMPT_VERSION,
   type AiReportProviderRequest,
-} from "@blackbox/analysis";
+} from "@tekrion/analysis";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -60,7 +60,7 @@ describe("OpenAI-compatible incident report provider", () => {
         text: {
           format: {
             type: "json_schema",
-            name: "blackbox_incident_report",
+            name: "tekrion_incident_report",
             strict: true,
             schema: AI_INCIDENT_NARRATIVE_JSON_SCHEMA,
           },
@@ -151,7 +151,7 @@ describe("OpenAI-compatible incident report provider", () => {
     );
   });
 
-  it("requires dedicated Black Box analysis configuration", () => {
+  it("requires dedicated Tekrion analysis configuration", () => {
     expect(
       openAiReportProviderFromEnvironment({
         OPENAI_API_KEY: API_KEY,
@@ -160,13 +160,23 @@ describe("OpenAI-compatible incident report provider", () => {
     ).toBeUndefined();
     expect(
       openAiReportProviderFromEnvironment({
-        BLACKBOX_ANALYSIS_API_KEY: API_KEY,
-        BLACKBOX_ANALYSIS_MODEL: "fixture-model",
-        BLACKBOX_ANALYSIS_PROVIDER: "fixture-provider",
+        TEKRION_ANALYSIS_API_KEY: API_KEY,
+        TEKRION_ANALYSIS_MODEL: "fixture-model",
+        TEKRION_ANALYSIS_PROVIDER: "fixture-provider",
       }),
     ).toMatchObject({
       provider: "fixture-provider",
       model: "fixture-model",
+    });
+    expect(
+      openAiReportProviderFromEnvironment({
+        BLACKBOX_ANALYSIS_API_KEY: API_KEY,
+        BLACKBOX_ANALYSIS_MODEL: "legacy-model",
+        BLACKBOX_ANALYSIS_PROVIDER: "legacy-provider",
+      }),
+    ).toMatchObject({
+      provider: "legacy-provider",
+      model: "legacy-model",
     });
   });
 

@@ -1,4 +1,4 @@
-import type { BlackBoxEvent } from "@blackbox/protocol";
+import type { TekrionEvent } from "@tekrion/protocol";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -42,7 +42,7 @@ export function stringsIn(value: unknown): string[] {
   return strings;
 }
 
-export function eventText(event: BlackBoxEvent): string {
+export function eventText(event: TekrionEvent): string {
   return [event.type, ...stringsIn(event.summary)].join("\n");
 }
 
@@ -73,7 +73,7 @@ function firstStringForKey(value: unknown, key: string): string | undefined {
 }
 
 export function eventExcerpt(
-  event: BlackBoxEvent,
+  event: TekrionEvent,
   maximumCharacters = 480,
 ): string | undefined {
   for (const key of EXCERPT_KEYS) {
@@ -142,11 +142,11 @@ function pathFromRecord(record: JsonRecord): string | undefined {
   return undefined;
 }
 
-export function eventPath(event: BlackBoxEvent): string | undefined {
+export function eventPath(event: TekrionEvent): string | undefined {
   return pathFromRecord(event.summary);
 }
 
-export function eventArguments(event: BlackBoxEvent): JsonRecord {
+export function eventArguments(event: TekrionEvent): JsonRecord {
   const direct = event.summary.arguments ?? event.summary.args;
   if (isRecord(direct)) {
     return direct;
@@ -190,7 +190,7 @@ function collectHashes(value: unknown, output: Set<string>): void {
   }
 }
 
-export function eventHashes(event: BlackBoxEvent): Set<string> {
+export function eventHashes(event: TekrionEvent): Set<string> {
   const hashes = new Set<string>();
   collectHashes(event.summary, hashes);
   if (event.payloadRef !== undefined) {

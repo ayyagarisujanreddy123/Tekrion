@@ -37,8 +37,8 @@ describe("agent integrations", () => {
 
   it("launches Codex through an authenticated HTTP-only recorder provider", () => {
     const sessionProxyOrigin =
-      "http://127.0.0.1:4141/.blackbox/session/c2Vzc2lvbg";
-    const provider = `blackbox_recorder_${createHash("sha256")
+      "http://127.0.0.1:4141/.tekrion/session/c2Vzc2lvbg";
+    const provider = `tekrion_recorder_${createHash("sha256")
       .update(sessionProxyOrigin)
       .digest("hex")
       .slice(0, 16)}`;
@@ -52,7 +52,7 @@ describe("agent integrations", () => {
       "--config",
       `model_provider="${provider}"`,
       "--config",
-      `model_providers.${provider}.name="Black Box Recorder"`,
+      `model_providers.${provider}.name="Tekrion Recorder"`,
       "--config",
       `model_providers.${provider}.base_url="${sessionProxyOrigin}/v1"`,
       "--config",
@@ -66,8 +66,9 @@ describe("agent integrations", () => {
     ]);
     expect(defaultUpstreamForAgent("codex")).toBe(OPENAI_UPSTREAM_ORIGIN);
     expect(prepared.environment).toEqual({
+      TEKRION_AGENT: "codex",
       BLACKBOX_AGENT: "codex",
-      OPENAI_BASE_URL: "http://127.0.0.1:4141/.blackbox/session/c2Vzc2lvbg/v1",
+      OPENAI_BASE_URL: "http://127.0.0.1:4141/.tekrion/session/c2Vzc2lvbg/v1",
     });
     expect(sessionUpstreamRouteForAgent("codex", false)).toBe("codex-auth");
     expect(sessionUpstreamRouteForAgent("codex", true)).toBe("direct");
@@ -77,7 +78,7 @@ describe("agent integrations", () => {
     const prepared = prepareAgentLaunch(
       "codex",
       ["--yes", "@openai/codex@latest", "exec", "inspect this project"],
-      "http://127.0.0.1:4141/.blackbox/session/cGFja2FnZS1ydW5uZXI",
+      "http://127.0.0.1:4141/.tekrion/session/cGFja2FnZS1ydW5uZXI",
       "/usr/local/bin/npx",
     );
 
@@ -96,16 +97,16 @@ describe("agent integrations", () => {
     const prepared = prepareAgentLaunch(
       "claude",
       ["-p", "inspect this project"],
-      "http://127.0.0.1:4141/.blackbox/session/c2Vzc2lvbg",
+      "http://127.0.0.1:4141/.tekrion/session/c2Vzc2lvbg",
     );
 
     expect(defaultUpstreamForAgent("claude")).toBe(ANTHROPIC_UPSTREAM_ORIGIN);
     expect(prepared).toEqual({
       arguments: ["-p", "inspect this project"],
       environment: {
+        TEKRION_AGENT: "claude",
         BLACKBOX_AGENT: "claude",
-        ANTHROPIC_BASE_URL:
-          "http://127.0.0.1:4141/.blackbox/session/c2Vzc2lvbg",
+        ANTHROPIC_BASE_URL: "http://127.0.0.1:4141/.tekrion/session/c2Vzc2lvbg",
       },
     });
     expect(prepared.environment).not.toHaveProperty("OPENAI_BASE_URL");

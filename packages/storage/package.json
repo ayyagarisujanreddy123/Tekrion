@@ -1,12 +1,11 @@
 {
-  "name": "@blackbox/storage",
+  "name": "@tekrion/storage",
   "version": "0.1.0",
-  "private": true,
-  "description": "Crash-safe SQLite evidence journal and blob store for Black Box",
+  "description": "Crash-safe SQLite evidence journal and blob store for Tekrion",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayyagarisujanreddy123/Black-Box.git",
+    "url": "git+https://github.com/ayyagarisujanreddy123/Tekrion.git",
     "directory": "packages/storage"
   },
   "publishConfig": {
@@ -24,7 +23,7 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@blackbox/protocol": "0.1.0",
+    "@tekrion/protocol": "0.1.0",
     "better-sqlite3": "12.11.1",
     "zod": "4.4.3"
   }

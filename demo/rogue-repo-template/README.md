@@ -1,6 +1,6 @@
 # Calculator fixture
 
-This disposable repository is used only by the Black Box deterministic demo.
+This disposable repository is used only by the Tekrion deterministic demo.
 
 Run `npm run build` to verify the build target and `npm test` to run the tests.
 

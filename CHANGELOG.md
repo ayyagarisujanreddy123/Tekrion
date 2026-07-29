@@ -1,6 +1,6 @@
 # Changelog
 
-This file records user-visible changes to Black Box. Version 0.1.0 remains an unreleased source candidate until an official tag and package publication are completed.
+This file records user-visible changes to Tekrion. Version 0.1.0 remains an unreleased source candidate until an official tag and package publication are completed.
 
 ## 0.1.0 — Unreleased
 
@@ -8,20 +8,34 @@ This file records user-visible changes to Black Box. Version 0.1.0 remains an un
 
 - Byte-faithful localhost proxy capture for supported OpenAI Responses, OpenAI
   Chat Completions, and Anthropic Messages JSON/SSE traffic.
-- Native `blackbox run` launch integration for Codex and Claude Code, including
+- Native `tekrion run` launch integration for Codex and Claude Code, including
   auto-detection, explicit `--agent` selection, one-run client configuration,
   and validated per-session upstream routing through a shared daemon.
 - Account-aware local sessions: Codex reuses ChatGPT or API-key authentication
   through an HTTP-only recorder provider, while Claude reuses its native
-  OAuth/API-key selection without a separate Black Box credential.
+  OAuth/API-key selection without a separate Tekrion credential.
 - Crash-safe SQLite evidence journal, content-addressed blob storage, recovery, migrations, quotas, retention, and explicit garbage collection.
-- `blackbox run` process capture with bounded output, signal forwarding, workspace baselines, live observations, and authoritative final file evidence.
+- `tekrion run` process capture with bounded output, signal forwarding, workspace baselines, live observations, and authoritative final file evidence.
 - Authenticated local browser cockpit with session navigation, virtualized timeline, evidence inspection, context reconstruction, search, and live updates.
 - Deterministic blame ranking, anomaly detection, incident reports, and explicit opt-in AI narrative enrichment with evidence minimization and consent binding.
-- Tamper-evident share and forensic `.bbx` archives with strict verification and database-enforced read-only imports.
+- Tamper-evident share and forensic `.tkr` archives with strict verification and database-enforced read-only imports.
 - Repeatable offline incident demo, measured local performance harness, cross-platform CI definition, clean-install package smoke testing, and release-candidate preflight.
 - A production operations runbook covering local deployment, health, capacity, backup/restore, upgrades, logs, and incident handling.
 - CodeQL scanning and weekly Dependabot update configuration, with third-party GitHub Actions pinned to immutable revisions.
+
+### Changed
+
+- Renamed the product, CLI, packages, runtime APIs, configuration, local
+  interfaces, and documentation from Black Box to Tekrion.
+- Renamed the canonical GitHub repository to
+  `ayyagarisujanreddy123/Tekrion`.
+- Moved public package names to the confirmed `@tekrion/*` npm scope and made
+  the seven runtime workspaces publishable without publishing them.
+- Changed new portable archive output from `.bbx`/`blackbox-bbx` to
+  `.tkr`/`tekrion-tkr`. Existing pre-rebrand archives remain importable.
+- Added non-destructive compatibility for pre-rebrand data homes, database and
+  blob-directory names, `BLACKBOX_*` configuration aliases, session headers
+  and routes, live-event names, and browser session tokens.
 
 ### Security and privacy
 
@@ -35,7 +49,7 @@ This file records user-visible changes to Black Box. Version 0.1.0 remains an un
 - Repository install scripts are explicitly reviewed and version-pinned for npm's dependency lifecycle policy.
 - Updated the locked development dependency graph to use the patched
   `brace-expansion` 5.0.8 release.
-- `blackbox doctor` opens the evidence database without migration and fails on schema, migration-ledger, or SQLite integrity problems.
+- `tekrion doctor` opens the evidence database without migration and fails on schema, migration-ledger, or SQLite integrity problems.
 - Daemon log startup rotation retains one private backup and rejects symlinked or non-file log targets.
 - Query and header collection preserves prototype-shaped names without assigning untrusted keys onto ordinary objects.
 - Sensitive control files and imported archives are read through stable file descriptors with enforced byte ceilings.
@@ -48,7 +62,7 @@ This file records user-visible changes to Black Box. Version 0.1.0 remains an un
   terminal and while the daemon shuts down, so completed sessions can be
   exported immediately without a recovery restart.
 - Corrected the minimum Node.js requirement to 22.15.0, the first 22.x release with the Zstandard APIs required by the evidence blob store, and added an explicit `doctor` runtime check.
-- Made `blackbox doctor` report unsupported POSIX permission-mode verification as a warning on Windows instead of failing an otherwise healthy installation.
+- Made `tekrion doctor` report unsupported POSIX permission-mode verification as a warning on Windows instead of failing an otherwise healthy installation.
 - Made package smoke testing and release preflight invoke JavaScript entrypoints directly so Windows does not attempt to execute npm-generated `.cmd` shims through `execFile`.
 
 ### Known limitations
@@ -57,5 +71,5 @@ This file records user-visible changes to Black Box. Version 0.1.0 remains an un
   transports, and path-bearing upstream gateways are not supported. Wrapped
   Codex sessions use HTTP.
 - Agent-specific adapters are not bundled.
-- Black Box observes configured API, wrapped-process, and repository boundaries; it is not an operating-system sandbox or universal activity monitor.
+- Tekrion observes configured API, wrapped-process, and repository boundaries; it is not an operating-system sandbox or universal activity monitor.
 - npm publication, signed tagging, and registry installation verification are deferred.

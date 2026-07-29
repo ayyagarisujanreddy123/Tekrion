@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   AiReportRequestSchema,
-  BbxArchiveSchema,
-  BlackBoxEventSchema,
+  TekrionArchiveSchema,
+  TekrionEventSchema,
   BlameResultSchema,
   ContextResultSchema,
   CONTEXT_VISIBILITY_NOTICE,
@@ -98,9 +98,7 @@ describe("versioned evidence contracts", () => {
       },
     });
 
-    expect(BlackBoxEventSchema.parse(canonicalEvent).type).toBe(
-      "model.request",
-    );
+    expect(TekrionEventSchema.parse(canonicalEvent).type).toBe("model.request");
     expect(rawExchange.protocol).toBe("openai.responses");
     expect(session.counts.outputTokens).toBeNull();
   });
@@ -109,11 +107,11 @@ describe("versioned evidence contracts", () => {
     const futureEvent = { ...canonicalEvent, schemaVersion: 2 };
 
     expect(() =>
-      parseCurrentRecord("event", BlackBoxEventSchema, futureEvent),
+      parseCurrentRecord("event", TekrionEventSchema, futureEvent),
     ).toThrow(UnsupportedSchemaVersionError);
 
     try {
-      parseCurrentRecord("event", BlackBoxEventSchema, futureEvent);
+      parseCurrentRecord("event", TekrionEventSchema, futureEvent);
     } catch (error: unknown) {
       expect(error).toMatchObject({
         actualVersion: 2,
@@ -136,7 +134,7 @@ describe("versioned evidence contracts", () => {
   });
 
   it("retains unknown canonical event types without inventing semantics", () => {
-    const event = BlackBoxEventSchema.parse({
+    const event = TekrionEventSchema.parse({
       ...canonicalEvent,
       type: "provider.future_item",
       evidence: "unknown",
@@ -342,7 +340,7 @@ describe("privacy and inference constraints", () => {
       limitations: ["Provider-hidden reasoning is unavailable."],
       analysis: {
         mode: "deterministic",
-        analyzer: "blackbox-rules-v1",
+        analyzer: "tekrion-rules-v1",
         promptVersion: null,
         model: null,
         externalEvidenceSent: false,
@@ -382,12 +380,12 @@ describe("privacy and inference constraints", () => {
     ).toBe(false);
   });
 
-  it("accepts normalized BBX manifests and rejects unsafe paths", () => {
+  it("accepts normalized TKR manifests and rejects unsafe paths", () => {
     const archive = {
       schemaVersion: 1,
       manifest: {
         schemaVersion: 1,
-        format: "blackbox-bbx",
+        format: "tekrion-tkr",
         archiveId: "archive-1",
         exportedAt: timestamp,
         profile: "share",
@@ -429,7 +427,13 @@ describe("privacy and inference constraints", () => {
         },
       ],
     };
-    expect(BbxArchiveSchema.parse(archive).manifest.profile).toBe("share");
+    expect(TekrionArchiveSchema.parse(archive).manifest.profile).toBe("share");
+    expect(
+      TekrionArchiveSchema.parse({
+        ...archive,
+        manifest: { ...archive.manifest, format: "blackbox-bbx" },
+      }).manifest.format,
+    ).toBe("blackbox-bbx");
     for (const unsafePath of [
       "/absolute/evidence.json",
       "../evidence.json",
@@ -439,7 +443,7 @@ describe("privacy and inference constraints", () => {
       "C:/evidence.json",
     ]) {
       expect(
-        BbxArchiveSchema.safeParse({
+        TekrionArchiveSchema.safeParse({
           ...archive,
           manifest: {
             ...archive.manifest,

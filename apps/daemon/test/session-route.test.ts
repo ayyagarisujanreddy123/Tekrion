@@ -38,10 +38,21 @@ describe("session-scoped proxy routes", () => {
 
   it("rejects malformed tokens and non-v1 provider paths", () => {
     expect(
-      parseSessionScopedPath("/.blackbox/session/not+base64/v1/responses"),
+      parseSessionScopedPath("/.tekrion/session/not+base64/v1/responses"),
     ).toBeUndefined();
     expect(
-      parseSessionScopedPath("/.blackbox/session/c2Vzc2lvbi0x/private"),
+      parseSessionScopedPath("/.tekrion/session/c2Vzc2lvbi0x/private"),
     ).toBeUndefined();
+  });
+
+  it("continues to parse pre-rebrand session routes", () => {
+    expect(
+      parseSessionScopedPath(
+        "/.blackbox/session/c2Vzc2lvbi1sZWdhY3k/v1/responses",
+      ),
+    ).toEqual({
+      sessionId: "session-legacy",
+      path: "/v1/responses",
+    });
   });
 });

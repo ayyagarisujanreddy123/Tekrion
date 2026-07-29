@@ -1,6 +1,6 @@
-# Contributing to Black Box
+# Contributing to Tekrion
 
-Black Box handles forensic evidence. Changes must preserve raw data, label uncertainty honestly, and never weaken credential-exclusion rules for convenience.
+Tekrion handles forensic evidence. Changes must preserve raw data, label uncertainty honestly, and never weaken credential-exclusion rules for convenience.
 
 ## Setup
 

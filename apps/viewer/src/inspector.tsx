@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import type {
-  BlackBoxEvent,
+  TekrionEvent,
   BlameAnalysis,
   BlameCandidate,
   BlobReference,
@@ -10,7 +10,7 @@ import type {
   EventDetail,
   IncidentReportResult,
   ReportPreflight,
-} from "@blackbox/protocol";
+} from "@tekrion/protocol";
 
 import type { ViewerApiClient } from "./api.js";
 import {
@@ -41,7 +41,7 @@ export interface InspectorProps {
   readonly detail?: EventDetail | undefined;
   readonly loading: boolean;
   readonly error?: string | undefined;
-  readonly relatedEvents: readonly BlackBoxEvent[];
+  readonly relatedEvents: readonly TekrionEvent[];
   readonly onSelectEvent: (eventId: string) => void;
 }
 
@@ -513,7 +513,7 @@ export function BlamePanel(props: {
   return <BlameView analysis={analysis} onSelectEvent={props.onSelectEvent} />;
 }
 
-export function blameAvailable(event: BlackBoxEvent): boolean {
+export function blameAvailable(event: TekrionEvent): boolean {
   return (
     event.type === "tool.call" ||
     event.type.startsWith("file.") ||
@@ -1191,7 +1191,7 @@ function Headers(props: { readonly detail: EventDetail }): React.JSX.Element {
 
 function Provenance(props: {
   readonly detail: EventDetail;
-  readonly relatedEvents: readonly BlackBoxEvent[];
+  readonly relatedEvents: readonly TekrionEvent[];
   readonly onSelectEvent: (eventId: string) => void;
 }): React.JSX.Element {
   return (

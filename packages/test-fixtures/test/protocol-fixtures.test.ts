@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { BlackBoxEventSchema } from "../../protocol/src/index.js";
+import { TekrionEventSchema } from "../../protocol/src/index.js";
 import {
   concatenateBytes,
   getProtocolFixture,
@@ -40,7 +40,7 @@ describe("golden protocol fixtures", () => {
       expect(fixture.expectedCanonicalEvents.length).toBeGreaterThan(0);
 
       for (const event of fixture.expectedCanonicalEvents) {
-        expect(BlackBoxEventSchema.safeParse(event).success).toBe(true);
+        expect(TekrionEventSchema.safeParse(event).success).toBe(true);
       }
     },
   );
@@ -79,9 +79,9 @@ describe("golden protocol fixtures", () => {
 
   it("uses unknown rather than zero when usage is absent", () => {
     const fixture = getProtocolFixture("usage-absent");
-    const event = BlackBoxEventSchema.parse(
+    const event = TekrionEventSchema.parse(
       fixture.expectedCanonicalEvents.find((candidate) => {
-        const parsed = BlackBoxEventSchema.safeParse(candidate);
+        const parsed = TekrionEventSchema.safeParse(candidate);
         return (
           parsed.success && parsed.data.type === "model.response.completed"
         );
@@ -97,7 +97,7 @@ describe("golden protocol fixtures", () => {
 
   it("marks the missing predecessor fixture as a partial client chain", () => {
     const fixture = getProtocolFixture("missing-previous-response");
-    const event = BlackBoxEventSchema.parse(fixture.expectedCanonicalEvents[0]);
+    const event = TekrionEventSchema.parse(fixture.expectedCanonicalEvents[0]);
 
     expect(event.summary).toMatchObject({
       contextCompleteness: "partial-client-chain",

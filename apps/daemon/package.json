@@ -1,12 +1,11 @@
 {
-  "name": "@blackbox/daemon",
+  "name": "@tekrion/daemon",
   "version": "0.1.0",
-  "private": true,
-  "description": "Local capture, query, archive, and analysis service for Black Box",
+  "description": "Local capture, query, archive, and analysis service for Tekrion",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ayyagarisujanreddy123/Black-Box.git",
+    "url": "git+https://github.com/ayyagarisujanreddy123/Tekrion.git",
     "directory": "apps/daemon"
   },
   "publishConfig": {
@@ -24,11 +23,11 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@blackbox/analysis": "0.1.0",
-    "@blackbox/context": "0.1.0",
-    "@blackbox/normalizers": "0.1.0",
-    "@blackbox/protocol": "0.1.0",
-    "@blackbox/storage": "0.1.0",
+    "@tekrion/analysis": "0.1.0",
+    "@tekrion/context": "0.1.0",
+    "@tekrion/normalizers": "0.1.0",
+    "@tekrion/protocol": "0.1.0",
+    "@tekrion/storage": "0.1.0",
     "zod": "4.4.3"
   }
 }

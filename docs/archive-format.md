@@ -1,10 +1,15 @@
-# `.bbx` archive format
+# `.tkr` archive format
 
-This document describes `blackbox-bbx` schema version 1. The protocol schemas in `packages/protocol/src/archive.ts` are authoritative.
+This document describes `tekrion-tkr` schema version 1. The protocol schemas in `packages/protocol/src/archive.ts` are authoritative.
+
+For compatibility, import also accepts the pre-rebrand `blackbox-bbx` format
+commonly stored with a `.bbx` extension. New exports always use
+`tekrion-tkr` and `.tkr`; both formats pass through the same verification and
+read-only import boundary.
 
 ## Container
 
-A `.bbx` file is UTF-8 JSON with a trailing newline:
+A `.tkr` file is UTF-8 JSON with a trailing newline:
 
 ```json
 {

@@ -54,13 +54,13 @@ afterEach(async () => {
 
 describe("authoritative workspace snapshots", () => {
   it("captures Git effects without blaming unchanged pre-existing dirt", async () => {
-    const root = await temporaryRoot("blackbox-git-observer-test-");
-    const blackBoxDirectory = join(root, "blackbox-home");
+    const root = await temporaryRoot("tekrion-git-observer-test-");
+    const tekrionDirectory = join(root, "tekrion-home");
     await mkdir(join(root, "ignored"), { recursive: true });
-    await mkdir(blackBoxDirectory, { recursive: true });
+    await mkdir(tekrionDirectory, { recursive: true });
     git(root, "init", "--quiet");
-    git(root, "config", "user.email", "blackbox@example.test");
-    git(root, "config", "user.name", "Black Box Test");
+    git(root, "config", "user.email", "tekrion@example.test");
+    git(root, "config", "user.name", "Tekrion Test");
     await Promise.all([
       writeFile(join(root, ".gitignore"), "ignored/\n"),
       writeFile(join(root, "modify.txt"), "before modify\n"),
@@ -72,11 +72,11 @@ describe("authoritative workspace snapshots", () => {
     git(root, "add", ".");
     git(root, "commit", "--quiet", "-m", "fixture baseline");
     await writeFile(join(root, "dirty.txt"), "pre-existing dirt\n");
-    await writeFile(join(blackBoxDirectory, "internal.tmp"), "baseline\n");
+    await writeFile(join(tekrionDirectory, "internal.tmp"), "baseline\n");
 
     const observer = await WorkspaceObserver.start({
       cwd: root,
-      dataDirectory: blackBoxDirectory,
+      dataDirectory: tekrionDirectory,
       configuration: configuration(),
     });
     const watched: { summary: { path: string } }[] = [];
@@ -92,7 +92,7 @@ describe("authoritative workspace snapshots", () => {
       writeFile(join(root, "untracked.txt"), "new file\n"),
       writeFile(join(root, "large.bin"), Buffer.alloc(64, 7)),
       writeFile(join(root, "ignored", "ignored.txt"), "ignored\n"),
-      writeFile(join(blackBoxDirectory, "internal.tmp"), "final\n"),
+      writeFile(join(tekrionDirectory, "internal.tmp"), "final\n"),
     ]);
     await rename(join(root, "rename-old.txt"), join(root, "renamed.txt"));
     await delay(150);
@@ -124,13 +124,13 @@ describe("authoritative workspace snapshots", () => {
     ]);
     expect(changes.has("dirty.txt")).toBe(false);
     expect(changes.has("ignored/ignored.txt")).toBe(false);
-    expect(changes.has("blackbox-home/internal.tmp")).toBe(false);
+    expect(changes.has("tekrion-home/internal.tmp")).toBe(false);
     expect(
       watched.some((change) => change.summary.path === "ignored/ignored.txt"),
     ).toBe(false);
     expect(
       watched.some(
-        (change) => change.summary.path === "blackbox-home/internal.tmp",
+        (change) => change.summary.path === "tekrion-home/internal.tmp",
       ),
     ).toBe(false);
 
@@ -181,7 +181,7 @@ describe("authoritative workspace snapshots", () => {
   }, 30_000);
 
   it("uses bounded content deltas for a non-Git directory", async () => {
-    const root = await temporaryRoot("blackbox-directory-observer-test-");
+    const root = await temporaryRoot("tekrion-directory-observer-test-");
     await Promise.all([
       writeFile(join(root, "modify.txt"), "old\n"),
       writeFile(join(root, "delete.txt"), "remove\n"),
@@ -245,10 +245,10 @@ describe("authoritative workspace snapshots", () => {
   });
 
   it("records a symlink itself without crossing its target boundary", async () => {
-    const root = await temporaryRoot("blackbox-symlink-observer-test-");
-    const outside = await temporaryRoot("blackbox-symlink-outside-test-");
+    const root = await temporaryRoot("tekrion-symlink-observer-test-");
+    const outside = await temporaryRoot("tekrion-symlink-outside-test-");
     const secondOutside = await temporaryRoot(
-      "blackbox-symlink-second-outside-test-",
+      "tekrion-symlink-second-outside-test-",
     );
     await Promise.all([
       writeFile(join(outside, "outside.txt"), "outside baseline\n"),
@@ -295,7 +295,7 @@ describe("authoritative workspace snapshots", () => {
   });
 
   it("closes its watcher when final capture is canceled", async () => {
-    const root = await temporaryRoot("blackbox-canceled-observer-test-");
+    const root = await temporaryRoot("tekrion-canceled-observer-test-");
     const observer = await WorkspaceObserver.start({
       cwd: root,
       configuration: configuration(),
