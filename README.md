@@ -1,21 +1,32 @@
-<pre align="center" role="heading" aria-level="1">
-████████╗███████╗██╗  ██╗██████╗ ██╗ ██████╗ ███╗   ██╗
-╚══██╔══╝██╔════╝██║ ██╔╝██╔══██╗██║██╔═══██╗████╗  ██║
-   ██║   █████╗  █████╔╝ ██████╔╝██║██║   ██║██╔██╗ ██║
-   ██║   ██╔══╝  ██╔═██╗ ██╔══██╗██║██║   ██║██║╚██╗██║
-   ██║   ███████╗██║  ██╗██║  ██║██║╚██████╔╝██║ ╚████║
-   ╚═╝   ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-</pre>
+<h1 align="center">
+  <img src="docs/readme-header.svg" alt="Tekrion — local evidence for AI coding agents" width="100%" />
+</h1>
 
 <p align="center">
-  <samp><strong>LOCAL FLIGHT RECORDER FOR AI CODING AGENTS</strong></samp>
-  <br />
-  <samp>EVIDENCE FOR EVERY AGENT ACTION.</samp>
+  <a href="https://github.com/ayyagarisujanreddy123/Tekrion/actions/workflows/ci.yml"><img src="https://github.com/ayyagarisujanreddy123/Tekrion/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status" /></a>
+  <a href="https://github.com/ayyagarisujanreddy123/Tekrion/actions/workflows/codeql.yml"><img src="https://github.com/ayyagarisujanreddy123/Tekrion/actions/workflows/codeql.yml/badge.svg?branch=main" alt="CodeQL status" /></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-6ec6c1" alt="Apache-2.0 license" /></a>
+  <a href="./package.json"><img src="https://img.shields.io/badge/Node.js-%3E%3D22.15-9bbf6a?logo=node.js&amp;logoColor=white" alt="Node.js 22.15 or newer" /></a>
+  <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/contributions-welcome-e8a84c" alt="Contributions welcome" /></a>
 </p>
 
-Tekrion (pronounced **TEK-ree-on**) is named after the Greek _tekmērion_, meaning evidence or proof. It records what an AI coding agent saw, said, called, printed, and changed—then turns that evidence into an investigation you can inspect locally.
+<p align="center">
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#why-tekrion-exists">Why Tekrion</a> ·
+  <a href="#browser-evidence-cockpit">Cockpit</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#contributing">Contributing</a> ·
+  <a href="#license">License</a>
+</p>
+
+Tekrion is an **open-source, local-first flight recorder for AI coding agents**. It records what an agent saw, said, called, printed, and changed—then turns that evidence into an investigation you can inspect on your own machine.
+
+The name is pronounced **TEK-ree-on** and comes from the Greek _tekmērion_, meaning evidence or proof.
 
 It runs as a CLI-managed localhost recorder with a browser cockpit. Launch Codex, Claude Code, or another supported HTTP client through `tekrion run`, and Tekrion builds a synchronized record of API traffic, model/tool events, process output, and workspace effects.
+
+> [!IMPORTANT]
+> **Pre-release:** Tekrion 0.1.0 is currently available from source. The public npm packages have not been released yet, and pre-release interfaces may still evolve.
 
 When an agent deletes a test, follows instructions hidden in a README, repeats a failing command, or drifts outside the user's request, Tekrion helps answer:
 
@@ -74,10 +85,12 @@ Requirements:
 - npm 10 or newer
 - Codex, Claude Code, or another supported client that accepts a custom base URL
 
-From this repository:
+Clone and run the current source:
 
 ```bash
-npm install
+git clone https://github.com/ayyagarisujanreddy123/Tekrion.git
+cd Tekrion
+npm ci
 npm run build
 npm run tekrion -- init
 npm run tekrion -- doctor
@@ -422,9 +435,15 @@ If a live provider is unavailable during a real investigation, process and works
 | Import reports an integrity failure  | Treat the file as corrupt or modified. Obtain a new copy instead of bypassing verification.                                                    |
 | Storage quota is reached             | Preview `tekrion prune` with an age or byte target, inspect the plan, then rerun with `--yes`.                                                 |
 
-## Measured local smoke test
+## Reproducible performance smoke test
 
-On 2026-07-21, the reproducible 100-sample loopback benchmark measured 6.031 ms of p95 proxy time-to-first-byte overhead on an Intel i7-9750H Mac running Node.js 22.20.0. The cockpit's initial HTML response completed in 1.327 ms at p95, and its three production assets totaled 99,525 bytes when gzipped. These are machine-specific smoke results—not browser render, Internet, streaming, or load-test claims. See the fixture hash, measured source commit, full distribution, method, and limitations in [docs/performance.md](docs/performance.md), then reproduce them with `npm run benchmark`.
+The repository includes a 100-sample loopback benchmark for proxy overhead, initial cockpit delivery, and packaged asset size:
+
+```bash
+npm run benchmark
+```
+
+Results are machine-specific smoke measurements—not browser-render, Internet, streaming, or load-test guarantees. See the recorded fixture hash, source commit, method, and limitations in [docs/performance.md](docs/performance.md), and reproduce the measurement on the exact release candidate before publishing performance claims.
 
 ## Supported today
 
@@ -527,12 +546,30 @@ demo/               disposable rogue repository and transcript
 docs/decisions/     architecture decision records
 ```
 
+## Contributing
+
+Contributions are welcome—from documentation fixes and protocol fixtures to provider compatibility, storage hardening, and cockpit accessibility.
+
+- Read [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, evidence-contract rules, and the definition of done.
+- Search the [issue tracker](https://github.com/ayyagarisujanreddy123/Tekrion/issues) before opening a new bug or feature request.
+- For substantial behavior or schema changes, open an issue first so the evidence and compatibility impact can be discussed.
+- Report vulnerabilities privately through the process in [SECURITY.md](./SECURITY.md), never through a public issue containing real evidence.
+
+Before submitting a pull request, run:
+
+```bash
+npm ci
+npm run check
+```
+
+Thank you for helping make AI-agent behavior easier to inspect and verify.
+
 ## Development
 
 Install dependencies and run the full gate:
 
 ```bash
-npm install
+npm ci
 npm run check
 ```
 
