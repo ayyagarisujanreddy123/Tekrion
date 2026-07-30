@@ -48,7 +48,7 @@ function SessionRail(props: {
   return (
     <aside className="session-rail" aria-label="Recorded sessions">
       <header>
-        <span>RECORDER INDEX</span>
+        <span>FLIGHT LOG</span>
         <strong>{props.sessions.length.toLocaleString()}</strong>
       </header>
       {props.loading && props.sessions.length === 0 ? (
@@ -127,9 +127,9 @@ export function MissingAuthentication(): React.JSX.Element {
   return (
     <main className="auth-gate">
       <div className="auth-gate__mark" aria-hidden="true">
-        BB
+        TK
       </div>
-      <span>LOCAL AUTH REQUIRED</span>
+      <span>LOCAL ACCESS / AUTH REQUIRED</span>
       <h1>The cockpit is sealed.</h1>
       <p>
         Open this viewer through <code>tekrion open</code>. The CLI transfers a
@@ -390,14 +390,15 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
       <header className="topbar">
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">
-            BB
+            TK
           </span>
           <div>
             <strong>TEKRION</strong>
-            <span>LOCAL EVIDENCE COCKPIT</span>
+            <span>AI AGENT FLIGHT RECORDER</span>
           </div>
         </div>
         <div className="system-readout">
+          <span className="system-mode">LOCAL / PRIVATE</span>
           <span
             className={`live-indicator status-${liveStatus}`}
             aria-hidden="true"
@@ -421,14 +422,16 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
         <main className="timeline-workspace">
           <header className="workspace-header">
             <div>
-              <span className="eyebrow">SESSION TRACE</span>
+              <span className="eyebrow">EVIDENCE TRACE</span>
               <h1>
                 {session?.repoRoot ?? session?.id ?? "Select a recording"}
               </h1>
               <p>
-                {session === undefined
-                  ? "No session loaded"
-                  : `${session.status} · ${session.captureLevel} capture · started ${new Date(session.startedAt).toLocaleString()}`}
+                <span>
+                  {session === undefined
+                    ? "No session loaded"
+                    : `${session.status} · ${session.captureLevel} capture · started ${new Date(session.startedAt).toLocaleString()}`}
+                </span>
               </p>
             </div>
             <div className="workspace-controls">
