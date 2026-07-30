@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="docs/readme-header.svg" alt="Tekrion — local evidence for AI coding agents" width="100%" />
+  <img src="docs/readme-header.svg" alt="Tekrion" width="100%" />
 </h1>
 
 <p align="center">
