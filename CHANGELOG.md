@@ -22,6 +22,7 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
 - Repeatable offline incident demo, measured local performance harness, cross-platform CI definition, clean-install package smoke testing, and release-candidate preflight.
 - A production operations runbook covering local deployment, health, capacity, backup/restore, upgrades, logs, and incident handling.
 - CodeQL scanning and weekly Dependabot update configuration, with third-party GitHub Actions pinned to immutable revisions.
+- Open-source community guidance with a project Code of Conduct, structured bug and feature forms, and a pull-request verification template.
 
 ### Changed
 
@@ -64,6 +65,7 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
 - Corrected the minimum Node.js requirement to 22.15.0, the first 22.x release with the Zstandard APIs required by the evidence blob store, and added an explicit `doctor` runtime check.
 - Made `tekrion doctor` report unsupported POSIX permission-mode verification as a warning on Windows instead of failing an otherwise healthy installation.
 - Made package smoke testing and release preflight invoke JavaScript entrypoints directly so Windows does not attempt to execute npm-generated `.cmd` shims through `execFile`.
+- Removed a conflicting duplicate install-script policy so strict npm installs use the reviewed, version-pinned approvals.
 
 ### Known limitations
 

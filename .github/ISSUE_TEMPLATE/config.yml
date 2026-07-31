@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/ayyagarisujanreddy123/Tekrion/security/advisories/new
+    about: Report vulnerabilities privately. Never disclose credentials or exploitable evidence in a public issue.
+  - name: Usage and troubleshooting guide
+    url: https://github.com/ayyagarisujanreddy123/Tekrion#readme
+    about: Review installation, diagnostics, supported clients and known limitations before filing an issue.

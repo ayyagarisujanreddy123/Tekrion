@@ -1,0 +1,59 @@
+name: Feature request
+description: Propose a focused improvement to Tekrion
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the investigation or recording problem first. Tekrion keeps observed evidence, derived facts and inference separate, so proposals should preserve that boundary.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow or evidence gap is difficult today, and who encounters it?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed improvement
+      description: Describe the smallest useful behavior rather than only the interface.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and privacy impact
+      description: What new data would be observed, stored, exported or sent externally? How should uncertainty and missing context be represented?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: dropdown
+    id: compatibility
+    attributes:
+      label: Compatibility impact
+      options:
+        - No contract or archive change expected
+        - Additive protocol or schema change
+        - Existing behavior or data may require migration
+        - Unsure
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and documentation for this request.
+          required: true
+        - label: This request contains no credentials or private evidence.
+          required: true

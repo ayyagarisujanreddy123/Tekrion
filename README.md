@@ -551,6 +551,7 @@ docs/decisions/     architecture decision records
 Contributions are welcome—from documentation fixes and protocol fixtures to provider compatibility, storage hardening, and cockpit accessibility.
 
 - Read [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, evidence-contract rules, and the definition of done.
+- Follow the project [Code of Conduct](./CODE_OF_CONDUCT.md) in issues, reviews, discussions, and other project spaces.
 - Search the [issue tracker](https://github.com/ayyagarisujanreddy123/Tekrion/issues) before opening a new bug or feature request.
 - For substantial behavior or schema changes, open an issue first so the evidence and compatibility impact can be discussed.
 - Report vulnerabilities privately through the process in [SECURITY.md](./SECURITY.md), never through a public issue containing real evidence.

@@ -7,9 +7,12 @@ Tekrion handles forensic evidence. Changes must preserve raw data, label uncerta
 Use Node.js 22.15 or newer and npm 10 or newer:
 
 ```bash
-npm install
+npm ci
 npm run check
 ```
+
+Use `npm install` only when intentionally changing dependencies and include the
+resulting lockfile update in the same pull request.
 
 Run a focused test while iterating, then run the full gate before handing work off:
 
@@ -39,6 +42,15 @@ Every supported protocol behavior needs:
 5. a test explaining the behavior being protected.
 
 Parser or proxy behavior that changes a golden fixture requires deliberate review. Do not regenerate snapshots merely to make a failure disappear.
+
+## Issues and pull requests
+
+- Search existing issues before opening a new report.
+- Use the bug or feature-request form so maintainers receive the environment and reproduction details needed to investigate.
+- Never attach real credentials, private source, evidence databases, daemon homes or unreviewed `.tkr` archives to a public issue.
+- Report vulnerabilities through [SECURITY.md](./SECURITY.md), not the public issue tracker.
+- Keep pull requests focused, explain evidence or compatibility effects and list the exact verification commands run.
+- Follow the project [Code of Conduct](./CODE_OF_CONDUCT.md) in every project space.
 
 ## Definition of done
 

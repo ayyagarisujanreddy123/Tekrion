@@ -1,0 +1,86 @@
+name: Bug report
+description: Report a reproducible problem in Tekrion
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Tekrion. Do not include credentials, private source, evidence databases, daemon homes or unreviewed `.tkr` archives. Report security issues through the private link below instead.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected area
+      options:
+        - CLI and agent wrapper
+        - Daemon and proxy
+        - Cockpit
+        - Storage and retention
+        - Archive export or import
+        - Context, blame or reports
+        - Packaging or installation
+        - Documentation
+        - Unsure
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Tekrion version or commit
+      description: Run `tekrion --version` or provide the full source commit.
+      placeholder: "0.1.0 or full commit SHA"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Include operating system, architecture, Node.js version and agent/client version when relevant.
+      placeholder: "macOS 15, arm64, Node.js 22.20.0, Codex ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest safe reproduction and exact commands, with sensitive values replaced.
+      placeholder: |
+        1. Start with ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Redacted diagnostics
+      description: Paste relevant `tekrion doctor --json` output or logs only after removing private paths, evidence and credentials.
+      render: shell
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I searched existing issues for this problem.
+          required: true
+        - label: I removed credentials, private evidence and other sensitive data.
+          required: true
