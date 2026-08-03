@@ -13,6 +13,7 @@ const STANDARD_HOP_BY_HOP_HEADERS = new Set([
 ]);
 
 const NEVER_PERSIST_HEADERS = new Set([
+  "anthropic-organization-id",
   "authorization",
   "chatgpt-account-id",
   "cookie",

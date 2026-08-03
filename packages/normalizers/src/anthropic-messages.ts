@@ -1,3 +1,5 @@
+import { gunzipSync } from "node:zlib";
+
 import {
   NormalizationExchangeSchema,
   NormalizationResultSchema,
@@ -12,7 +14,17 @@ import { SseReplayDetector } from "./duplicates.js";
 import { materializeCanonicalEvents } from "./events.js";
 import { decodeSseChunks, type SseFrame } from "./sse.js";
 
-export const ANTHROPIC_MESSAGES_NORMALIZER_VERSION = "1.0.0";
+export const ANTHROPIC_MESSAGES_NORMALIZER_VERSION = "1.1.0";
+export const DEFAULT_MAX_DECODED_ANTHROPIC_RESPONSE_BYTES = 64 * 1024 * 1024;
+
+const MAX_CONFIGURED_DECODED_RESPONSE_BYTES = 1024 * 1024 * 1024;
+
+class AnthropicContentDecodingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AnthropicContentDecodingError";
+  }
+}
 
 type JsonRecord = Record<string, unknown>;
 
@@ -157,6 +169,89 @@ function contentType(exchange: NormalizationExchange): string {
     }
   }
   return "";
+}
+
+function responseHeaderValues(
+  exchange: NormalizationExchange,
+  expectedName: string,
+): readonly string[] {
+  for (const [name, value] of Object.entries(exchange.responseHeaders ?? {})) {
+    if (name.toLowerCase() === expectedName) {
+      return Array.isArray(value) ? value : [value];
+    }
+  }
+  return [];
+}
+
+function responseContentEncodings(
+  exchange: NormalizationExchange,
+): readonly string[] {
+  return responseHeaderValues(exchange, "content-encoding")
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => value.length > 0);
+}
+
+function decodedResponseLimit(options: NormalizationOptions): number {
+  const limit =
+    options.maxDecodedResponseBodyBytes ??
+    DEFAULT_MAX_DECODED_ANTHROPIC_RESPONSE_BYTES;
+  if (
+    !Number.isInteger(limit) ||
+    limit <= 0 ||
+    limit > MAX_CONFIGURED_DECODED_RESPONSE_BYTES
+  ) {
+    throw new RangeError(
+      `Decoded Anthropic response limit must be an integer between 1 and ${MAX_CONFIGURED_DECODED_RESPONSE_BYTES}.`,
+    );
+  }
+  return limit;
+}
+
+function decodeResponseBody(
+  exchange: NormalizationExchange,
+  options: NormalizationOptions,
+): Uint8Array | undefined {
+  const encodings = responseContentEncodings(exchange);
+  if (encodings.length === 0) {
+    return exchange.responseBody;
+  }
+
+  const limit = decodedResponseLimit(options);
+  let decoded = exchange.responseBody;
+  for (const encoding of [...encodings].reverse()) {
+    if (encoding === "identity") {
+      continue;
+    }
+    if (encoding !== "gzip" && encoding !== "x-gzip") {
+      throw new AnthropicContentDecodingError(
+        "Anthropic response uses an unsupported content encoding.",
+      );
+    }
+    if (decoded === undefined) {
+      throw new AnthropicContentDecodingError(
+        "Anthropic gzip response had no retained response body.",
+      );
+    }
+    try {
+      decoded = gunzipSync(decoded, { maxOutputLength: limit });
+    } catch (error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "ERR_BUFFER_TOO_LARGE"
+      ) {
+        throw new AnthropicContentDecodingError(
+          `Anthropic gzip response exceeded the ${limit}-byte decoded-body limit.`,
+        );
+      }
+      throw new AnthropicContentDecodingError(
+        "Anthropic gzip response could not be decoded.",
+      );
+    }
+  }
+  return decoded;
 }
 
 function requestObject(
@@ -882,6 +977,37 @@ function normalizeSse(
   });
 }
 
+function normalizeContentDecodingFailure(
+  exchange: NormalizationExchange,
+  options: NormalizationOptions,
+  error: AnthropicContentDecodingError,
+): NormalizationResult {
+  const parserId = contentType(exchange)
+    .toLowerCase()
+    .includes("text/event-stream")
+    ? "anthropic.messages.sse"
+    : "anthropic.messages.json";
+  const diagnostics: ParserDiagnostic[] = [];
+  const request = requestObject(exchange, diagnostics);
+  diagnostics.push(
+    diagnostic("invalid-payload", error.message, {
+      eventType: "content-encoding",
+      fatal: true,
+    }),
+  );
+  return NormalizationResultSchema.parse({
+    parserId,
+    parserVersion: ANTHROPIC_MESSAGES_NORMALIZER_VERSION,
+    status: "malformed",
+    events: materializeCanonicalEvents(
+      exchange,
+      [...requestEvidenceDrafts(exchange, request), parserErrorDraft(parserId)],
+      options,
+    ),
+    diagnostics,
+  });
+}
+
 export class AnthropicMessagesNormalizer implements ExchangeNormalizer {
   readonly id = "anthropic.messages";
   readonly version = ANTHROPIC_MESSAGES_NORMALIZER_VERSION;
@@ -904,8 +1030,26 @@ export class AnthropicMessagesNormalizer implements ExchangeNormalizer {
         diagnostics: [],
       });
     }
-    return contentType(exchange).toLowerCase().includes("text/event-stream")
-      ? normalizeSse(exchange, options)
-      : normalizeJson(exchange, options);
+    let decodedResponseBody: Uint8Array | undefined;
+    try {
+      decodedResponseBody = decodeResponseBody(exchange, options);
+    } catch (error: unknown) {
+      if (!(error instanceof AnthropicContentDecodingError)) {
+        throw error;
+      }
+      return normalizeContentDecodingFailure(exchange, options, error);
+    }
+    const decodedExchange =
+      decodedResponseBody === exchange.responseBody
+        ? exchange
+        : NormalizationExchangeSchema.parse({
+            ...exchange,
+            responseBody: decodedResponseBody,
+          });
+    return contentType(decodedExchange)
+      .toLowerCase()
+      .includes("text/event-stream")
+      ? normalizeSse(decodedExchange, options)
+      : normalizeJson(decodedExchange, options);
   }
 }

@@ -658,6 +658,86 @@ WHERE response_headers_json IS NOT NULL
   );
 `;
 
+const REMOVE_ANTHROPIC_ORGANIZATION_ID_HEADER_SQL = String.raw`
+PRAGMA secure_delete = ON;
+
+DROP TRIGGER imported_session_no_raw_exchange_update;
+
+UPDATE raw_exchanges
+SET request_headers_json = COALESCE(
+      (
+        SELECT json_group_object(key, json(value))
+        FROM json_each(raw_exchanges.request_headers_json)
+        WHERE lower(key) <> 'anthropic-organization-id'
+      ),
+      '{}'
+    ),
+    record_json = json_set(
+      record_json,
+      '$.requestHeaders',
+      json(
+        COALESCE(
+          (
+            SELECT json_group_object(key, json(value))
+            FROM json_each(
+              json_extract(raw_exchanges.record_json, '$.requestHeaders')
+            )
+            WHERE lower(key) <> 'anthropic-organization-id'
+          ),
+          '{}'
+        )
+      )
+    )
+WHERE EXISTS (
+  SELECT 1
+  FROM json_each(raw_exchanges.request_headers_json)
+  WHERE lower(key) = 'anthropic-organization-id'
+);
+
+UPDATE raw_exchanges
+SET response_headers_json = COALESCE(
+      (
+        SELECT json_group_object(key, json(value))
+        FROM json_each(raw_exchanges.response_headers_json)
+        WHERE lower(key) <> 'anthropic-organization-id'
+      ),
+      '{}'
+    ),
+    record_json = json_set(
+      record_json,
+      '$.responseHeaders',
+      json(
+        COALESCE(
+          (
+            SELECT json_group_object(key, json(value))
+            FROM json_each(
+              json_extract(raw_exchanges.record_json, '$.responseHeaders')
+            )
+            WHERE lower(key) <> 'anthropic-organization-id'
+          ),
+          '{}'
+        )
+      )
+    )
+WHERE response_headers_json IS NOT NULL
+  AND EXISTS (
+    SELECT 1
+    FROM json_each(raw_exchanges.response_headers_json)
+    WHERE lower(key) = 'anthropic-organization-id'
+  );
+
+CREATE TRIGGER imported_session_no_raw_exchange_update
+BEFORE UPDATE ON raw_exchanges
+WHEN EXISTS (
+  SELECT 1 FROM sessions
+  WHERE sessions.id IN (OLD.session_id, NEW.session_id)
+    AND sessions.status = 'imported-readonly'
+)
+BEGIN
+  SELECT RAISE(ABORT, 'imported session is read-only');
+END;
+`;
+
 export const MIGRATIONS: readonly Migration[] = [
   defineMigration(1, "initial-evidence-schema", INITIAL_SCHEMA_SQL),
   defineMigration(
@@ -679,6 +759,11 @@ export const MIGRATIONS: readonly Migration[] = [
     5,
     "remove-chatgpt-account-id-header",
     REMOVE_CHATGPT_ACCOUNT_ID_HEADER_SQL,
+  ),
+  defineMigration(
+    6,
+    "remove-anthropic-organization-id-header",
+    REMOVE_ANTHROPIC_ORGANIZATION_ID_HEADER_SQL,
   ),
 ];
 

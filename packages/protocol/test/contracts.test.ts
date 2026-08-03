@@ -175,6 +175,8 @@ describe("versioned evidence contracts", () => {
 
 describe("privacy and inference constraints", () => {
   it.each([
+    "anthropic-organization-id",
+    "Anthropic-Organization-ID",
     "authorization",
     "Authorization",
     "chatgpt-account-id",

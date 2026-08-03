@@ -8,6 +8,7 @@ import {
 } from "./common.js";
 
 const FORBIDDEN_PERSISTED_HEADERS = new Set([
+  "anthropic-organization-id",
   "authorization",
   "chatgpt-account-id",
   "cookie",

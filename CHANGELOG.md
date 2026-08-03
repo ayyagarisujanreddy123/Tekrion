@@ -40,9 +40,10 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
 
 ### Security and privacy
 
-- Sensitive authorization, `x-api-key`, ChatGPT account-routing, and cookie
-  headers are excluded from persisted evidence; existing stores are migrated to
-  scrub historically retained Anthropic API-key and ChatGPT account-identifier
+- Sensitive authorization, `x-api-key`, ChatGPT account-routing, Anthropic
+  organization-identifying, and cookie headers are excluded from persisted
+  evidence; existing stores are migrated to scrub historically retained
+  Anthropic API-key, ChatGPT account-identifier, and Anthropic organization-ID
   fields.
 - Control and cockpit services default to loopback with token and origin checks.
 - Recorded markup remains inert, optional external analysis is disabled by default, and imported evidence cannot trigger analysis or replay.
@@ -57,6 +58,10 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
 
 ### Fixed
 
+- Decode bounded gzip-compressed Anthropic Messages JSON/SSE copies during
+  normalization while retaining and forwarding the original compressed HTTP
+  bytes unchanged. Corrupt, unsupported, and over-limit encodings now produce
+  explicit malformed normalization evidence.
 - Recognize OpenAI Responses SSE bodies when an upstream omits the
   `Content-Type` header, including account-authenticated Codex traffic.
 - Finalize abandoned recorder exchanges before a wrapped session becomes

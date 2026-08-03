@@ -33,6 +33,7 @@ export interface ExchangeNormalizationRunner {
 export interface NormalizationRunnerOptions {
   readonly normalizer?: NormalizerEngine;
   readonly knownResponseIds?: () => ReadonlySet<string>;
+  readonly maxDecodedResponseBodyBytes?: number;
   readonly now?: () => Date;
 }
 
@@ -88,6 +89,12 @@ export class DurableNormalizationRunner implements ExchangeNormalizationRunner {
     const exchange = await this.loadExchange(exchangeId);
     const normalization = this.normalizer.normalize(exchange, {
       observedAt: exchange.endedAt ?? exchange.startedAt,
+      ...(this.options.maxDecodedResponseBodyBytes === undefined
+        ? {}
+        : {
+            maxDecodedResponseBodyBytes:
+              this.options.maxDecodedResponseBodyBytes,
+          }),
       ...(this.options.knownResponseIds === undefined
         ? {}
         : { knownResponseIds: this.options.knownResponseIds() }),

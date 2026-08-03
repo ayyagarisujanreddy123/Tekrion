@@ -16,6 +16,12 @@ This is primarily a Tekrion runtime component. Most users should install
 - OpenAI Responses JSON and server-sent events
 - OpenAI Chat Completions JSON and server-sent events
 - Anthropic Messages JSON and server-sent events
+
+Anthropic response normalization decodes a bounded copy of `gzip`-encoded JSON
+or SSE while the recorder retains the original HTTP representation unchanged.
+Corrupt, unsupported, and over-limit encodings are reported as malformed
+normalization evidence.
+
 - Incremental text and function/tool-call argument assembly
 - Usage, errors, duplicates, malformed frames, and unknown items
 

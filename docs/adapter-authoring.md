@@ -71,10 +71,10 @@ const response = await fetch(`${proxyOrigin}/v1/responses`, {
 });
 ```
 
-Authorization, `x-api-key`, `ChatGPT-Account-ID`, and cookie headers are
-forwarded in memory so the provider request still works, but Tekrion's
-protocol schema and persistence boundary reject them from stored header
-evidence.
+Authorization, `x-api-key`, `ChatGPT-Account-ID`,
+`Anthropic-Organization-ID`, and cookie headers are forwarded in memory so the
+provider request still works, but Tekrion's protocol schema and persistence
+boundary reject them from stored header evidence.
 
 ## Session-scoped base URL
 

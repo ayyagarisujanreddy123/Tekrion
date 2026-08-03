@@ -20,19 +20,21 @@ Operational daemon output is limited to lifecycle and error summaries rather tha
 
 ## Credentials and redaction
 
-Authorization, `x-api-key`, `ChatGPT-Account-ID`, proxy-authorization, cookie,
-set-cookie and configured sensitive header values are excluded from persisted
-header evidence. The ChatGPT account identifier is used only in memory to route
-Codex account traffic. Credentials may still appear inside request bodies,
-model text, source files, tool output or terminal output. Known credential
-filenames are hash-only, oversized file content is omitted, and recognized
-secret patterns are redacted before optional AI transmission or `share` export.
+Authorization, `x-api-key`, `ChatGPT-Account-ID`,
+`Anthropic-Organization-ID`, proxy-authorization, cookie, set-cookie and
+configured sensitive header values are excluded from persisted header evidence.
+The ChatGPT account identifier is used only in memory to route Codex account
+traffic. Credentials may still appear inside request bodies, model text, source
+files, tool output or terminal output. Known credential filenames are hash-only,
+oversized file content is omitted, and recognized secret patterns are redacted
+before optional AI transmission or `share` export.
 
 Provider-support storage migrations scrub historically retained `x-api-key` and
-ChatGPT account-identifier header fields from the active database. A private
-database backup created before either migration preserves the pre-migration
-state and can still contain those bytes. Protect or retire it under the same
-credential and personal-data handling policy as a forensic archive.
+ChatGPT account-identifier and Anthropic organization-identifier header fields
+from the active database. A private database backup created before these
+migrations preserves the pre-migration state and can still contain those bytes.
+Protect or retire it under the same credential and personal-data handling policy
+as a forensic archive.
 
 Redaction is rule-based. It recognizes private-key blocks and common OpenAI, GitHub, AWS, JWT, bearer and named credential forms, plus structurally named secret fields. It cannot guarantee that arbitrary secrets, personal data or sensitive prose are absent. Review every artifact before sharing it.
 

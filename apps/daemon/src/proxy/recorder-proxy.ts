@@ -249,6 +249,7 @@ export class RecorderProxy {
       options.normalizationRunner ??
       new DurableNormalizationRunner(options.storage, {
         knownResponseIds: () => this.sessionizer.knownResponseIds(),
+        maxDecodedResponseBodyBytes: this.configuration.maxResponseBodyBytes,
       });
     this.server = createServer((request, response) => {
       void this.handleRequest(request, response);

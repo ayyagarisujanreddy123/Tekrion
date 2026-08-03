@@ -350,6 +350,7 @@ describe("database lifecycle and migrations", () => {
       );
     const secret = "sk-ant-legacy-header-secret";
     const accountId = "chatgpt-legacy-account-id";
+    const organizationId = "anthropic-legacy-organization-id";
     const legacyExchange = {
       schemaVersion: 1,
       id: "exchange-legacy-headers",
@@ -360,12 +361,14 @@ describe("database lifecycle and migrations", () => {
       path: "/v1/messages",
       query: {},
       requestHeaders: {
+        "Anthropic-Organization-ID": [organizationId],
         "X-API-Key": [secret],
         "ChatGPT-Account-ID": [accountId],
         "content-type": ["application/json"],
       },
       responseStatus: 200,
       responseHeaders: {
+        "anthropic-organization-id": ["response-organization-id"],
         "chatgpt-account-id": ["response-account-id"],
         "x-api-key": ["response-secret"],
         "request-id": ["req_fixture"],
@@ -439,6 +442,161 @@ describe("database lifecycle and migrations", () => {
         .pluck()
         .get(legacyExchange.id),
     ).not.toContain(accountId);
+    expect(
+      storage.unsafeDatabase
+        .prepare("SELECT response_headers_json FROM raw_exchanges WHERE id = ?")
+        .pluck()
+        .get(legacyExchange.id),
+    ).not.toContain("organization-id");
+    expect(
+      storage.unsafeDatabase
+        .prepare("SELECT record_json FROM raw_exchanges WHERE id = ?")
+        .pluck()
+        .get(legacyExchange.id),
+    ).not.toContain(organizationId);
+    storage.checkpoint("TRUNCATE");
+    expect(
+      (await readFile(storage.databasePath)).includes(
+        Buffer.from(organizationId),
+      ),
+    ).toBe(false);
+  });
+
+  it("scrubs Anthropic organization headers from imported read-only evidence", async () => {
+    const root = await makeRoot();
+    const databasePath = join(root, "headers-v5-imported.sqlite");
+    const legacy = new Database(databasePath);
+    applyMigrations(legacy, MIGRATIONS.slice(0, 5), TIME);
+    const activeSession = session("session-imported-legacy-headers");
+    legacy
+      .prepare(
+        `INSERT INTO sessions(
+           id, schema_version, started_at, status, capture_level, models_json,
+           tags_json, event_count, error_count, input_tokens, output_tokens,
+           metadata_json, record_json, created_at, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        activeSession.id,
+        activeSession.schemaVersion,
+        activeSession.startedAt,
+        activeSession.status,
+        activeSession.captureLevel,
+        JSON.stringify(activeSession.models),
+        JSON.stringify(activeSession.tags),
+        0,
+        0,
+        null,
+        null,
+        JSON.stringify(activeSession.metadata),
+        JSON.stringify(activeSession),
+        TIME,
+        TIME,
+      );
+    const organizationId = "anthropic-imported-organization-id";
+    const legacyExchange = {
+      schemaVersion: 1,
+      id: "exchange-imported-legacy-headers",
+      sessionId: activeSession.id,
+      sequence: 1,
+      protocol: "anthropic.messages",
+      method: "POST",
+      path: "/v1/messages",
+      query: {},
+      requestHeaders: { "content-type": ["application/json"] },
+      responseStatus: 200,
+      responseHeaders: {
+        "anthropic-organization-id": [organizationId],
+        "request-id": ["req_imported_fixture"],
+      },
+      startedAt: TIME,
+      endedAt: LATER,
+      outcome: "completed",
+      parseStatus: "parsed",
+      capture: {
+        requestComplete: true,
+        responseComplete: true,
+        droppedRequestBytes: 0,
+        droppedResponseBytes: 0,
+      },
+    };
+    legacy
+      .prepare(
+        `INSERT INTO raw_exchanges(
+           id, session_id, sequence, protocol, method, path, query_json,
+           request_headers_json, response_status, response_headers_json,
+           started_at, ended_at, outcome, parse_status, journal_state,
+           record_json, created_at, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      )
+      .run(
+        legacyExchange.id,
+        legacyExchange.sessionId,
+        legacyExchange.sequence,
+        legacyExchange.protocol,
+        legacyExchange.method,
+        legacyExchange.path,
+        JSON.stringify(legacyExchange.query),
+        JSON.stringify(legacyExchange.requestHeaders),
+        legacyExchange.responseStatus,
+        JSON.stringify(legacyExchange.responseHeaders),
+        legacyExchange.startedAt,
+        legacyExchange.endedAt,
+        legacyExchange.outcome,
+        legacyExchange.parseStatus,
+        "complete",
+        JSON.stringify(legacyExchange),
+        TIME,
+        TIME,
+      );
+    const importedSession = SessionSchema.parse({
+      ...activeSession,
+      endedAt: LATER,
+      status: "imported-readonly",
+      metadata: { importedReadOnly: true },
+    });
+    legacy
+      .prepare(
+        `UPDATE sessions
+         SET ended_at = ?, status = ?, metadata_json = ?, record_json = ?,
+             updated_at = ?
+         WHERE id = ?`,
+      )
+      .run(
+        importedSession.endedAt,
+        importedSession.status,
+        JSON.stringify(importedSession.metadata),
+        JSON.stringify(importedSession),
+        TIME,
+        importedSession.id,
+      );
+    legacy.close();
+
+    const storage = await openTekrionStorage({
+      databasePath,
+      dataDirectory: join(root, "data"),
+      now: () => new Date(TIME),
+    });
+    openedStorages.push(storage);
+
+    expect(storage.schemaVersion).toBe(LATEST_SCHEMA_VERSION);
+    expect(storage.sessions.getRequired(importedSession.id).status).toBe(
+      "imported-readonly",
+    );
+    expect(
+      storage.rawExchanges.getRequired(legacyExchange.id).responseHeaders,
+    ).toEqual({ "request-id": ["req_imported_fixture"] });
+    expect(
+      storage.unsafeDatabase
+        .prepare("SELECT record_json FROM raw_exchanges WHERE id = ?")
+        .pluck()
+        .get(legacyExchange.id),
+    ).not.toContain(organizationId);
+    expect(() =>
+      storage.unsafeDatabase
+        .prepare("UPDATE raw_exchanges SET parse_status = ? WHERE id = ?")
+        .run("malformed", legacyExchange.id),
+    ).toThrow("imported session is read-only");
   });
 
   it("rejects a newer schema unless query-only access is explicit", async () => {

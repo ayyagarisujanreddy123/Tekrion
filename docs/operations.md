@@ -222,12 +222,12 @@ Application rollback is unsafe after a schema migration. Restore the stopped
 whole-home snapshot with the matching older version instead. Preserve the failed
 upgrade copy for investigation.
 
-Provider-support migrations remove historically retained `x-api-key` and
-`ChatGPT-Account-ID` fields from active raw-exchange header records. A private
-pre-migration database backup can still contain the earlier bytes. Protect or
-retire that backup according to your credential and personal-data retention
-policy, and rotate an Anthropic key if it was previously routed through an older
-Tekrion build.
+Provider-support migrations remove historically retained `x-api-key`,
+`ChatGPT-Account-ID`, and `Anthropic-Organization-ID` fields from active
+raw-exchange header records. A private pre-migration database backup can still
+contain the earlier bytes. Protect or retire that backup according to your
+credential and personal-data retention policy, and rotate an Anthropic key if it
+was previously routed through an older Tekrion build.
 
 ## Operational logs
 

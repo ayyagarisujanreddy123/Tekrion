@@ -140,7 +140,7 @@ No separate Tekrion API key is required for local first-party sessions:
 | Codex interactive, `exec`, `resume`, `fork`, or `review` | ChatGPT sign-in or Codex API-key sign-in                                   | Selected automatically in memory |
 | Claude interactive, print mode, or resumed session       | Claude subscription OAuth, OAuth token, bearer token, or Anthropic API key | Anthropic Messages API           |
 
-Authorization values and the Codex account-routing identifier are forwarded only in memory and are forbidden in durable header evidence. An explicit `--upstream` or `TEKRION_UPSTREAM_URL` always selects direct gateway routing. Hosted Codex/Claude web sessions, IDE sessions not launched by the wrapper, and Bedrock/Vertex/Foundry transports do not pass through this localhost recorder.
+Authorization values, the Codex account-routing identifier, and the Anthropic organization identifier are forwarded only in memory and are forbidden in durable header evidence. An explicit `--upstream` or `TEKRION_UPSTREAM_URL` always selects direct gateway routing. Hosted Codex/Claude web sessions, IDE sessions not launched by the wrapper, and Bedrock/Vertex/Foundry transports do not pass through this localhost recorder.
 
 All examples below use the installed `tekrion` command for readability. When running from source, replace `tekrion` with `npm run tekrion --`.
 

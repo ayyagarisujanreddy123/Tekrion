@@ -91,6 +91,7 @@ describe("proxy configuration safety", () => {
 describe("header forwarding and persistence boundaries", () => {
   const incoming = {
     authorization: "Bearer fixture-secret",
+    "anthropic-organization-id": "anthropic-org-fixture-private",
     "chatgpt-account-id": "account-fixture-private",
     "x-api-key": "anthropic-fixture-secret",
     cookie: "session=fixture-cookie",
@@ -106,6 +107,9 @@ describe("header forwarding and persistence boundaries", () => {
     const forwarded = headersForForwarding(incoming, { dropHost: true });
 
     expect(forwarded.authorization).toBe("Bearer fixture-secret");
+    expect(forwarded["anthropic-organization-id"]).toBe(
+      "anthropic-org-fixture-private",
+    );
     expect(forwarded["chatgpt-account-id"]).toBe("account-fixture-private");
     expect(forwarded["x-api-key"]).toBe("anthropic-fixture-secret");
     expect(forwarded.cookie).toBe("session=fixture-cookie");
@@ -121,10 +125,12 @@ describe("header forwarding and persistence boundaries", () => {
     const serialized = JSON.stringify(persisted);
 
     expect(serialized).not.toContain("fixture-secret");
+    expect(serialized).not.toContain("anthropic-org-fixture-private");
     expect(serialized).not.toContain("anthropic-fixture-secret");
     expect(serialized).not.toContain("account-fixture-private");
     expect(serialized).not.toContain("fixture-cookie");
     expect(persisted.authorization).toBeUndefined();
+    expect(persisted["anthropic-organization-id"]).toBeUndefined();
     expect(persisted["chatgpt-account-id"]).toBeUndefined();
     expect(persisted["x-api-key"]).toBeUndefined();
     expect(persisted.cookie).toBeUndefined();

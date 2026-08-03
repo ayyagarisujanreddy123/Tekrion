@@ -41,16 +41,16 @@ releases, another repository rename, or a local-directory rename.
 ## Repository state at this handoff
 
 - Branch: `main`
-- Pre-rebrand baseline: commit `84740e0`
-  (`fix: settle abandoned recorder exchanges`)
-- Baseline is already on `origin/main`
+- `origin/main` remains at `766cfec33917ea0f01a74d30cb6ab109b9d19d0e`
+  (`chore: complete open source release hygiene`)
+- Local `main` is one commit ahead with
+  `fix: normalize Anthropic gzip responses safely`; it has not been pushed
 - GitHub repository rename to `ayyagarisujanreddy123/Tekrion` is complete
-- The complete Tekrion rebrand was authorized for commit and push on
-  2026-07-29; verify the final local and remote SHA before relying on this
-  handoff
+- The tracked working tree was clean after the authorized 2026-08-03 Claude
+  gzip/privacy fix was verified and committed
 - Nothing was tagged, released, or published to npm
 - Existing user work was not discarded or reset
-- `AGENTS.md` is local instruction context and was not modified
+- `AGENTS.md` remains ignored, local instruction context
 - Node used for verification: 22.20.0
 - npm used for verification: 10.9.3
 
@@ -143,7 +143,7 @@ Package smoke results after stale-output cleanup:
 - daemon: 53 files;
 - CLI: 39 files.
 
-## Real Codex acceptance
+## Real provider acceptance
 
 A fresh real account-authenticated Codex `exec` run passed through the Tekrion
 wrapper on 2026-07-29 using the existing ChatGPT login and a disposable
@@ -162,15 +162,41 @@ home/workspace:
 The preceding Codex acceptance also verified share `.tkr` export/import,
 read-only imported evidence, and persistence across daemon restart.
 
-Claude Code 2.1.205 was installed but `claude auth status` reported
-`loggedIn: false`. A Claude subscription OAuth flow was opened but not
-completed. Tekrion then wrapped a non-interactive Claude run and correctly
-captured process start, stdout/stderr, workspace snapshots, exit code 1, and
-session end while Claude reported `Not logged in · Please run /login`.
-Provider-level Claude acceptance therefore remains blocked by missing native
-Claude authentication. This is an account prerequisite, not a known Tekrion
-defect. Repeat the real model test after the user completes `claude auth login`
-in their own terminal.
+Claude subscription/OAuth acceptance remains deferred because native login is
+not active. API-key-only Claude provider acceptance is now complete.
+
+The first bounded API-key acceptance on 2026-08-03 exposed a release-blocking
+defect: three valid gzip-compressed Anthropic Messages SSE responses were
+retained byte-faithfully but normalized as compressed bytes, producing three
+`parser.error` events. It also showed that the account-scoped Anthropic
+organization response header was retained.
+
+The authorized fix now:
+
+- normalizes a bounded decoded copy of gzip Anthropic JSON/SSE while leaving raw
+  forwarded and stored bytes unchanged;
+- treats corrupt, unsupported, and over-limit encodings as explicit malformed
+  evidence;
+- versions the updated Anthropic normalizer as `1.1.0`;
+- forbids the Anthropic organization header at both durable schema and proxy
+  persistence boundaries; and
+- adds storage migration 6 to scrub that header from active historical raw
+  exchange records.
+
+A fresh bounded API-key-only Claude Code 2.1.205 acceptance repeated after the
+fix. The wrapped run created and byte-verified one 38-byte file and exited
+successfully. Three complete gzip SSE responses remained valid compressed raw
+evidence and all normalized as `anthropic.messages.sse@1.1.0`, producing the
+expected assistant, tool, usage, and completion evidence with zero parser,
+capture, transport, or upstream errors. The API key was absent from the active
+database, every decoded blob, the repository, and all disposable test-home
+files. The Anthropic organization header was absent from persisted raw headers.
+A share export applied 46 redactions, imported as `imported-readonly`, and
+survived daemon startup. All disposable daemons were stopped.
+
+The complete 2026-08-03 source gate passed formatting, lint, TypeScript, 337
+unit tests, the production build, and both packaged end-to-end tests. Focused
+gzip, privacy, migration, and recorder coverage passed 100 tests.
 
 Disposable `/tmp` homes and workspaces are not persistent user data.
 
@@ -201,8 +227,10 @@ Never infer:
 
 ## Recommended next moves
 
-1. Review and commit the atomic Tekrion rebrand when the user asks.
-2. Rename the local directory only if the user separately requests it.
-3. Run Claude manual acceptance later with a real authenticated account.
-4. Run release preflight from a clean commit and publish only on explicit
+1. Push the local Claude gzip/privacy fix only if the user explicitly asks.
+2. Run subscription/OAuth Claude acceptance after native login is available.
+3. Rerun the exact-candidate benchmark and manual tarball/privacy review before
+   release preparation.
+4. Rename the local directory only if the user separately requests it.
+5. Publish, tag, push, or create a release only under fresh explicit
    authorization.

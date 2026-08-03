@@ -91,6 +91,7 @@ export interface CanonicalEventDraft {
 export interface NormalizationOptions {
   readonly firstSequence?: number;
   readonly observedAt?: string;
+  readonly maxDecodedResponseBodyBytes?: number;
   readonly eventId?: (
     exchange: NormalizationExchange,
     ordinal: number,

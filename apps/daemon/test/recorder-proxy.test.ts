@@ -9,6 +9,7 @@ import { connect, type AddressInfo } from "node:net";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { gunzipSync, gzipSync } from "node:zlib";
 
 import {
   ChunkManifestSchema,
@@ -91,6 +92,31 @@ async function makeUpstream(): Promise<{
           "content-length": output.length,
         });
         response.end(output);
+        return;
+      }
+
+      if (
+        request.url === "/v1/messages" &&
+        body.includes(Buffer.from('"model":"claude-gzip-fixture"'))
+      ) {
+        const output = Buffer.from(
+          [
+            'event: message_start\ndata: {"type":"message_start","message":{"id":"msg_gzip_fixture","usage":{"input_tokens":2,"output_tokens":0}}}\n\n',
+            'event: content_block_start\ndata: {"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}\n\n',
+            'event: content_block_delta\ndata: {"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"gzip normalized"}}\n\n',
+            'event: content_block_stop\ndata: {"type":"content_block_stop","index":0}\n\n',
+            'event: message_delta\ndata: {"type":"message_delta","delta":{"stop_reason":"end_turn","stop_sequence":null},"usage":{"output_tokens":3}}\n\n',
+            'event: message_stop\ndata: {"type":"message_stop"}\n\n',
+          ].join(""),
+        );
+        const compressed = gzipSync(output);
+        response.writeHead(200, {
+          "content-type": "text/event-stream",
+          "content-encoding": "gzip",
+          "content-length": compressed.length,
+          "anthropic-organization-id": "anthropic-org-never-persist",
+        });
+        response.end(compressed);
         return;
       }
 
@@ -475,6 +501,7 @@ describe("byte-faithful recorder proxy", () => {
       normalizerVersions: {
         "openai.responses": "1.2.0",
         "openai.chat-completions": "1.1.0",
+        "anthropic.messages": "1.1.0",
         "unknown-openai-compatible": "1.0.0",
       },
     });
@@ -484,6 +511,70 @@ describe("byte-faithful recorder proxy", () => {
     ).normalizeExchange(raw.id);
     expect(rerun.inserted).toBe(false);
     expect(storage.events.count("session-normalization")).toBe(4);
+  });
+
+  it("normalizes gzip Anthropic SSE while retaining only the original compressed bytes", async () => {
+    const upstream = await makeUpstream();
+    const { storage } = await makeStorage();
+    const proxy = await makeProxy(upstream.origin, storage);
+    const body = Buffer.from(
+      JSON.stringify({
+        model: "claude-gzip-fixture",
+        max_tokens: 16,
+        messages: [{ role: "user", content: "Reply briefly." }],
+        stream: true,
+      }),
+    );
+
+    const result = await requestBytes(
+      proxy.address()?.origin as string,
+      "/v1/messages",
+      body,
+      {
+        "content-type": "application/json",
+        "x-tekrion-session": "session-anthropic-gzip",
+      },
+    );
+    await proxy.flush();
+
+    expect(result.status).toBe(200);
+    expect(result.headers["content-encoding"]).toBe("gzip");
+    expect(result.headers["anthropic-organization-id"]).toBe(
+      "anthropic-org-never-persist",
+    );
+    expect(gunzipSync(result.body).toString("utf8")).toContain(
+      "gzip normalized",
+    );
+
+    const raw = latestRawExchange(storage);
+    expect(raw.parseStatus).toBe("parsed");
+    expect(raw.responseHeaders?.["content-encoding"]).toEqual(["gzip"]);
+    expect(raw.responseHeaders?.["anthropic-organization-id"]).toBeUndefined();
+    expect(await storage.blobs.get(raw.responseBodyRef?.id as string)).toEqual(
+      result.body,
+    );
+    expect(
+      storage.events
+        .list("session-anthropic-gzip")
+        .events.map((event) => event.type),
+    ).toEqual([
+      "model.request",
+      "model.response.started",
+      "message.assistant",
+      "model.usage",
+      "model.response.completed",
+    ]);
+    expect(proxy.health()).toMatchObject({
+      status: "healthy",
+      captureFailures: 0,
+      normalizationFailures: 0,
+    });
+    storage.checkpoint("TRUNCATE");
+    expect(
+      (await readFile(storage.databasePath)).includes(
+        Buffer.from("anthropic-org-never-persist"),
+      ),
+    ).toBe(false);
   });
 
   it("continues a known response ancestry session and strips grouping signals", async () => {
