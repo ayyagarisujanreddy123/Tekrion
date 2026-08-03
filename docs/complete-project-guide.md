@@ -1281,10 +1281,10 @@ The reproducible loopback smoke benchmark used 10 warmups and 100 measured reque
 
 Measured results:
 
-- p95 proxy time-to-first-byte delta over direct loopback: 6.031 ms;
-- p95 proxy total-duration delta: 5.977 ms;
-- p95 cockpit initial HTML total: 1.327 ms;
-- three packaged cockpit assets: 99,525 bytes when each is gzipped.
+- p95 proxy time-to-first-byte delta over direct loopback: 8.004 ms;
+- p95 proxy total-duration delta: 8.045 ms;
+- p95 cockpit initial HTML total: 1.878 ms;
+- three packaged cockpit assets: 101,360 bytes when each is gzipped.
 
 These are machine-specific smoke measurements, not browser-render, Internet, streaming, concurrency, memory, or general production guarantees.
 

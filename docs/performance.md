@@ -4,24 +4,24 @@ This document publishes a reproducible local smoke measurement, not a general pe
 
 ## Result
 
-- Measured: 2026-07-21T07:20:03.766Z
-- Measured source commit: `3ceb53a89f2d898917a447554096394be1608dcf`
+- Measured: 2026-08-03T20:49:22.664Z
+- Measured source commit: `8e7de1d97f5778923c3574358aada2055982f452`
 - Command: `npm run benchmark`
 - Samples: 10 warmups, then 100 measured requests per route
 - Machine: Intel Core i7-9750H, macOS 25.5.0, x64
 - Runtime: Node.js v22.20.0
-- Fixture SHA-256: `a48eb11e0f9d8862dc401e68ce421e6417365163c286287f24867f38ab717f1f`
+- Fixture SHA-256: `641456124a454d129db426912679eeb4a63e0fd6e2063dea40072eb5189a464d`
 
 | Route and metric               | p50      | p95      |
 | ------------------------------ | -------- | -------- |
-| Direct upstream TTFB           | 0.711 ms | 1.403 ms |
-| Recorded proxy TTFB            | 4.869 ms | 7.434 ms |
-| Direct upstream total          | 0.787 ms | 1.592 ms |
-| Recorded proxy total           | 4.965 ms | 7.569 ms |
-| Cockpit initial document TTFB  | 0.920 ms | 1.191 ms |
-| Cockpit initial document total | 0.996 ms | 1.327 ms |
+| Direct upstream TTFB           | 0.872 ms | 1.114 ms |
+| Recorded proxy TTFB            | 6.136 ms | 9.118 ms |
+| Direct upstream total          | 0.966 ms | 1.239 ms |
+| Recorded proxy total           | 6.259 ms | 9.284 ms |
+| Cockpit initial document TTFB  | 1.153 ms | 1.642 ms |
+| Cockpit initial document total | 1.252 ms | 1.878 ms |
 
-The p95 recorded-minus-direct delta was 6.031 ms to first byte and 5.977 ms total. The packaged cockpit had three production assets totaling 350,226 raw bytes and 99,525 bytes when each asset was gzipped. Source maps are excluded from that payload count.
+The p95 recorded-minus-direct delta was 8.004 ms to first byte and 8.045 ms total. The packaged cockpit had three production assets totaling 357,345 raw bytes and 101,360 bytes when each asset was gzipped. Source maps are excluded from that payload count.
 
 ## Method and limits
 

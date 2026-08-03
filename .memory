@@ -43,8 +43,9 @@ releases, another repository rename, or a local-directory rename.
 - Branch: `main`
 - `origin/main` remains at `766cfec33917ea0f01a74d30cb6ab109b9d19d0e`
   (`chore: complete open source release hygiene`)
-- Local `main` is one commit ahead with
-  `fix: normalize Anthropic gzip responses safely`; it has not been pushed
+- Local `main` contains the reviewed, unpushed Claude gzip/privacy fix at
+  `7db9532`, the dependency security update at `8e7de1d`, and the current
+  benchmark/documentation refresh
 - GitHub repository rename to `ayyagarisujanreddy123/Tekrion` is complete
 - The tracked working tree was clean after the authorized 2026-08-03 Claude
   gzip/privacy fix was verified and committed
@@ -198,6 +199,14 @@ The complete 2026-08-03 source gate passed formatting, lint, TypeScript, 337
 unit tests, the production build, and both packaged end-to-end tests. Focused
 gzip, privacy, migration, and recorder coverage passed 100 tests.
 
+The release-gate refresh later on 2026-08-03 found newly reviewed advisories in
+the locked development graph. The lock now resolves `brace-expansion` 5.0.9 and
+`postcss` 8.5.25. A clean install and high-severity audit reported zero
+vulnerabilities. Source gates, package smoke, and two consecutive offline demos
+passed with the patched lock. The exact-source benchmark measured 8.004 ms p95
+time-to-first-byte overhead, 8.045 ms p95 total overhead, 1.878 ms p95 cockpit
+initial-document total, and 101,360 gzip bytes across the three cockpit assets.
+
 Disposable `/tmp` homes and workspaces are not persistent user data.
 
 ## Release boundary
@@ -227,10 +236,10 @@ Never infer:
 
 ## Recommended next moves
 
-1. Push the local Claude gzip/privacy fix only if the user explicitly asks.
+1. Run the clean-tree release preflight after the benchmark documentation
+   commit, then push the local commits only if the user explicitly asks.
 2. Run subscription/OAuth Claude acceptance after native login is available.
-3. Rerun the exact-candidate benchmark and manual tarball/privacy review before
-   release preparation.
+3. Perform the manual tarball/privacy review before release preparation.
 4. Rename the local directory only if the user separately requests it.
 5. Publish, tag, push, or create a release only under fresh explicit
    authorization.

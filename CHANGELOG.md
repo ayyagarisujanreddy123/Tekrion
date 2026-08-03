@@ -50,7 +50,7 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
 - Apache-2.0 licensing and generated third-party notices are included in future runtime package contents.
 - Repository install scripts are explicitly reviewed and version-pinned for npm's dependency lifecycle policy.
 - Updated the locked development dependency graph to use the patched
-  `brace-expansion` 5.0.8 release.
+  `brace-expansion` 5.0.9 and `postcss` 8.5.25 releases.
 - `tekrion doctor` opens the evidence database without migration and fails on schema, migration-ledger, or SQLite integrity problems.
 - Daemon log startup rotation retains one private backup and rejects symlinked or non-file log targets.
 - Query and header collection preserves prototype-shaped names without assigning untrusted keys onto ordinary objects.
