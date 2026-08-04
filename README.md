@@ -206,16 +206,34 @@ Tekrion excludes `.git`, dependencies, common build/cache directories, its own d
 
 ## Browser evidence cockpit
 
-The local React cockpit provides:
+[![Tekrion cockpit showing the flight log, synchronized evidence lanes, and selected-event inspector](docs/cockpit-overview.png)](docs/cockpit-overview.png)
 
-- Session navigation and live recorder health
-- A virtualized, multi-lane event timeline
-- Search over normalized event evidence
-- Relative, local, and UTC timestamp modes
-- Keyboard navigation and an accessible list mode
-- Safe raw payload, header, provenance, and file-diff inspection
-- Live SSE updates with cursor recovery after refresh
-- Inert rendering for recorded HTML, Markdown, and script-like content
+_Select the image to open it full-size. The screenshot uses Tekrion's
+deterministic synthetic incident fixture; it contains no real account,
+credential, or user-session data._
+
+### What each cockpit area shows
+
+| Cockpit area                 | What it shows                                                                                                                           | Why it matters                                                                  |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| **System bar**               | The `LOCAL / PRIVATE` mode, live-journal connection, and current event count                                                            | Confirms that the authenticated local viewer is connected to the recorder       |
+| **Flight log**               | Recorded sessions with status, start time, capture level, and event count                                                               | Lets you move between investigations without mixing their evidence              |
+| **Evidence trace header**    | Repository or workspace, session state, capture level, and start time                                                                   | Establishes the scope and health of the selected recording                      |
+| **Search and view controls** | Evidence search, relative/local/UTC time, and accessible-list mode                                                                      | Finds exact messages, paths, and tool output while preserving event order       |
+| **Evidence lanes**           | Model activity, tool calls/results, file and process effects, risks, and context/usage                                                  | Aligns different evidence sources on one synchronized timeline                  |
+| **Event cards**              | Sequence, relative time, canonical event type, and a bounded summary                                                                    | Makes the path from request to action to workspace effect inspectable           |
+| **Event inspector**          | Summary plus the tabs applicable to that event: report, context, blame, normalized data, raw payload, safe headers, provenance, or diff | Connects every conclusion back to retained evidence and correlation identifiers |
+
+In the pictured demo, the timeline connects a user instruction not to delete
+tests, an untrusted instruction discovered in `README.md`, the resulting
+`delete_file` call, the deletion of `test/math.test.js`, and the final process
+exit. Selecting any card changes the inspector on the right. Dense streaming
+deltas are collapsed into logical events, while the original bounded transport
+evidence remains available through the inspector.
+
+The cockpit receives live SSE updates with cursor recovery after refresh. It
+also provides keyboard navigation, an accessible list representation, and inert
+rendering for recorded HTML, Markdown, and script-like content.
 
 Open it with:
 
