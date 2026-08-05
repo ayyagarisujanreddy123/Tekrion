@@ -6,6 +6,7 @@ import {
   ContextResultSchema,
   CONTEXT_VISIBILITY_NOTICE,
   IncidentReportResultSchema,
+  type EventDetail,
   type TekrionEvent,
 } from "@tekrion/protocol";
 import { createElement } from "react";
@@ -17,6 +18,7 @@ import { decodeFileDelta } from "../src/diff.js";
 import {
   BlameView,
   ContextView,
+  Inspector,
   JsonBlock,
   ReportView,
   blameAvailable,
@@ -24,9 +26,14 @@ import {
 import { TimelineView } from "../src/timeline-view.js";
 import {
   classifyEvent,
+  eventCategoryLabel,
   eventPreview,
+  eventTitle,
+  eventTypeLabel,
+  humanizeIdentifier,
   mergeTimelineEvents,
 } from "../src/timeline.js";
+import type { ViewerApiClient } from "../src/api.js";
 
 const TIME = "2026-07-16T12:00:00.000Z";
 
@@ -69,6 +76,64 @@ describe("viewer evidence model", () => {
         (item) => item.sequence,
       ),
     ).toEqual([1, 2, 3]);
+    expect(
+      eventCategoryLabel(
+        event(4, { source: "filesystem", type: "file.delete" }),
+      ),
+    ).toBe("Needs attention");
+    expect(
+      eventTitle(
+        event(6, { type: "tool.call", summary: { name: "read_file" } }),
+      ),
+    ).toBe("Read file");
+    expect(eventTypeLabel(event(7))).toBe("Assistant message");
+    expect(humanizeIdentifier("wrapped-process")).toBe("Wrapped process");
+    expect(eventPreview(event(8, { summary: { exitCode: 0 } }))).toBe(
+      "Exit code: 0",
+    );
+    expect(
+      eventPreview(
+        event(9, {
+          type: "tool.call",
+          summary: { name: "read_file", arguments: { path: "README.md" } },
+        }),
+      ),
+    ).toBe("Path: README.md");
+    expect(
+      eventPreview(
+        event(10, {
+          source: "filesystem",
+          type: "file.delete",
+          summary: { path: "test/math.test.js", beforeHash: "a".repeat(64) },
+        }),
+      ),
+    ).toBe("File deleted from the workspace.");
+  });
+
+  it("keeps the primary event views simple and hides technical tabs initially", () => {
+    const detail = {
+      event: event(8, {
+        type: "tool.call",
+        summary: { name: "delete_file", path: "test/math.test.js" },
+      }),
+    } as EventDetail;
+    const html = renderToStaticMarkup(
+      createElement(Inspector, {
+        api: {} as ViewerApiClient,
+        sessionId: "session-view",
+        detail,
+        loading: false,
+        relatedEvents: [],
+        onSelectEvent: () => undefined,
+      }),
+    );
+
+    expect(html).toContain("Overview");
+    expect(html).toContain("Possible cause");
+    expect(html).toContain("Report");
+    expect(html).toContain("Technical details");
+    expect(html).not.toContain("Event JSON");
+    expect(html).toContain("test/math.test.js");
   });
 
   it("decodes retained text states for a file diff", () => {
@@ -389,5 +454,24 @@ describe("viewer evidence model", () => {
     expect(renderedRows).toBeLessThan(100);
     expect(html).toContain("event 1");
     expect(html).not.toContain("event 10000");
+    expect(html).toContain("timeline-frame--list");
+    expect(html).toContain("Oldest to newest");
+  });
+
+  it("keeps the evidence-lane layout available as a secondary view", () => {
+    const html = renderToStaticMarkup(
+      createElement(TimelineView, {
+        events: [event(1)],
+        sessionStartedAt: TIME,
+        timestampMode: "relative",
+        accessibleMode: false,
+        layout: "lanes",
+        onSelect: () => undefined,
+      }),
+    );
+
+    expect(html).toContain("timeline-frame--lanes");
+    expect(html).toContain("Conversation");
+    expect(html).toContain("Files &amp; process");
   });
 });

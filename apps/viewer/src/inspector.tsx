@@ -18,6 +18,14 @@ import {
   numberedLines,
   type DecodedFileState,
 } from "./diff.js";
+import {
+  eventCategoryLabel,
+  eventFieldValue,
+  eventPreview,
+  eventTitle,
+  eventTypeLabel,
+  humanizeIdentifier,
+} from "./timeline.js";
 
 type InspectorTab =
   | "summary"
@@ -29,6 +37,25 @@ type InspectorTab =
   | "headers"
   | "provenance"
   | "diff";
+
+const INSPECTOR_TAB_LABELS: Readonly<Record<InspectorTab, string>> = {
+  summary: "Overview",
+  blame: "Possible cause",
+  report: "Report",
+  context: "Model context",
+  normalized: "Event JSON",
+  raw: "Raw payload",
+  headers: "HTTP headers",
+  provenance: "Provenance",
+  diff: "File change",
+};
+
+const TECHNICAL_TABS: readonly InspectorTab[] = [
+  "normalized",
+  "raw",
+  "headers",
+  "provenance",
+];
 
 interface PayloadChoice {
   readonly label: string;
@@ -1146,16 +1173,18 @@ function Summary(props: { readonly detail: EventDetail }): React.JSX.Element {
   const event = props.detail.event;
   return (
     <div className="summary-tab">
+      <p className="event-overview">{eventPreview(event)}</p>
       <div className="evidence-stamps">
-        <span>{event.source}</span>
-        <span>{event.evidence}</span>
-        <span>sequence {event.sequence}</span>
+        <span>{eventCategoryLabel(event)}</span>
+        <span>{humanizeIdentifier(event.evidence)} evidence</span>
+        <span>Event #{event.sequence.toLocaleString()}</span>
       </div>
+      <h3 className="summary-heading">Recorded details</h3>
       <dl className="summary-grid">
         {Object.entries(event.summary).map(([name, value]) => (
           <div key={name}>
-            <dt>{name}</dt>
-            <dd>{typeof value === "string" ? value : JSON.stringify(value)}</dd>
+            <dt>{humanizeIdentifier(name)}</dt>
+            <dd>{eventFieldValue(name, value)}</dd>
           </div>
         ))}
       </dl>
@@ -1247,22 +1276,22 @@ function Provenance(props: {
 
 export function Inspector(props: InspectorProps): React.JSX.Element {
   const [tab, setTab] = useState<InspectorTab>("summary");
+  const [technicalOpen, setTechnicalOpen] = useState(false);
   const detail = props.detail;
-  const tabs: InspectorTab[] = [
+  const primaryTabs: InspectorTab[] = [
     "summary",
-    ...(props.sessionId === undefined ? [] : (["report"] as const)),
+    ...(detail?.fileChange === undefined ? [] : (["diff"] as const)),
     ...(detail !== undefined && blameAvailable(detail.event)
       ? (["blame"] as const)
       : []),
     ...(detail?.event.type === "model.request" ? (["context"] as const) : []),
-    "normalized",
-    "raw",
-    "headers",
-    "provenance",
-    ...(detail?.fileChange === undefined ? [] : (["diff"] as const)),
+    ...(props.sessionId === undefined ? [] : (["report"] as const)),
   ];
 
-  useEffect(() => setTab("summary"), [detail?.event.id]);
+  useEffect(() => {
+    setTab("summary");
+    setTechnicalOpen(false);
+  }, [detail?.event.id]);
 
   if (props.loading) {
     return (
@@ -1276,8 +1305,13 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
   }
   if (detail === undefined) {
     return (
-      <div className="inspector-state">
-        Select an event to inspect its evidence.
+      <div className="inspector-state inspector-empty">
+        <span aria-hidden="true">2</span>
+        <strong>Select an event</strong>
+        <p>
+          Choose an activity item to understand what happened and inspect its
+          evidence.
+        </p>
       </div>
     );
   }
@@ -1285,26 +1319,64 @@ export function Inspector(props: InspectorProps): React.JSX.Element {
   return (
     <div className="inspector-content">
       <header className="inspector-heading">
-        <span>event / {detail.event.source}</span>
-        <h2>{detail.event.type}</h2>
-        <code>{detail.event.id}</code>
+        <span>
+          Event #{detail.event.sequence.toLocaleString()} ·{" "}
+          {eventCategoryLabel(detail.event)}
+        </span>
+        <h2>{eventTitle(detail.event)}</h2>
+        {eventTypeLabel(detail.event) === eventTitle(detail.event) ? null : (
+          <p>{eventTypeLabel(detail.event)}</p>
+        )}
+        <code>{detail.event.type}</code>
       </header>
-      <div
-        className="inspector-tabs"
-        role="tablist"
-        aria-label="Evidence inspector"
-      >
-        {tabs.map((candidate) => (
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === candidate}
-            key={candidate}
-            onClick={() => setTab(candidate)}
+      <div className="inspector-navigation">
+        <div className="inspector-tabs" role="tablist" aria-label="Event views">
+          {primaryTabs.map((candidate) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === candidate}
+              key={candidate}
+              onClick={() => setTab(candidate)}
+            >
+              {INSPECTOR_TAB_LABELS[candidate]}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="technical-toggle"
+          aria-expanded={technicalOpen}
+          onClick={() => {
+            const next = !technicalOpen;
+            setTechnicalOpen(next);
+            if (!next && TECHNICAL_TABS.includes(tab)) {
+              setTab("summary");
+            }
+          }}
+        >
+          Technical details
+          <span aria-hidden="true">{technicalOpen ? "−" : "+"}</span>
+        </button>
+        {technicalOpen ? (
+          <div
+            className="inspector-tabs inspector-tabs--technical"
+            role="tablist"
+            aria-label="Technical event details"
           >
-            {candidate}
-          </button>
-        ))}
+            {TECHNICAL_TABS.map((candidate) => (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === candidate}
+                key={candidate}
+                onClick={() => setTab(candidate)}
+              >
+                {INSPECTOR_TAB_LABELS[candidate]}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
       <div className="inspector-panel" role="tabpanel">
         {tab === "summary" ? <Summary detail={detail} /> : null}

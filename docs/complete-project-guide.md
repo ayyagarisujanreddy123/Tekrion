@@ -591,11 +591,13 @@ The control credential is transferred through the browser URL fragment. URL frag
 
 #### Session navigation
 
-Shows recorded investigations, status, time, capture level, command/model metadata, event counts, file changes, and errors.
+The **Recordings** panel shows each investigation's plain-language status, start time, capture level, and event count. Selecting one updates the activity and details panels without mixing evidence between sessions.
 
 #### Timeline
 
-Shows synchronized lanes for:
+The default **List** view presents events from oldest to newest with a readable category, title, short preview, timestamp, and canonical event type. This makes the request-to-action sequence understandable without requiring the reader to decode a multi-lane diagram.
+
+An optional **Lanes** view groups the same ordered evidence into:
 
 - conversation/model activity;
 - tools;
@@ -603,25 +605,22 @@ Shows synchronized lanes for:
 - errors;
 - context/usage information.
 
-Dense streaming deltas are collapsed into logical events, while raw transport evidence remains available in the inspector.
+Dense streaming deltas are collapsed into logical events. Selecting an item opens its explanation, while the original bounded transport evidence remains available under **Technical details**.
 
 #### Inspector
 
-Depending on the selected event, tabs expose:
+The inspector opens on **Overview**, which translates the event into a readable title, summary, category, and recorded details. Depending on the selected event, the primary tabs can also expose:
 
-- summary;
-- normalized representation;
-- raw payload;
-- safe headers;
-- provenance and correlation identifiers;
-- file diff;
-- context;
-- blame;
+- file change;
+- model context;
+- possible cause;
 - report.
+
+Lower-level Event JSON, raw payloads, safe HTTP headers, provenance, and correlation identifiers remain available in the collapsed **Technical details** section.
 
 #### Search and navigation
 
-The cockpit provides bounded queries, cursor pagination, FTS-backed search, keyboard navigation, timestamp modes, and an accessible list representation.
+The cockpit keeps search and display options together: bounded FTS-backed queries, chronological or lane layout, elapsed/local/UTC timestamps, keyboard navigation, cursor pagination, and an optional full-list mode for assistive technology. Less-common display options are grouped under **More**.
 
 #### Live updates
 

@@ -50,12 +50,12 @@ $ tekrion run -- <agent-command>
 
 $ tekrion open
         │
-        ├── TIMELINE   what happened, in sequence
-        ├── CONTEXT    what the client made visible to the model
-        ├── DIFF       what changed in the workspace
-        ├── BLAME      which preceding evidence ranks highest, and why
-        ├── REPORT     facts, hypothesis, alternatives, and prevention
-        └── RAW        the retained evidence behind every claim
+        ├── RECORDINGS          choose an agent session
+        ├── ACTIVITY            follow what happened, oldest to newest
+        ├── OVERVIEW            understand the selected event
+        ├── FOCUSED VIEWS       inspect a file change, possible cause,
+        │                       model context, or incident report
+        └── TECHNICAL DETAILS   verify the retained evidence behind a claim
 ```
 
 ![Tekrion local evidence architecture](docs/architecture.svg)
@@ -120,6 +120,10 @@ Open the local evidence cockpit:
 ```bash
 npm run tekrion -- open
 ```
+
+The cockpit opens the newest recording. Completed recordings begin at their
+first event so you can follow the activity in order; an active recording follows
+its newest event as evidence arrives.
 
 Inspect the journal from the terminal:
 
@@ -206,34 +210,55 @@ Tekrion excludes `.git`, dependencies, common build/cache directories, its own d
 
 ## Browser evidence cockpit
 
-[![Tekrion cockpit showing the flight log, synchronized evidence lanes, and selected-event inspector](docs/cockpit-overview.png)](docs/cockpit-overview.png)
+[![Tekrion cockpit showing recordings, a chronological activity list, and selected-event details](docs/cockpit-overview.png)](docs/cockpit-overview.png)
 
 _Select the image to open it full-size. The screenshot uses Tekrion's
 deterministic synthetic incident fixture; it contains no real account,
 credential, or user-session data._
 
+### A simple first investigation
+
+1. Choose a session under **Recordings**. Its workspace, state, capture level,
+   start time, and evidence count appear in the recording header.
+2. Keep **List** and **Elapsed** selected, then read **Activity** from oldest to
+   newest. Red **Needs attention** items call out errors and potentially risky
+   file actions without hiding the surrounding sequence.
+3. Select an activity item and start with **Overview**. Open **File change**,
+   **Possible cause**, **Model context**, or **Report** only when that view is
+   relevant to the selected evidence.
+4. Use search to narrow the recording by message, file, tool, or output. Expand
+   **Technical details** only when you need normalized JSON, raw payloads, safe
+   HTTP headers, or provenance identifiers.
+
+Switch to **Lanes** when comparing evidence sources is more useful than reading
+one chronological list. **More** contains the optional full-list mode for
+assistive technology.
+
 ### What each cockpit area shows
 
-| Cockpit area                 | What it shows                                                                                                                           | Why it matters                                                                  |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| **System bar**               | The `LOCAL / PRIVATE` mode, live-journal connection, and current event count                                                            | Confirms that the authenticated local viewer is connected to the recorder       |
-| **Flight log**               | Recorded sessions with status, start time, capture level, and event count                                                               | Lets you move between investigations without mixing their evidence              |
-| **Evidence trace header**    | Repository or workspace, session state, capture level, and start time                                                                   | Establishes the scope and health of the selected recording                      |
-| **Search and view controls** | Evidence search, relative/local/UTC time, and accessible-list mode                                                                      | Finds exact messages, paths, and tool output while preserving event order       |
-| **Evidence lanes**           | Model activity, tool calls/results, file and process effects, risks, and context/usage                                                  | Aligns different evidence sources on one synchronized timeline                  |
-| **Event cards**              | Sequence, relative time, canonical event type, and a bounded summary                                                                    | Makes the path from request to action to workspace effect inspectable           |
-| **Event inspector**          | Summary plus the tabs applicable to that event: report, context, blame, normalized data, raw payload, safe headers, provenance, or diff | Connects every conclusion back to retained evidence and correlation identifiers |
+| Cockpit area                    | What it shows                                                                                                       | Why it matters                                                               |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **Top bar**                     | Local/private mode, live connection state, and the current event count                                              | Confirms that the authenticated viewer is connected to the local recorder    |
+| **Recordings**                  | Sessions with a plain status, start time, capture level, and event count                                            | Lets you move between investigations without mixing their evidence           |
+| **Recording header**            | Workspace, session state, capture level, and start time                                                             | Establishes the scope and health of the selected recording                   |
+| **Search and display controls** | Evidence search, chronological or lane layout, elapsed/local/UTC time, and full-list accessibility mode             | Keeps the common controls together without crowding the investigation        |
+| **Activity list**               | A readable oldest-to-newest sequence of conversation, tools, files/processes, risks, and model context              | Makes the investigation understandable without first learning a lane diagram |
+| **Activity items**              | Sequence, category, title, concise preview, time, and canonical event type                                          | Makes the path from request to action to workspace effect quick to scan      |
+| **Event details**               | A readable overview and relevant file, cause, context, or report views; raw evidence is under **Technical details** | Keeps the usual explanation simple while retaining direct access to evidence |
 
 In the pictured demo, the timeline connects a user instruction not to delete
 tests, an untrusted instruction discovered in `README.md`, the resulting
 `delete_file` call, the deletion of `test/math.test.js`, and the final process
-exit. Selecting any card changes the inspector on the right. Dense streaming
-deltas are collapsed into logical events, while the original bounded transport
-evidence remains available through the inspector.
+exit. Selecting an activity item opens its explanation on the right. The
+optional **Lanes** view groups the same ordered evidence by source when that is
+useful. Dense streaming deltas are collapsed into logical events, while the
+original bounded transport evidence remains available under **Technical
+details**.
 
 The cockpit receives live SSE updates with cursor recovery after refresh. It
-also provides keyboard navigation, an accessible list representation, and inert
-rendering for recorded HTML, Markdown, and script-like content.
+also provides keyboard navigation, an optional full-list mode for assistive
+technology, and inert rendering for recorded HTML, Markdown, and script-like
+content.
 
 Open it with:
 
@@ -245,7 +270,7 @@ The CLI transfers the local control credential through the URL fragment, does no
 
 ## Context time travel
 
-Select a `model.request` event and open the **context** tab.
+Select a `model.request` event and open **Model context**.
 
 For Chat Completions, Tekrion reconstructs the explicit message history sent in the request. For Responses, it follows locally recorded `previous_response_id` ancestry with cycle, depth, and recorded-sequence guards.
 
@@ -265,7 +290,7 @@ Tekrion never invents missing messages, hidden instructions, or private model re
 
 ## Deterministic blame
 
-Select a `tool.call` or file action and open the **blame** tab.
+Select a `tool.call` or file action and open **Possible cause**.
 
 Tekrion first normalizes the target into its verb, path/entity, arguments, scope, result, and impact. It then considers only eligible evidence that preceded—and was available to—the target invocation.
 

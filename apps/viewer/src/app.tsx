@@ -4,10 +4,22 @@ import type { TekrionEvent, EventDetail, Session } from "@tekrion/protocol";
 
 import type { ViewerApiClient } from "./api.js";
 import { Inspector } from "./inspector.js";
-import { TimelineView } from "./timeline-view.js";
-import { mergeTimelineEvents, type TimestampMode } from "./timeline.js";
+import { TimelineView, type TimelineLayout } from "./timeline-view.js";
+import {
+  captureLevelLabel,
+  humanizeIdentifier,
+  mergeTimelineEvents,
+  type TimestampMode,
+} from "./timeline.js";
 
 type LiveStatus = "idle" | "connecting" | "live" | "retrying";
+
+const LIVE_STATUS_LABELS: Readonly<Record<LiveStatus, string>> = {
+  idle: "Not connected",
+  connecting: "Connecting",
+  live: "Live",
+  retrying: "Reconnecting",
+};
 
 export interface CockpitProps {
   readonly api: ViewerApiClient;
@@ -16,6 +28,17 @@ export interface CockpitProps {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : "Unexpected local API error.";
+}
+
+function sessionName(session: Session): string {
+  return session.repoRoot?.split(/[\\/]/u).filter(Boolean).at(-1) ?? session.id;
+}
+
+function sessionStartedAt(session: Session): string {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(session.startedAt));
 }
 
 function reconnectDelay(
@@ -48,8 +71,13 @@ function SessionRail(props: {
   return (
     <aside className="session-rail" aria-label="Recorded sessions">
       <header>
-        <span>FLIGHT LOG</span>
-        <strong>{props.sessions.length.toLocaleString()}</strong>
+        <div>
+          <strong>Recordings</strong>
+          <span>Choose a session to investigate</span>
+        </div>
+        <span className="session-count">
+          {props.sessions.length.toLocaleString()}
+        </span>
       </header>
       {props.loading && props.sessions.length === 0 ? (
         <div className="rail-state" role="status">
@@ -73,6 +101,7 @@ function SessionRail(props: {
             type="button"
             key={session.id}
             className={session.id === props.selectedId ? "is-selected" : ""}
+            aria-pressed={session.id === props.selectedId}
             onClick={() => props.onSelect(session.id)}
           >
             <span
@@ -80,14 +109,18 @@ function SessionRail(props: {
               aria-hidden="true"
             />
             <span className="session-copy">
-              <strong>
-                {session.repoRoot?.split(/[\\/]/u).filter(Boolean).at(-1) ??
-                  session.id}
-              </strong>
-              <span>{new Date(session.startedAt).toLocaleString()}</span>
-              <span>
-                {session.captureLevel} ·{" "}
-                {session.counts.events.toLocaleString()} events
+              <strong>{sessionName(session)}</strong>
+              <span className="session-copy__meta">
+                <span className={`status-label status-${session.status}`}>
+                  {humanizeIdentifier(session.status)}
+                </span>
+                <time dateTime={session.startedAt}>
+                  {sessionStartedAt(session)}
+                </time>
+              </span>
+              <span className="session-copy__counts">
+                {session.counts.events.toLocaleString()} events ·{" "}
+                {captureLevelLabel(session.captureLevel)}
               </span>
             </span>
           </button>
@@ -108,15 +141,15 @@ function TimestampControl(props: {
 }): React.JSX.Element {
   return (
     <label className="compact-control">
-      time
+      <span>Time</span>
       <select
         value={props.mode}
         onChange={(event) =>
           props.onChange(event.target.value as TimestampMode)
         }
       >
-        <option value="relative">relative</option>
-        <option value="local">local</option>
+        <option value="relative">Elapsed</option>
+        <option value="local">Local</option>
         <option value="utc">UTC</option>
       </select>
     </label>
@@ -158,6 +191,7 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
   const [detailError, setDetailError] = useState<string>();
   const [liveStatus, setLiveStatus] = useState<LiveStatus>("idle");
   const [timestampMode, setTimestampMode] = useState<TimestampMode>("relative");
+  const [timelineLayout, setTimelineLayout] = useState<TimelineLayout>("list");
   const [accessibleMode, setAccessibleMode] = useState(false);
   const [search, setSearch] = useState("");
   const [searchMatches, setSearchMatches] = useState<readonly string[]>();
@@ -221,7 +255,11 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
         }
         setSession(loadedSession);
         setEvents(loadedEvents);
-        setSelectedEventId(loadedEvents.at(-1)?.id);
+        setSelectedEventId(
+          loadedSession.status === "active"
+            ? loadedEvents.at(-1)?.id
+            : loadedEvents[0]?.id,
+        );
         setTimelineLoading(false);
 
         let afterSequence = loadedEvents.at(-1)?.sequence ?? 0;
@@ -393,20 +431,22 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
             TK
           </span>
           <div>
-            <strong>TEKRION</strong>
-            <span>AI AGENT FLIGHT RECORDER</span>
+            <strong>Tekrion</strong>
+            <span>Agent activity, explained</span>
           </div>
         </div>
-        <div className="system-readout">
-          <span className="system-mode">LOCAL / PRIVATE</span>
-          <span
-            className={`live-indicator status-${liveStatus}`}
-            aria-hidden="true"
-          />
-          <span>
-            {liveStatus === "live" ? "JOURNAL LIVE" : liveStatus.toUpperCase()}
+        <div className="system-readout" aria-live="polite">
+          <span className="system-mode">Local &amp; private</span>
+          <span className="connection-status">
+            <span
+              className={`live-indicator status-${liveStatus}`}
+              aria-hidden="true"
+            />
+            {LIVE_STATUS_LABELS[liveStatus]}
           </span>
-          <code>{events.length.toLocaleString()} EVENTS</code>
+          <span className="topbar-event-count">
+            {events.length.toLocaleString()} events
+          </span>
         </div>
       </header>
       <div className="cockpit-grid">
@@ -421,32 +461,67 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
         />
         <main className="timeline-workspace">
           <header className="workspace-header">
-            <div>
-              <span className="eyebrow">EVIDENCE TRACE</span>
+            <div className="recording-heading">
+              <span className="eyebrow">Recording</span>
               <h1>
-                {session?.repoRoot ?? session?.id ?? "Select a recording"}
+                {session === undefined
+                  ? "Select a recording"
+                  : sessionName(session)}
               </h1>
-              <p>
-                <span>
-                  {session === undefined
-                    ? "No session loaded"
-                    : `${session.status} · ${session.captureLevel} capture · started ${new Date(session.startedAt).toLocaleString()}`}
-                </span>
-              </p>
+              {session === undefined ? (
+                <p>Choose a recording from the left to view its activity.</p>
+              ) : (
+                <>
+                  <p className="recording-path" title={session.repoRoot}>
+                    {session.repoRoot ?? session.id}
+                  </p>
+                  <div className="recording-meta">
+                    <span className={`status-label status-${session.status}`}>
+                      {humanizeIdentifier(session.status)}
+                    </span>
+                    <span>{captureLevelLabel(session.captureLevel)}</span>
+                    <time dateTime={session.startedAt}>
+                      Started {sessionStartedAt(session)}
+                    </time>
+                  </div>
+                </>
+              )}
             </div>
             <div className="workspace-controls">
+              <div className="view-switcher" role="group" aria-label="View">
+                <span>View</span>
+                <button
+                  type="button"
+                  aria-pressed={timelineLayout === "list"}
+                  onClick={() => setTimelineLayout("list")}
+                >
+                  List
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={timelineLayout === "lanes"}
+                  onClick={() => setTimelineLayout("lanes")}
+                >
+                  Lanes
+                </button>
+              </div>
               <TimestampControl
                 mode={timestampMode}
                 onChange={setTimestampMode}
               />
-              <label className="toggle-control">
-                <input
-                  type="checkbox"
-                  checked={accessibleMode}
-                  onChange={(event) => setAccessibleMode(event.target.checked)}
-                />
-                accessible list
-              </label>
+              <details className="display-options">
+                <summary>More</summary>
+                <label className="toggle-control">
+                  <input
+                    type="checkbox"
+                    checked={accessibleMode}
+                    onChange={(event) =>
+                      setAccessibleMode(event.target.checked)
+                    }
+                  />
+                  Render the complete list for assistive technology
+                </label>
+              </details>
             </div>
           </header>
           <form
@@ -454,25 +529,31 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
             role="search"
             onSubmit={(event) => void submitSearch(event)}
           >
-            <label htmlFor="evidence-search">SEARCH EVIDENCE</label>
+            <label className="visually-hidden" htmlFor="evidence-search">
+              Search this recording
+            </label>
             <input
               id="evidence-search"
               type="search"
               value={search}
-              placeholder="message text, path, tool output…"
+              placeholder="Search messages, files, tools, and output"
               onChange={(event) => setSearch(event.target.value)}
+              disabled={selectedSessionId === undefined}
             />
             <button type="submit" disabled={searching}>
-              {searching ? "SEARCHING" : "FIND"}
+              {searching ? "Searching…" : "Search"}
             </button>
             {searchMatches === undefined ? null : (
-              <button
-                type="button"
-                className="quiet-button"
-                onClick={clearSearch}
-              >
-                CLEAR · {searchMatches.length}
-              </button>
+              <div className="search-results">
+                <output>{searchMatches.length.toLocaleString()} results</output>
+                <button
+                  type="button"
+                  className="quiet-button"
+                  onClick={clearSearch}
+                >
+                  Clear
+                </button>
+              </div>
             )}
           </form>
           {timelineError === undefined ? null : (
@@ -491,7 +572,7 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
           ) : session === undefined ? (
             <div className="timeline-empty">
               <strong>Select a session</strong>
-              <span>The synchronized evidence lanes will appear here.</span>
+              <span>Its recorded activity will appear here in order.</span>
             </div>
           ) : (
             <TimelineView
@@ -500,11 +581,12 @@ export function TekrionCockpit(props: CockpitProps): React.JSX.Element {
               sessionStartedAt={session.startedAt}
               timestampMode={timestampMode}
               accessibleMode={accessibleMode}
+              layout={timelineLayout}
               onSelect={setSelectedEventId}
             />
           )}
         </main>
-        <aside className="inspector" aria-label="Evidence inspector">
+        <aside className="inspector" aria-label="Selected event details">
           <Inspector
             api={props.api}
             sessionId={session?.id}
