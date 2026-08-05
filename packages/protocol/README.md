@@ -3,8 +3,8 @@
 Versioned runtime contracts for Tekrion evidence, queries, context reconstruction,
 analysis, incident reports, and portable archives.
 
-This package contains the shared Zod schemas and TypeScript types used at Black
-Box's storage, daemon, CLI, and viewer boundaries. It is primarily a Tekrion
+This package contains the shared Zod schemas and TypeScript types used at
+Tekrion's storage, daemon, CLI, and viewer boundaries. It is primarily a Tekrion
 runtime component. Most users should install
 [`@tekrion/cli`](https://www.npmjs.com/package/@tekrion/cli) instead.
 

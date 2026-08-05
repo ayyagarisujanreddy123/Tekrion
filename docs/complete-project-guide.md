@@ -1296,17 +1296,17 @@ Completed locally:
 - Apache-2.0 project/package metadata;
 - canonical license text and third-party notices in future tarballs;
 - changelog and package README;
+- public-access metadata on exactly the seven runtime manifests, while
+  development-only workspaces remain private;
 - package contents and install validation;
 - release preflight.
 
 Not performed:
 
-- removing `private: true`;
-- npm login, scope validation, or publication;
-- signed release tag;
-- tag/commit push for this local continuation;
+- fresh npm login, current scope-access reconfirmation, or publication;
+- signed release tag or tag push;
 - public-registry install verification;
-- remote release notes/checksums.
+- `latest` promotion, GitHub release notes, or release checksums.
 
 ## 23. Repository layout
 

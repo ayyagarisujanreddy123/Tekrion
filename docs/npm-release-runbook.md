@@ -22,13 +22,15 @@ Publish the runtime packages in dependency order:
 All seven packages use one version and exact internal dependency versions. The CLI
 must be published last.
 
-## Hard gate: confirm the npm namespace
+## Hard gate: confirm current npm access
 
 The package names require ownership of, or write access to, the npm `@tekrion`
 scope. A registry `E404` only shows that a package version is not public; it does
 not prove permission to create it.
 
-Before changing any runtime `private` flag:
+The seven runtime manifests are already prepared for public access. That source
+state is not evidence of registry permission and does not authorize publication.
+Before any publication attempt:
 
 1. Sign in with `npm login` and verify the intended identity with `npm whoami`.
 2. In npm organization settings, confirm that identity owns or administers the
@@ -43,12 +45,13 @@ guide](https://docs.npmjs.com/package-scope-access-level-and-visibility/).
 
 ## Prepare the exact candidate
 
-After scope ownership is confirmed:
+After current scope access is confirmed:
 
-1. Remove `private: true` from exactly the seven runtime manifests listed above.
+1. Confirm that exactly the seven runtime manifests listed above omit
+   `private: true` and declare `publishConfig.access` as `public`.
 2. Keep every development-only workspace private.
 3. Replace unreleased/source-candidate wording and date the changelog only when
-   this is the genuine release candidate.
+   publication of the genuine release candidate is explicitly authorized.
 4. Run the complete local sequence:
 
    ```bash

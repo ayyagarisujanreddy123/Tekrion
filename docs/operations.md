@@ -26,9 +26,10 @@ and incident handling. Read the [privacy guide](privacy.md) and
 
 ## Install a reviewed build
 
-The npm packages remain publication-locked until registry identity and scope
-ownership are verified. Until an npm release is independently verified, operate a
-reviewed source commit:
+The seven runtime manifests are prepared for public access, but no package has
+been published and manifest state is not publication authorization. Until npm
+identity and current scope access are confirmed and a registry release is
+independently verified, operate a reviewed source commit:
 
 ```bash
 git clone https://github.com/ayyagarisujanreddy123/Tekrion.git
@@ -270,4 +271,5 @@ If integrity, unexpected exposure, or unsafe agent behavior is suspected:
 - [ ] Capture and storage byte limits are explicit and appropriate.
 - [ ] Retention, stopped backup, restore rehearsal, and upgrade ownership are set.
 - [ ] Known protocol, privacy, redaction, and sandbox limitations are accepted.
-- [ ] npm publication locks remain until registry ownership is proven.
+- [ ] Any npm-based deployment uses independently verified registry artifacts;
+      otherwise an immutable reviewed source commit is used.
