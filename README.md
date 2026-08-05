@@ -210,7 +210,7 @@ Tekrion excludes `.git`, dependencies, common build/cache directories, its own d
 
 ## Browser evidence cockpit
 
-[![Tekrion cockpit showing recordings, a chronological activity list, and selected-event details](docs/cockpit-overview.png)](docs/cockpit-overview.png)
+[![Tekrion cockpit showing a selected Needs attention file deletion in the chronological activity list and event details](docs/cockpit-overview.png)](docs/cockpit-overview.png)
 
 _Select the image to open it full-size. The screenshot uses Tekrion's
 deterministic synthetic incident fixture; it contains no real account,
