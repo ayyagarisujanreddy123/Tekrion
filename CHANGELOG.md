@@ -37,6 +37,9 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
 - Added non-destructive compatibility for pre-rebrand data homes, database and
   blob-directory names, `BLACKBOX_*` configuration aliases, session headers
   and routes, live-event names, and browser session tokens.
+- Upgraded the SQLite runtime to `better-sqlite3` 13.0.3's N-API build, which
+  removes the deprecated `prebuild-install` dependency while retaining the
+  Node.js 22 runtime floor.
 
 ### Security and privacy
 

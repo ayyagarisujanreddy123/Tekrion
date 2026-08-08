@@ -22,7 +22,6 @@
   },
   "packageManager": "npm@10.9.3",
   "allowScripts": {
-    "better-sqlite3@12.11.1": true,
     "fsevents@2.3.3": true
   },
   "scripts": {
