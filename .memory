@@ -21,7 +21,7 @@ The user selected **Tekrion** as the permanent brand and confirmed on
 - New default evidence home: a platform-specific `Tekrion`/`tekrion` directory
 - Version: 0.1.0, still an unreleased source candidate
 
-Public registry lookups on 2026-07-29 returned no published version for any of
+Public registry lookups on 2026-08-07 returned no published version for any of
 the seven intended runtime package names. The local npm session returned E401
 for `npm whoami`, so npm authentication must be refreshed before a future
 release. An E404 does not prove scope ownership; ownership is recorded from the
@@ -41,15 +41,21 @@ releases, another repository rename, or a local-directory rename.
 ## Repository state at this handoff
 
 - Branch: `main`
-- `origin/main` remains at `766cfec33917ea0f01a74d30cb6ab109b9d19d0e`
-  (`chore: complete open source release hygiene`)
-- Local `main` contains the reviewed, unpushed Claude gzip/privacy fix at
-  `7db9532`, the dependency security update at `8e7de1d`, and the current
-  benchmark/documentation refresh
+- `origin/main` remains at `4e486fd7988bbd467c5581c25717aa01d28eabbf`
+  (`docs: refresh cockpit walkthrough`)
+- Local `main` contains three reviewed release-preparation commits after
+  `origin/main`: `b7672f9` updates the patched development dependency,
+  `d745da8` upgrades the SQLite runtime, and `60b17e9` records the exact
+  benchmark and completed manual release review. This handoff update is
+  documentation-only and does not change package contents.
 - GitHub repository rename to `ayyagarisujanreddy123/Tekrion` is complete
-- The tracked working tree was clean after the authorized 2026-08-03 Claude
-  gzip/privacy fix was verified and committed
+- The tracked working tree was clean before this handoff update
 - Nothing was tagged, released, or published to npm
+- The GitHub repository has no release tag, GitHub release, ruleset, or
+  `npm-production` environment
+- CI and CodeQL passed on exact pushed commit `4e486fd`; the unpushed final
+  candidate still requires those checks on its exact SHA after an authorized
+  push
 - Existing user work was not discarded or reset
 - `AGENTS.md` remains ignored, local instruction context
 - Node used for verification: 22.20.0
@@ -207,6 +213,45 @@ passed with the patched lock. The exact-source benchmark measured 8.004 ms p95
 time-to-first-byte overhead, 8.045 ms p95 total overhead, 1.878 ms p95 cockpit
 initial-document total, and 101,360 gzip bytes across the three cockpit assets.
 
+## Production readiness verification on 2026-08-07
+
+The local 0.1.0 candidate was refreshed against current registry and dependency
+state without pushing, tagging, publishing, or changing external release
+configuration.
+
+- A newly disclosed high-severity `nanoid` advisory was resolved with the
+  minimal development-lock update to 3.3.18. The complete npm audit now reports
+  zero vulnerabilities.
+- `better-sqlite3` was upgraded from 12.11.1 to 13.0.3 after review of the
+  upstream N-API transition. The change removes the deprecated
+  `prebuild-install` dependency and 35 transitive packages. All 26 focused
+  storage tests, all 339 unit tests, and both packaged end-to-end tests passed.
+- Formatting, ESLint, strict TypeScript, the production build, package smoke,
+  and the clean-installed CLI lifecycle passed.
+- The seven exact runtime tarballs were manually inspected. No credential
+  signature, local path, `.env`, log, database, source map, source/test tree,
+  traversal entry, link, or special file was found. All READMEs and canonical
+  licenses were present, and the CLI included the cockpit and generated
+  third-party notices.
+- The exact tarballs clean-installed without a deprecation warning and added 10
+  runtime packages. The installed CLI passed version, help, initialization,
+  empty-session, SQLite-integrity, private-file, listener, and upstream checks.
+  `doctor` returned `ok: true` with only the documented WebSocket/Realtime
+  warning.
+- Two consecutive deterministic offline demos passed with both report formats
+  and the protected test fixture retained.
+- The exact runtime source commit `d745da862f03dd4d3be7766480a0004b4ab2ff84`
+  measured 8.306 ms p95 recorder time-to-first-byte overhead, 8.284 ms p95
+  total overhead, 1.430 ms p95 cockpit initial-document total, and 104,892 gzip
+  bytes across the three cockpit assets.
+- The manual artifact results and SHA-256 checksums are recorded in
+  `docs/release-review-0.1.0.md`; the final source/documentation candidate is
+  `60b17e908fc27389022632180e5b96535407196e`.
+
+The final clean-tree aggregate preflight must run after this handoff commit.
+The exact final pushed SHA must then pass cross-platform CI and CodeQL before
+publication.
+
 Disposable `/tmp` homes and workspaces are not persistent user data.
 
 ## Release boundary
@@ -218,10 +263,11 @@ Before any future release:
 
 1. confirm npm authentication and current organization/package access;
 2. inspect all seven package names and registry state;
-3. commit the exact reviewed source if the user requests a commit;
-4. run the complete release preflight on a clean tree;
-5. push only with explicit authorization and wait for CI on the exact SHA;
-6. publish only after a separate explicit instruction;
+3. run the complete release preflight on a clean tree;
+4. push only with explicit authorization and wait for CI on the exact SHA;
+5. configure the protected `npm-production` environment only under explicit
+   release-preparation authorization;
+6. publish to `next` only after a separate explicit instruction;
 7. verify clean registry installation before tagging or promoting release tags.
 
 Never infer:
@@ -236,10 +282,17 @@ Never infer:
 
 ## Recommended next moves
 
-1. Run the clean-tree release preflight after the benchmark documentation
-   commit, then push the local commits only if the user explicitly asks.
-2. Run subscription/OAuth Claude acceptance after native login is available.
-3. Perform the manual tarball/privacy review before release preparation.
-4. Rename the local directory only if the user separately requests it.
-5. Publish, tag, push, or create a release only under fresh explicit
-   authorization.
+1. Run the final clean-tree release preflight, then push the local commits only
+   if the user explicitly authorizes that push.
+2. Wait for cross-platform CI and CodeQL on the exact pushed SHA.
+3. Have the user authenticate npm directly and reconfirm `@tekrion` write
+   access; never ask them to paste a token or 2FA code into project files or
+   chat.
+4. Configure the protected GitHub environment only under fresh release
+   preparation authorization, then publish 0.1.0 to `next` only under separate
+   publication authorization.
+5. Tag, promote to `latest`, and create the GitHub release only under their
+   separate authorization boundary.
+6. Subscription/OAuth Claude acceptance remains deferred until native login is
+   available; the user previously chose to skip that test for now.
+7. Rename the local directory only if the user separately requests it.
