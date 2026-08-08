@@ -8,6 +8,10 @@ The ordered first-publication procedure, bootstrap safeguards, registry checks,
 and trusted-publishing transition are documented in the [npm release
 runbook](npm-release-runbook.md).
 
+The completed local source, tarball, privacy, license, and clean-install review
+for the current 0.1.0 runtime candidate is recorded in the [0.1.0 release
+review](release-review-0.1.0.md).
+
 ## Automated source gates
 
 The checked-in [CI workflow](../.github/workflows/ci.yml) defines three boundaries:
