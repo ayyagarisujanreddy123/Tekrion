@@ -2,8 +2,8 @@
 
 Status: **local source and package artifact review passed**
 
-- Review date: 2026-08-07 CDT / 2026-08-08 UTC
-- Reviewed runtime source commit: `d745da862f03dd4d3be7766480a0004b4ab2ff84`
+- Review date: 2026-08-15 CDT / 2026-08-15 UTC
+- Reviewed runtime source commit: `504400b4c49ee187d9b022be21c7d8e86ec35f35`
 - Version: `0.1.0`
 - Runtime: Node.js 22.20.0 on macOS 25.5.0 x64
 
@@ -41,7 +41,7 @@ over the generated `.tgz` file.
 | `tekrion-context-0.1.0.tgz`     |     7 |       10,801 | `e55c48795ecadf488a00fa24365e9c8ff8d64d95d3a3e0092fc9c2faf827bbd5` |
 | `tekrion-analysis-0.1.0.tgz`    |    19 |       28,003 | `576bfe007012070ffc7a1c94c0e278f4756ce4ed0d5ab3151d6d83fa96869c91` |
 | `tekrion-daemon-0.1.0.tgz`      |    53 |       56,678 | `b4537d71dd691a23c26a057bfb6e99dc75eed2876b11de74d8818b5f5801c70c` |
-| `tekrion-cli-0.1.0.tgz`         |    39 |      145,760 | `10afde60fe92d4b4d9f9e909caaa8f9c0b605699acf8ddb3550705558073ead6` |
+| `tekrion-cli-0.1.0.tgz`         |    39 |      145,678 | `d8464229132d721d991b88f64b0a65d9caab64eb95618841ab69b712e8677970` |
 
 ## Manual privacy and contents review
 
