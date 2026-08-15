@@ -64,7 +64,15 @@ jobs:
         with:
           node-version: 22.20.0
           cache: npm
-      - run: npm ci
+      - name: Install dependencies on Windows from reviewed prebuilds
+        if: runner.os == 'Windows'
+        run: npm ci --ignore-scripts
+      - name: Verify the bundled SQLite prebuild on Windows
+        if: runner.os == 'Windows'
+        run: node -e "const Database = require('better-sqlite3'); const database = new Database(':memory:'); database.prepare('SELECT 1').get(); database.close();"
+      - name: Install dependencies
+        if: runner.os != 'Windows'
+        run: npm ci
       - name: Exercise packaged CLI and offline fallback twice
         run: npm run test:e2e
       - name: Install and exercise packed runtime packages
