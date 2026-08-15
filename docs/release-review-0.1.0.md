@@ -3,7 +3,7 @@
 Status: **local source and package artifact review passed**
 
 - Review date: 2026-08-15 CDT / 2026-08-15 UTC
-- Reviewed runtime source commit: `504400b4c49ee187d9b022be21c7d8e86ec35f35`
+- Reviewed runtime source commit: `c6e215c1202b032897149e80fe1394160819579e`
 - Version: `0.1.0`
 - Runtime: Node.js 22.20.0 on macOS 25.5.0 x64
 
@@ -40,8 +40,8 @@ over the generated `.tgz` file.
 | `tekrion-normalizers-0.1.0.tgz` |    25 |       23,183 | `214e277cbd10efdb05e1147abf05c10d2fb96632013311453ee37e9fbdc6832c` |
 | `tekrion-context-0.1.0.tgz`     |     7 |       10,801 | `e55c48795ecadf488a00fa24365e9c8ff8d64d95d3a3e0092fc9c2faf827bbd5` |
 | `tekrion-analysis-0.1.0.tgz`    |    19 |       28,003 | `576bfe007012070ffc7a1c94c0e278f4756ce4ed0d5ab3151d6d83fa96869c91` |
-| `tekrion-daemon-0.1.0.tgz`      |    53 |       56,678 | `b4537d71dd691a23c26a057bfb6e99dc75eed2876b11de74d8818b5f5801c70c` |
-| `tekrion-cli-0.1.0.tgz`         |    39 |      145,678 | `d8464229132d721d991b88f64b0a65d9caab64eb95618841ab69b712e8677970` |
+| `tekrion-daemon-0.1.0.tgz`      |    54 |       57,247 | `4139a8c804894ca3063081a35e57fe4467a586bb120d2ac81aebec431372c088` |
+| `tekrion-cli-0.1.0.tgz`         |    40 |      146,243 | `13850ea3c62ec8c5ad00c05201b1412ed61f73ad7487db93e419eeebd5fad351` |
 
 ## Manual privacy and contents review
 
@@ -56,6 +56,9 @@ over the generated `.tgz` file.
 - Every runtime tarball contains its package README, compiled JavaScript and
   declarations, package manifest, and a byte-identical copy of the canonical
   Apache-2.0 license.
+- The daemon and CLI tarballs contain npm's persistent dual-use metadata and a
+  root-level `DISCLOSURE` describing their authorized observability purpose,
+  sensitive-data boundary, and prohibited misuse.
 - The CLI includes the built cockpit HTML, JavaScript, and CSS, without source
   maps. Its generated notices cover React, React DOM, Scheduler, and Zod, the
   production dependencies embedded in the browser assets.
@@ -85,15 +88,14 @@ supported.
 
 ## External release boundary
 
-The local candidate is ready to enter the controlled publication runbook. These
-items are deliberately still pending:
+The npm identity, `@tekrion` ownership, auth-and-writes 2FA, and the
+main-restricted `npm-production` GitHub environment have been confirmed. These
+external release operations remain:
 
-1. Push the final reviewed commit and require cross-platform CI and CodeQL to
-   pass on its exact SHA.
-2. Authenticate npm and reconfirm write access to `@tekrion`.
-3. Configure the protected `npm-production` GitHub environment and use a local,
-   interactive 2FA session for the dual-use-aware first publication.
-4. Publish all seven packages to `next`, then verify registry contents and
-   clean installs on every claimed platform.
-5. Create the signed tag, promote to `latest`, and publish the GitHub release
+1. Push the final review-only commit and require cross-platform CI and CodeQL
+   to pass on its exact SHA.
+2. Publish all seven packages to `next` through the guarded local interactive
+   2FA path, then verify registry contents and clean installs on every claimed
+   platform.
+3. Create the signed tag, promote to `latest`, and publish the GitHub release
    only under their separate authorization boundary.
