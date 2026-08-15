@@ -1,8 +1,8 @@
 # Security verification map
 
-> Source candidate: Tekrion 0.1.0
+> Release: Tekrion 0.1.0
 >
-> Verified: 2026-07-27
+> Verified: 2026-08-15
 
 This document maps every item in the execution plan's privacy and security checklist to the implementation boundary and regression evidence that enforce it. It is intended to make the security posture reviewable instead of relying on an unchecked claim.
 

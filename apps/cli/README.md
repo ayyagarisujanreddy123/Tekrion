@@ -2,9 +2,8 @@
 
 Tekrion is a local flight recorder for AI coding agents. It records observable API traffic, model and tool events, process output, and workspace effects, then connects that evidence in a terminal workflow and browser cockpit.
 
-> The manifests are prepared for the confirmed `@tekrion` npm scope, but the
-> packages have not been published. Until an official release is linked from
-> the project repository, use the source quickstart in the full documentation.
+The CLI is published from the `@tekrion` npm scope. It manages the local daemon,
+browser cockpit, recordings, reports, archives, and wrapped-agent lifecycle.
 
 ## Requirements
 
@@ -14,7 +13,6 @@ Tekrion is a local flight recorder for AI coding agents. It records observable A
 ## Start recording
 
 ```bash
-# Available after the first official npm release:
 npm install --global @tekrion/cli
 tekrion init
 tekrion doctor

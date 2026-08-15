@@ -1,8 +1,8 @@
 # Changelog
 
-This file records user-visible changes to Tekrion. Version 0.1.0 remains an unreleased source candidate until an official tag and package publication are completed.
+This file records user-visible changes to Tekrion.
 
-## 0.1.0 — Unreleased
+## 0.1.0 — 2026-08-15
 
 ### Added
 
@@ -31,7 +31,7 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
 - Renamed the canonical GitHub repository to
   `ayyagarisujanreddy123/Tekrion`.
 - Moved public package names to the confirmed `@tekrion/*` npm scope and made
-  the seven runtime workspaces publishable without publishing them.
+  the seven runtime workspaces independently installable.
 - Changed new portable archive output from `.bbx`/`blackbox-bbx` to
   `.tkr`/`tekrion-tkr`. Existing pre-rebrand archives remain importable.
 - Added non-destructive compatibility for pre-rebrand data homes, database and
@@ -50,7 +50,7 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
   fields.
 - Control and cockpit services default to loopback with token and origin checks.
 - Recorded markup remains inert, optional external analysis is disabled by default, and imported evidence cannot trigger analysis or replay.
-- Apache-2.0 licensing and generated third-party notices are included in future runtime package contents.
+- Apache-2.0 licensing and generated third-party notices are included in runtime package contents.
 - Repository install scripts are explicitly reviewed and version-pinned for npm's dependency lifecycle policy.
 - Updated the locked development dependency graph to use the patched
   `brace-expansion` 5.0.9, `postcss` 8.5.25, and `nanoid` 3.3.18 releases.
@@ -74,6 +74,9 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
 - Made `tekrion doctor` report unsupported POSIX permission-mode verification as a warning on Windows instead of failing an otherwise healthy installation.
 - Made package smoke testing and release preflight invoke JavaScript entrypoints directly so Windows does not attempt to execute npm-generated `.cmd` shims through `execFile`.
 - Removed a conflicting duplicate install-script policy so strict npm installs use the reviewed, version-pinned approvals.
+- Made Windows source CI use the bundled `better-sqlite3` N-API prebuild and
+  verify it before exercising the packaged lifecycle, avoiding an unnecessary
+  native rebuild against the hosted runner toolchain.
 
 ### Known limitations
 
@@ -82,4 +85,5 @@ This file records user-visible changes to Tekrion. Version 0.1.0 remains an unre
   Codex sessions use HTTP.
 - Agent-specific adapters are not bundled.
 - Tekrion observes configured API, wrapped-process, and repository boundaries; it is not an operating-system sandbox or universal activity monitor.
-- npm publication, signed tagging, and registry installation verification are deferred.
+- Native desktop installers and operating-system package-manager distributions
+  are not included in 0.1.0; the supported distribution is npm.

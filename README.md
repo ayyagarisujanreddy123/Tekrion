@@ -26,7 +26,8 @@ The name is pronounced **TEK-ree-on** and comes from the Greek _tekmērion_, mea
 It runs as a CLI-managed localhost recorder with a browser cockpit. Launch Codex, Claude Code, or another supported HTTP client through `tekrion run`, and Tekrion builds a synchronized record of API traffic, model/tool events, process output, and workspace effects.
 
 > [!IMPORTANT]
-> **Pre-release:** Tekrion 0.1.0 is currently available from source. The public npm packages have not been released yet, and pre-release interfaces may still evolve.
+> **Early release:** Tekrion 0.1.0 is the first public release. Review the
+> privacy and capture boundaries before recording a sensitive workspace.
 
 When an agent deletes a test, follows instructions hidden in a README, repeats a failing command, or drifts outside the user's request, Tekrion helps answer:
 
@@ -85,7 +86,28 @@ Requirements:
 - npm 10 or newer
 - Codex, Claude Code, or another supported client that accepts a custom base URL
 
-Clone and run the current source:
+Install the public CLI:
+
+```bash
+npm install --global @tekrion/cli
+tekrion init
+tekrion doctor
+```
+
+Run an agent under the recorder:
+
+```bash
+tekrion run -- <agent-command> [arguments...]
+```
+
+For example:
+
+```bash
+tekrion run -- codex
+tekrion run -- claude
+```
+
+To build the current source instead:
 
 ```bash
 git clone https://github.com/ayyagarisujanreddy123/Tekrion.git
@@ -94,19 +116,6 @@ npm ci
 npm run build
 npm run tekrion -- init
 npm run tekrion -- doctor
-```
-
-Run an agent under the recorder:
-
-```bash
-npm run tekrion -- run -- <agent-command> [arguments...]
-```
-
-For example:
-
-```bash
-npm run tekrion -- run -- codex
-npm run tekrion -- run -- claude
 ```
 
 Direct `codex` and `claude` executables are detected automatically. Use
@@ -637,7 +646,7 @@ Tekrion handles forensic evidence. Schema and fixture changes must preserve raw 
 
 ## Project status
 
-Version 0.1.0 is the current unreleased source candidate. The core capabilities scheduled for milestones M0 through M9 are implemented in this source tree:
+Version 0.1.0 is the first public release. The core capabilities scheduled for milestones M0 through M9 are implemented:
 
 - Recorder contracts and golden fixtures
 - Crash-safe storage and content-addressed blobs
@@ -651,7 +660,7 @@ Version 0.1.0 is the current unreleased source candidate. The core capabilities 
 - Tamper-evident share/forensic archives and read-only import
 - Explicit retention, safe blob collection, and repeatable offline demo rehearsal
 
-The application is designed for local, single-user production operation; see the operations runbook for deployment, health, backup, retention, upgrade, and incident procedures. This is not a claim that a public package release is complete. npm identity, publication, registry-install verification, signing, and release tagging remain separate release operations.
+The application is designed for local, single-user production operation; see the operations runbook for deployment, health, backup, retention, upgrade, and incident procedures. Release artifacts are published and verified through the controlled npm release runbook; signing and GitHub release tagging remain separate operations.
 
 For the detailed product contract and milestone acceptance criteria, see:
 

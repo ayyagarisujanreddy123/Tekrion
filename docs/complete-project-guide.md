@@ -1,8 +1,8 @@
 # Tekrion: Complete Project Guide
 
-> Version 0.1.0 — unreleased source candidate
+> Version 0.1.0 — first public release
 >
-> Last updated: 2026-07-22
+> Last updated: 2026-08-15
 
 This document explains Tekrion from the beginning. It is written for someone who has never seen the project, has not read its design documents, and may not already understand AI-agent observability.
 
@@ -833,10 +833,8 @@ Deletion cannot erase copies in backups, previously exported archives, unrelated
 
 ### Current release status
 
-Version 0.1.0 is an unreleased source candidate. The seven runtime manifests
-are publishable under the confirmed `@tekrion` npm scope, but no npm
-publication is claimed. Use the repository workflow below until an official
-package release is linked from the project.
+Version 0.1.0 is the first public release. Install the CLI from the public
+`@tekrion` npm scope; its six runtime dependencies are installed automatically.
 
 ### Requirements
 
@@ -845,6 +843,15 @@ package release is linked from the project.
 - Codex, Claude Code, or another supported agent/client that can honor a custom
   base URL for API capture;
 - permission to inspect the target workspace and traffic.
+
+### Install from npm
+
+```bash
+npm install --global @tekrion/cli
+tekrion --version
+tekrion init
+tekrion doctor
+```
 
 ### Build from source
 
@@ -856,7 +863,8 @@ npm run tekrion -- init
 npm run tekrion -- doctor
 ```
 
-`npm run tekrion --` is the source-repository prefix. The examples below use the eventual installed form `tekrion` for readability.
+`npm run tekrion --` is the source-repository prefix. The examples below use
+the installed `tekrion` command for readability.
 
 ### Recommended: wrap one agent command
 
@@ -969,7 +977,7 @@ npm run demo:offline
 
 The command:
 
-1. rebuilds the source candidate;
+1. rebuilds the release candidate;
 2. resets only the dedicated `.tekrion-demo` workspace;
 3. recreates the clean rogue repository fixture;
 4. imports checked-in protocol/process/workspace evidence;
@@ -1487,6 +1495,8 @@ These are future directions, not 0.1.0 capabilities.
 - [Security policy](../SECURITY.md) — vulnerability reporting and trust model
 - [Contribution guide](../CONTRIBUTING.md) — rules for changing forensic contracts
 - [Architecture decisions](decisions/) — decision-by-decision implementation rationale
-- [Changelog](../CHANGELOG.md) — 0.1.0 candidate contents and known limitations
+- [Changelog](../CHANGELOG.md) — 0.1.0 contents and known limitations
 
-Tekrion is complete as a local 0.1.0 source candidate across the planned M0–M9 feature path. Its runtime manifests are prepared under the confirmed `@tekrion` scope, but publishing, tagging, and external release operations remain separately authorized steps.
+Tekrion 0.1.0 implements the planned M0–M9 local evidence path and is
+distributed through the public `@tekrion` npm scope. Signed tagging and GitHub
+release publication remain separate release operations.
