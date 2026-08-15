@@ -4,13 +4,17 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
-import { runtimePackages } from "./runtime-packages.mjs";
+import {
+  dualUseRuntimePackageNames,
+  runtimePackages,
+} from "./runtime-packages.mjs";
 
 const execute = promisify(execFile);
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const npmCliPath = process.env.npm_execpath;
 const gitExecutable = "git";
 const maximumOutputBytes = 100 * 1024 * 1024;
+const dualUsePackageNames = new Set(dualUseRuntimePackageNames);
 const privateWorkspaceDirectories = [
   ".",
   "apps/demo-agent",
@@ -265,6 +269,38 @@ async function manifestChecks() {
           "Publish configuration",
           "explicit public access is missing from scoped runtime packages",
           invalidPublishConfiguration.join("\n"),
+        ),
+  );
+
+  const invalidDualUseDeclarations = [];
+  for (const { runtimePackage, manifest } of manifests) {
+    if (!dualUsePackageNames.has(manifest.name)) {
+      continue;
+    }
+    const disclosure = await firstExistingFile([
+      join(repositoryRoot, runtimePackage.directory, "DISCLOSURE"),
+    ]);
+    if (
+      manifest.contentPolicy?.class !== "dual-use" ||
+      !Array.isArray(manifest.files) ||
+      !manifest.files.includes("DISCLOSURE") ||
+      disclosure === undefined
+    ) {
+      invalidDualUseDeclarations.push(manifest.name);
+    }
+  }
+  checks.push(
+    invalidDualUseDeclarations.length === 0
+      ? passed(
+          "dual-use-declarations",
+          "Dual-use declarations",
+          `${dualUsePackageNames.size} capture packages include npm metadata and disclosures`,
+        )
+      : failed(
+          "dual-use-declarations",
+          "Dual-use declarations",
+          "capture packages must declare npm dual-use metadata and package a DISCLOSURE file",
+          invalidDualUseDeclarations.join("\n"),
         ),
   );
 

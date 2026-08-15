@@ -46,6 +46,9 @@ Deterministic inspection and reporting stay local. Optional AI report enrichment
 
 Recordings may contain prompts, source code, tool output, and credentials present in payload bodies. Protect the Tekrion data directory and review the selected archive profile before sharing an export.
 
+The packaged `DISCLOSURE` describes the CLI's dual-use capture capabilities,
+intended authorized use, and sensitive-data responsibilities.
+
 For the complete quickstart, supported protocols, evidence model, privacy boundaries, and source-development instructions, read the [project documentation](https://github.com/ayyagarisujanreddy123/Tekrion#readme) and [security policy](https://github.com/ayyagarisujanreddy123/Tekrion/security/policy).
 
 Tekrion is licensed under Apache-2.0. The full license text is included at `dist/LICENSE`, and notices for dependencies embedded in the browser assets are included at `dist/THIRD_PARTY_NOTICES`.

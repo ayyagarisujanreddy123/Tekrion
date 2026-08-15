@@ -14,12 +14,16 @@ import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 
 import { MINIMUM_NODE_VERSION } from "../packages/protocol/dist/index.js";
-import { runtimePackages } from "./runtime-packages.mjs";
+import {
+  dualUseRuntimePackageNames,
+  runtimePackages,
+} from "./runtime-packages.mjs";
 
 const execute = promisify(execFile);
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const npmCliPath = process.env.npm_execpath;
 const runtimePackageNames = new Set(runtimePackages.map(({ name }) => name));
+const dualUsePackageNames = new Set(dualUseRuntimePackageNames);
 const forbiddenPackagePaths = [
   /(^|\/)(?:src|test|tests|__tests__)(\/|$)/,
   /(?:blackbox|bbx)/i,
@@ -70,6 +74,13 @@ function validatePackageContents(result) {
     paths.includes("dist/index.d.ts"),
     `${result.name} lacks dist/index.d.ts`,
   );
+
+  if (dualUsePackageNames.has(result.name)) {
+    assert.ok(
+      paths.includes("DISCLOSURE"),
+      `${result.name} lacks its required dual-use disclosure`,
+    );
+  }
 
   if (result.name === "@tekrion/cli") {
     assert.ok(
@@ -139,6 +150,20 @@ async function validatePackageManifests() {
         manifest.description.trim().length > 0,
       `${manifest.name} lacks a package description`,
     );
+
+    if (dualUsePackageNames.has(manifest.name)) {
+      assert.deepEqual(
+        manifest.contentPolicy,
+        { class: "dual-use" },
+        `${manifest.name} lacks npm dual-use metadata`,
+      );
+      const disclosure = await readFile(
+        join(repositoryRoot, runtimePackage.directory, "DISCLOSURE"),
+        "utf8",
+      );
+      assert.match(disclosure, /dual-use developer observability software/u);
+      assert.match(disclosure, /authorized to inspect/u);
+    }
 
     for (const [dependency, version] of Object.entries(
       manifest.dependencies ?? {},

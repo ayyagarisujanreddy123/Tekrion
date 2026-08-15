@@ -91,8 +91,8 @@ items are deliberately still pending:
 1. Push the final reviewed commit and require cross-platform CI and CodeQL to
    pass on its exact SHA.
 2. Authenticate npm and reconfirm write access to `@tekrion`.
-3. Configure the protected `npm-production` GitHub environment and its
-   short-lived bootstrap credential.
+3. Configure the protected `npm-production` GitHub environment and use a local,
+   interactive 2FA session for the dual-use-aware first publication.
 4. Publish all seven packages to `next`, then verify registry contents and
    clean installs on every claimed platform.
 5. Create the signed tag, promote to `latest`, and publish the GitHub release

@@ -13,3 +13,8 @@ export const runtimePackages = Object.freeze([
   Object.freeze({ name: "@tekrion/daemon", directory: "apps/daemon" }),
   Object.freeze({ name: "@tekrion/cli", directory: "apps/cli" }),
 ]);
+
+export const dualUseRuntimePackageNames = Object.freeze([
+  "@tekrion/daemon",
+  "@tekrion/cli",
+]);

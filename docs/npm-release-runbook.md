@@ -22,6 +22,21 @@ Publish the runtime packages in dependency order:
 All seven packages use one version and exact internal dependency versions. The CLI
 must be published last.
 
+## npm dual-use classification
+
+`@tekrion/daemon` and `@tekrion/cli` provide security-relevant traffic capture,
+process observation, and forensic evidence capabilities. They therefore declare
+`contentPolicy.class` as `dual-use` and package a root-level `DISCLOSURE` file as
+required by npm's [Dual-Use Content
+Policy](https://docs.npmjs.com/policies/dual-use/). The other five runtime
+libraries do not themselves intercept traffic or launch observed processes.
+
+The declaration is persistent across future daemon and CLI versions. Do not
+remove it without npm Trust & Safety review. Dual-use packages must be published
+through an interactive 2FA-authenticated session, or staged and later approved
+with 2FA; direct publication with a bypass-2FA token or trusted-publishing OIDC is
+not permitted.
+
 ## Hard gate: confirm current npm access
 
 The package names require ownership of, or write access to, the npm `@tekrion`
@@ -48,7 +63,9 @@ guide](https://docs.npmjs.com/package-scope-access-level-and-visibility/).
 After current scope access is confirmed:
 
 1. Confirm that exactly the seven runtime manifests listed above omit
-   `private: true` and declare `publishConfig.access` as `public`.
+   `private: true` and declare `publishConfig.access` as `public`. Confirm the
+   daemon and CLI still contain both the npm dual-use metadata and their
+   package-root `DISCLOSURE` files.
 2. Keep every development-only workspace private.
 3. Replace unreleased/source-candidate wording and date the changelog only when
    publication of the genuine release candidate is explicitly authorized.
@@ -75,41 +92,42 @@ After current scope access is confirmed:
 `release:preflight` must say `READY`, and the working tree must be clean. A passing
 local build is not a substitute for the cross-platform run on the candidate SHA.
 
-## Protect the one-time bootstrap
+## First publication requires interactive 2FA
 
-An npm trusted publisher cannot be attached until each package exists. The checked
-in `bootstrap-npm.yml` workflow therefore supports the first publication with a
-short-lived granular token.
+Staged publishing requires a package to exist already, so it cannot create these
+seven package names. Because the daemon and CLI are declared dual-use, the 0.1.0
+bootstrap must use a local, interactive npm session with 2FA. Do not use a
+bypass-2FA token, a CI secret, or direct trusted publishing for this release.
 
-Before dispatching it:
+From a real terminal on the exact clean and CI-approved `main` commit:
 
-1. Create a GitHub environment named `npm-production`.
-2. Restrict that environment to the `main` branch and configure a required reviewer
-   when an independent reviewer is available.
-3. Create a granular npm token with the shortest practical expiration, package and
-   scope read/write access only for the controlled namespace, and the minimum
-   organization permission required. npm requires 2FA or a write token configured
-   to bypass 2FA for non-interactive package creation.
-4. Store the token only as the `NPM_TOKEN` secret on `npm-production`. Never put it
-   in a repository, command transcript, issue, archive, or workflow file.
-5. Dispatch **Bootstrap npm release** from `main`, entering the exact 40-character
-   candidate SHA and the confirmation `publish-0.1.0-to-next`.
+1. Run `npm login`, verify the identity with `npm whoami`, and confirm the account
+   uses `auth-and-writes` 2FA.
+2. Make sure `NODE_AUTH_TOKEN` and `NPM_TOKEN` are unset. Never put an npm token or
+   one-time password in a command argument, repository file, transcript, issue, or
+   chat message.
+3. Run the guarded interactive command, replacing the placeholder with the exact
+   40-character approved commit:
 
-The workflow installs only the explicitly reviewed, version-pinned dependency
-lifecycle scripts, re-runs all local gates, verifies the token identity, refuses to
-begin if any `0.1.0` package already exists, and publishes dependencies first under
-the `next` dist-tag with provenance. The refusal is deliberate: blindly rerunning
-after a partial publication can make an incident worse.
+   ```bash
+   npm run release:publish:interactive -- <approved-commit-sha>
+   ```
 
-GitHub environments can hold approval-gated secrets as described in [GitHub's
-deployment environment documentation](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments/).
-Granular token controls are documented in [npm's access-token
-guide](https://docs.npmjs.com/creating-and-viewing-access-tokens/).
+4. Type the command's exact release confirmation. Respond to npm's own 2FA prompts
+   in that terminal. The command re-runs preflight, refuses to start if any 0.1.0
+   version exists, publishes the seven packages in dependency order under `next`,
+   and verifies each registry tag before continuing.
+
+The refusal is deliberate: blindly rerunning after a partial publication can make
+an incident worse. Follow the partial-publication policy below if the command stops
+after any package has been created.
 
 ## Verify the real registry artifacts
 
 Do not promote `latest` immediately. Inspect all seven `0.1.0` records, tarball
-integrity values, repository metadata, licenses, READMEs, and provenance first.
+integrity values, repository metadata, licenses, READMEs, dual-use declarations,
+and registry signatures first. The interactive first publication does not produce
+GitHub Actions provenance; subsequent staged releases should.
 
 Verify the CLI from a clean temporary installation:
 
@@ -132,8 +150,11 @@ After registry and platform verification, and only with explicit authorization:
 
 1. Create and verify a signed `v0.1.0` tag on the exact tested SHA.
 2. Push that tag.
-3. Promote `@tekrion/protocol`, storage, normalizers, context, analysis, daemon,
-   and finally CLI from `next` to `latest`.
+3. From the same exact clean commit, run
+   `npm run release:promote:interactive -- <approved-commit-sha>`, enter its exact
+   confirmation, and respond to npm's own 2FA prompts. It promotes protocol,
+   storage, normalizers, context, analysis, daemon, and finally CLI from `next` to
+   `latest`, verifying each tag as it proceeds.
 4. Install `@tekrion/cli@latest` in another clean directory and repeat the CLI
    checks.
 5. Publish the GitHub release with the supported protocols, capture levels, privacy
@@ -142,40 +163,41 @@ After registry and platform verification, and only with explicit authorization:
 Never attach real `.tkr` evidence, local databases, credentials, recordings, or
 machine-specific configuration to a release.
 
-## Replace bootstrap credentials with trusted publishing
+## Configure staged trusted publishing for later releases
 
 Immediately after the first successful publication:
 
-1. Revoke the bootstrap npm token and remove the `NPM_TOKEN` environment secret.
-2. Remove `bootstrap-npm.yml` in a focused commit.
-3. Add the permanent `publish.yml` workflow.
-4. Configure a trusted publisher separately on all seven npm packages with:
+1. Keep the `npm-production` GitHub environment restricted to `main`; add a
+   required reviewer when an independent reviewer is available.
+2. Add the permanent `publish.yml` workflow.
+3. Configure a trusted publisher separately on all seven npm packages with:
 
    - provider: GitHub Actions;
    - owner: `ayyagarisujanreddy123`;
    - repository: `Tekrion`;
    - workflow filename: `publish.yml`;
    - environment: `npm-production`;
-   - allowed action: `npm publish`.
+   - allowed action: `npm stage publish`.
 
-5. Use a GitHub-hosted runner, `id-token: write`, Node.js 22.15 or newer, and npm
-   11.5.1 or newer. This satisfies both Tekrion's runtime contract and npm's
-   lower trusted-publishing minimum. The permanent publishing job must not receive
-   `NODE_AUTH_TOKEN` or another write credential.
-6. Verify one trusted publication before configuring packages to disallow ordinary
-   publishing tokens.
+4. Use a GitHub-hosted runner, `id-token: write`, Node.js 22.15 or newer, and a
+   current npm release that supports both trusted and staged publishing. The
+   permanent publishing job must not receive `NODE_AUTH_TOKEN` or another write
+   credential.
+5. Have a maintainer inspect the staged tarballs and approve them interactively
+   with 2FA. Do not configure the trust relationship for direct `npm publish` on
+   the daemon or CLI.
+6. Verify one staged trusted publication before configuring packages to disallow
+   ordinary publishing tokens.
 
-As verified on 2026-07-20, npm trusted publishing supports GitHub-hosted runners,
-automatically generates provenance for public packages from public repositories,
-requires npm 11.5.1 or newer and Node.js 22.14 or newer, and requires an allowed
-action on newly created trust relationships. Recheck [the official trusted
-publishing documentation](https://docs.npmjs.com/trusted-publishers/) before every
+Recheck the official [trusted publishing](https://docs.npmjs.com/trusted-publishers/),
+[staged publishing](https://docs.npmjs.com/staged-publishing/), and [dual-use
+content](https://docs.npmjs.com/policies/dual-use/) documentation before every
 release because these requirements can change.
 
 ## Partial publication policy
 
-npm versions are immutable. If the bootstrap stops after publishing only part of
-the set:
+npm versions are immutable. If the interactive publication stops after
+publishing only part of the set:
 
 1. Inspect all seven registry records and tarballs.
 2. If every existing artifact is correct, publish only the missing packages in

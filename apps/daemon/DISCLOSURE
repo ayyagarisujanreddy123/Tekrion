@@ -1,0 +1,17 @@
+Tekrion is dual-use developer observability software.
+
+This package provides a local HTTP proxy that can record explicitly configured
+OpenAI-compatible and Anthropic Messages API traffic. It also provides an
+authenticated local service for storing, querying, reporting on, archiving, and
+retaining that evidence.
+
+The intended use is consensual debugging, auditing, and incident review of AI
+coding agents in workspaces and accounts the operator is authorized to inspect.
+It is not intended for covert monitoring, credential theft, unauthorized traffic
+interception, exploitation, or bypassing access controls.
+
+The control service and recorder proxy bind to loopback by default. Non-loopback
+proxy use requires an explicit opt-in. Recorded traffic can contain source code,
+prompts, model responses, tool activity, credentials, and other sensitive data.
+Operators are responsible for obtaining authorization and applying Tekrion's
+redaction, access-control, archive, and retention safeguards.

@@ -1490,7 +1490,7 @@ These are future directions, not 0.1.0 capabilities.
 - [Performance results](performance.md) — reproducible benchmark method and limits
 - [Demo script](demo-script.md) — three-minute, seven-minute, and fallback paths
 - [Release checklist](release-checklist.md) — source gates and authorization boundaries
-- [npm release runbook](npm-release-runbook.md) — ordered bootstrap, registry verification, and trusted publishing
+- [npm release runbook](npm-release-runbook.md) — interactive first publication, registry verification, and staged trusted publishing
 - [Security verification map](security-verification.md) — implementation and regression evidence for each security control
 - [Security policy](../SECURITY.md) — vulnerability reporting and trust model
 - [Contribution guide](../CONTRIBUTING.md) — rules for changing forensic contracts

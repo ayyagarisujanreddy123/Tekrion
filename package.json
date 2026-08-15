@@ -39,6 +39,8 @@
     "package:smoke": "npm run build && node scripts/package-smoke.mjs",
     "prebuild": "npm run clean",
     "release:preflight": "node scripts/release-preflight.mjs",
+    "release:promote:interactive": "node scripts/npm-release-interactive.mjs promote-latest",
+    "release:publish:interactive": "node scripts/npm-release-interactive.mjs publish-next",
     "test": "npm run test:unit",
     "test:e2e": "npm run build && vitest run --config vitest.e2e.config.ts",
     "test:unit": "vitest run",

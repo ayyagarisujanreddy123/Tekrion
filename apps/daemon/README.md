@@ -18,6 +18,9 @@ loopback by default and requires an explicit opt-in for non-loopback use. Do not
 expose the control listener, copy its token into logs, or treat the daemon as a
 sandbox for the wrapped process.
 
+The packaged `DISCLOSURE` describes the daemon's dual-use traffic-capture
+capabilities, intended authorized use, and sensitive-data responsibilities.
+
 ## Project links
 
 - [Tekrion repository](https://github.com/ayyagarisujanreddy123/Tekrion)

@@ -1,11 +1,13 @@
 # Release checklist
 
-Tekrion 0.1.0 is an unreleased source candidate. Completing a source check is necessary but does not authorize a tag, package publication, signing operation, or update to `origin`.
+This checklist records the gates and authorization boundaries for Tekrion
+0.1.0. Completing a source check does not itself authorize a tag, package
+publication, signing operation, or update to `origin`.
 
 The implemented privacy/security controls and their regression coverage are indexed in the [security verification map](security-verification.md).
 
-The ordered first-publication procedure, bootstrap safeguards, registry checks,
-and trusted-publishing transition are documented in the [npm release
+The ordered interactive first-publication procedure, registry checks, and staged
+trusted-publishing transition are documented in the [npm release
 runbook](npm-release-runbook.md).
 
 The completed local source, tarball, privacy, license, and clean-install review
@@ -45,6 +47,7 @@ It runs the source gate, clean-installs the packed runtime set, audits dependenc
 - [ ] Inspect the package tarballs from the package smoke test; reject secrets, local databases, logs, source maps, fixtures not intended for distribution, and missing runtime assets.
 - [ ] Confirm the CLI tarball contains the project license and generated notices for every dependency embedded in the browser assets.
 - [ ] Confirm all seven runtime tarballs contain their package-local README and canonical license.
+- [ ] Confirm the daemon and CLI tarballs contain their persistent npm dual-use metadata and root-level `DISCLOSURE` files.
 - [ ] Review `.tkr` share/forensic warnings, optional-AI consent copy, and supported/unsupported claims.
 - [ ] Record known limitations and migration compatibility.
 - [ ] Capture fallback screenshots/video from the exact candidate, if required for the release venue.
@@ -55,7 +58,7 @@ The 0.1.0 candidate version and Apache-2.0 license are already applied. These re
 
 - create a signed tag;
 - push the candidate commit and tag;
-- publish the npm package with provenance;
+- publish the first npm release interactively with 2FA, then use staged trusted publishing with provenance for later versions;
 - verify installation from the public registry on every claimed platform;
 - publish release notes and immutable checksums.
 

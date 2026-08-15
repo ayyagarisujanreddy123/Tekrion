@@ -2,6 +2,9 @@
   "name": "@tekrion/cli",
   "version": "0.1.0",
   "description": "Local flight recorder and evidence cockpit for AI coding agents",
+  "contentPolicy": {
+    "class": "dual-use"
+  },
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
@@ -21,6 +24,7 @@
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
+    "DISCLOSURE",
     "dist/LICENSE",
     "dist/THIRD_PARTY_NOTICES",
     "dist/**/*.js",

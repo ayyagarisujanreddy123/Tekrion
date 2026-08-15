@@ -1,0 +1,17 @@
+Tekrion is dual-use developer observability software.
+
+This package can launch an explicitly selected local process, configure that
+process to use Tekrion's local recorder proxy, and record its process output and
+workspace effects. Through @tekrion/daemon, it can also capture configured
+OpenAI-compatible and Anthropic Messages API traffic and produce evidence
+reports and archives.
+
+The intended use is consensual debugging, auditing, and incident review of AI
+coding agents in workspaces and accounts the operator is authorized to inspect.
+It is not intended for covert monitoring, credential theft, unauthorized traffic
+interception, exploitation, or bypassing access controls.
+
+Recording can collect source code, prompts, model responses, tool activity,
+process output, workspace changes, credentials, and other sensitive data.
+Operators are responsible for obtaining authorization and applying Tekrion's
+redaction, access-control, archive, and retention safeguards.
