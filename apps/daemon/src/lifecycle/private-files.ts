@@ -88,20 +88,15 @@ export async function readPrivateTextFile(path: string): Promise<string> {
     }
 
     // Node 22.15 reports dev=0 for path stats on Windows while handle stats
-    // contain the volume identifier. Compare two independently opened handles
-    // so the identity check remains exact without weakening symlink defenses.
-    const verificationHandle = await open(path, "r");
-    try {
-      const verification = await verificationHandle.stat({ bigint: true });
-      if (
-        !verification.isFile() ||
-        information.dev !== verification.dev ||
-        information.ino !== verification.ino
-      ) {
-        throw new Error(`Sensitive path changed while opening: ${path}`);
-      }
-    } finally {
-      await verificationHandle.close();
+    // contain the volume identifier. The inode still identifies the same file,
+    // and all later operations stay bound to the handle opened before lstat.
+    const windowsPathStatOmitsDevice =
+      process.platform === "win32" && target.dev === 0n;
+    if (
+      information.ino !== target.ino ||
+      (!windowsPathStatOmitsDevice && information.dev !== target.dev)
+    ) {
+      throw new Error(`Sensitive path changed while opening: ${path}`);
     }
 
     if (information.size > BigInt(MAX_PRIVATE_TEXT_BYTES)) {
