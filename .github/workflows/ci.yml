@@ -33,8 +33,12 @@ jobs:
       - run: npm test
 
   minimum-node:
-    name: Minimum Node.js
-    runs-on: ubuntu-latest
+    name: Minimum Node.js (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - name: Check out source
@@ -44,7 +48,15 @@ jobs:
         with:
           node-version: 22.15.0
           cache: npm
-      - run: npm ci
+      - name: Install dependencies on Windows from reviewed prebuilds
+        if: runner.os == 'Windows'
+        run: npm ci --ignore-scripts
+      - name: Verify the bundled SQLite prebuild on Windows
+        if: runner.os == 'Windows'
+        run: node -e "const Database = require('better-sqlite3'); const database = new Database(':memory:'); database.prepare('SELECT 1').get(); database.close();"
+      - name: Install dependencies
+        if: runner.os != 'Windows'
+        run: npm ci
       - run: npm run build
       - run: npm test
 
