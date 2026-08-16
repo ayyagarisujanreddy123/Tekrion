@@ -39,6 +39,13 @@ async function temporaryRoot(): Promise<string> {
   return root;
 }
 
+async function expectPosixMode(path: string, expected: number): Promise<void> {
+  const information = await stat(path);
+  if (process.platform !== "win32") {
+    expect(information.mode & 0o777).toBe(expected);
+  }
+}
+
 async function listen(server: Server): Promise<string> {
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
@@ -191,9 +198,26 @@ describe("Tekrion path compatibility", () => {
     });
 
     expect(home).toBe("/users/fixture/.local/share/blackbox");
-    expect(resolveDaemonPaths(home, { pathExists }).databasePath).toBe(
-      legacyDatabase,
-    );
+    expect(
+      resolveDaemonPaths(home, { pathExists, platform: "linux" }).databasePath,
+    ).toBe(legacyDatabase);
+  });
+
+  it("uses Windows path rules independently of the test host", () => {
+    const localAppData = "C:\\Users\\fixture\\AppData\\Local";
+    const legacyDatabase = `${localAppData}\\BlackBox\\blackbox.sqlite`;
+    const pathExists = (path: string) => path === legacyDatabase;
+    const home = defaultTekrionHome({
+      environment: { LOCALAPPDATA: localAppData },
+      platform: "win32",
+      userHome: "C:\\Users\\fixture",
+      pathExists,
+    });
+
+    expect(home).toBe(`${localAppData}\\BlackBox`);
+    expect(
+      resolveDaemonPaths(home, { pathExists, platform: "win32" }).databasePath,
+    ).toBe(legacyDatabase);
   });
 });
 
@@ -214,8 +238,8 @@ describe("private install credentials", () => {
     expect(first).toMatch(/^[A-Za-z\d_-]{43}$/u);
     expect(second).toBe(first);
     expect(await readControlToken(paths.tokenPath)).toBe(first);
-    expect((await stat(paths.homeDirectory)).mode & 0o777).toBe(0o700);
-    expect((await stat(paths.tokenPath)).mode & 0o777).toBe(0o600);
+    await expectPosixMode(paths.homeDirectory, 0o700);
+    await expectPosixMode(paths.tokenPath, 0o600);
   });
 
   it("rejects malformed existing token material", async () => {
@@ -226,7 +250,7 @@ describe("private install credentials", () => {
     await expect(readControlToken(paths.tokenPath)).rejects.toThrow(
       "Control token is invalid",
     );
-    expect((await stat(paths.tokenPath)).mode & 0o777).toBe(0o600);
+    await expectPosixMode(paths.tokenPath, 0o600);
   });
 
   it("refuses a symlinked control-token target", async () => {
@@ -261,7 +285,7 @@ describe("daemon lock ownership and recovery", () => {
         processAlive: () => true,
       }),
     ).rejects.toBeInstanceOf(DaemonAlreadyRunningError);
-    expect((await stat(path)).mode & 0o777).toBe(0o600);
+    await expectPosixMode(path, 0o600);
     expect(await first.release()).toBe(true);
     expect(await readDaemonLockRecord(path)).toBeUndefined();
   });

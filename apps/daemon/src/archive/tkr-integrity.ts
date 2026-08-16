@@ -201,11 +201,20 @@ async function syncDirectory(path: string): Promise<void> {
     handle = await open(path, "r");
     await handle.sync();
   } catch (error: unknown) {
+    const code =
+      typeof error === "object" && error !== null && "code" in error
+        ? String(error.code)
+        : undefined;
     if (
-      typeof error !== "object" ||
-      error === null ||
-      !("code" in error) ||
-      !["EINVAL", "ENOTSUP", "EBADF"].includes(String(error.code))
+      code === undefined ||
+      (!["EINVAL", "ENOTSUP", "EBADF"].includes(code) &&
+        // Node/libuv rejects fsync on an open directory with EPERM on Windows.
+        // The temporary file itself was synced before it was linked or renamed.
+        !(
+          process.platform === "win32" &&
+          handle !== undefined &&
+          code === "EPERM"
+        ))
     ) {
       throw error;
     }
