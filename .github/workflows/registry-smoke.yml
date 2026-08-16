@@ -145,7 +145,7 @@ jobs:
 
           if [ "$RUNNER_OS" = "Windows" ]; then
             CONTROL_TOKEN_PATH="$data_dir/control.token" node -e '
-              const { closeSync, fstatSync, lstatSync, openSync } = require("node:fs");
+              const { closeSync, fstatSync, lstatSync, openSync, statSync } = require("node:fs");
               const descriptor = openSync(process.env.CONTROL_TOKEN_PATH, "r");
               try {
                 const summarize = (information) => ({
@@ -160,6 +160,9 @@ jobs:
                   JSON.stringify({
                     node: process.version,
                     handle: summarize(fstatSync(descriptor, { bigint: true })),
+                    resolvedTarget: summarize(
+                      statSync(process.env.CONTROL_TOKEN_PATH, { bigint: true }),
+                    ),
                     target: summarize(
                       lstatSync(process.env.CONTROL_TOKEN_PATH, { bigint: true }),
                     ),
