@@ -1,6 +1,6 @@
 {
   "name": "@tekrion/normalizers",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "OpenAI and Anthropic evidence normalization for Tekrion",
   "license": "Apache-2.0",
   "repository": {
@@ -23,10 +23,10 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@tekrion/protocol": "0.1.0",
+    "@tekrion/protocol": "0.1.1",
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@tekrion/test-fixtures": "0.1.0"
+    "@tekrion/test-fixtures": "0.1.1"
   }
 }

@@ -2,6 +2,27 @@
 
 This file records user-visible changes to Tekrion.
 
+## 0.1.1 — 2026-08-16
+
+### Changed
+
+- Expanded the repository and npm CLI READMEs into a complete public reference
+  for installation, all commands and options, defaults, environment variables,
+  safety boundaries, and exit statuses.
+- Expanded `tekrion --help` to expose the full accepted command surface and
+  added a regression test that keeps both public READMEs aligned with it.
+
+### Fixed
+
+- Made Windows data-home and daemon path resolution use Windows path semantics,
+  including when compatibility behavior is tested from another host platform.
+- Made private control-file validation work on Node.js 22.15 for Windows while
+  preserving handle-bound reads and file-identity checks.
+- Accepted Windows' `EPERM` response when syncing an open directory after the
+  archive or blob file itself has been durably synced.
+- Hardened source and public-registry smoke coverage for the packaged lifecycle
+  on Windows.
+
 ## 0.1.0 — 2026-08-15
 
 ### Added

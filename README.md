@@ -5,6 +5,7 @@
 <p align="center">
   <a href="https://github.com/ayyagarisujanreddy123/Tekrion/actions/workflows/ci.yml"><img src="https://github.com/ayyagarisujanreddy123/Tekrion/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI status" /></a>
   <a href="https://github.com/ayyagarisujanreddy123/Tekrion/actions/workflows/codeql.yml"><img src="https://github.com/ayyagarisujanreddy123/Tekrion/actions/workflows/codeql.yml/badge.svg?branch=main" alt="CodeQL status" /></a>
+  <a href="https://www.npmjs.com/package/@tekrion/cli"><img src="https://img.shields.io/npm/v/@tekrion/cli?logo=npm&amp;label=%40tekrion%2Fcli" alt="@tekrion/cli npm version" /></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-Apache--2.0-6ec6c1" alt="Apache-2.0 license" /></a>
   <a href="./package.json"><img src="https://img.shields.io/badge/Node.js-%3E%3D22.15-9bbf6a?logo=node.js&amp;logoColor=white" alt="Node.js 22.15 or newer" /></a>
   <a href="./CONTRIBUTING.md"><img src="https://img.shields.io/badge/contributions-welcome-e8a84c" alt="Contributions welcome" /></a>
@@ -12,6 +13,7 @@
 
 <p align="center">
   <a href="#quickstart">Quickstart</a> ·
+  <a href="#cli-reference">CLI reference</a> ·
   <a href="#why-tekrion-exists">Why Tekrion</a> ·
   <a href="#browser-evidence-cockpit">Cockpit</a> ·
   <a href="#architecture">Architecture</a> ·
@@ -26,8 +28,9 @@ The name is pronounced **TEK-ree-on** and comes from the Greek _tekmērion_, mea
 It runs as a CLI-managed localhost recorder with a browser cockpit. Launch Codex, Claude Code, or another supported HTTP client through `tekrion run`, and Tekrion builds a synchronized record of API traffic, model/tool events, process output, and workspace effects.
 
 > [!IMPORTANT]
-> **Early release:** Tekrion 0.1.0 is the first public release. Review the
-> privacy and capture boundaries before recording a sensitive workspace.
+> **Early release:** Tekrion is publicly available from npm and remains under
+> active 0.x development. Review the privacy and capture boundaries before
+> recording a sensitive workspace.
 
 When an agent deletes a test, follows instructions hidden in a README, repeats a failing command, or drifts outside the user's request, Tekrion helps answer:
 
@@ -89,7 +92,8 @@ Requirements:
 Install the public CLI:
 
 ```bash
-npm install --global @tekrion/cli
+npm install --global @tekrion/cli@latest
+tekrion --version
 tekrion init
 tekrion doctor
 ```
@@ -118,6 +122,9 @@ npm run tekrion -- init
 npm run tekrion -- doctor
 ```
 
+All remaining examples use the installed `tekrion` command. When running from
+source, replace `tekrion` with `npm run tekrion --`.
+
 Direct `codex` and `claude` executables are detected automatically. Use
 `--agent codex`, `--agent claude`, or `--agent openai-compatible` when the
 agent is launched through a package runner. Common npm, pnpm, Yarn, and Bun
@@ -127,7 +134,7 @@ command string.
 Open the local evidence cockpit:
 
 ```bash
-npm run tekrion -- open
+tekrion open
 ```
 
 The cockpit opens the newest recording. Completed recordings begin at their
@@ -137,9 +144,9 @@ its newest event as evidence arrives.
 Inspect the journal from the terminal:
 
 ```bash
-npm run tekrion -- sessions --json
-npm run tekrion -- inspect <session-id> --json
-npm run tekrion -- report <session-id>
+tekrion sessions --json
+tekrion inspect <session-id> --json
+tekrion report <session-id>
 ```
 
 `tekrion run` starts or reuses the daemon, creates one explicit session, selects a provider integration, mirrors the child process, observes its workspace, and preserves the child's exit status. Codex receives a temporary HTTP-only model-provider override plus `OPENAI_BASE_URL`; the provider reuses Codex's active OpenAI authentication. Claude receives a session-scoped `ANTHROPIC_BASE_URL` and keeps using Claude's native credential selection. Tekrion does not edit either agent's global configuration.
@@ -154,8 +161,6 @@ No separate Tekrion API key is required for local first-party sessions:
 | Claude interactive, print mode, or resumed session       | Claude subscription OAuth, OAuth token, bearer token, or Anthropic API key | Anthropic Messages API           |
 
 Authorization values, the Codex account-routing identifier, and the Anthropic organization identifier are forwarded only in memory and are forbidden in durable header evidence. An explicit `--upstream` or `TEKRION_UPSTREAM_URL` always selects direct gateway routing. Hosted Codex/Claude web sessions, IDE sessions not launched by the wrapper, and Bedrock/Vertex/Foundry transports do not pass through this localhost recorder.
-
-All examples below use the installed `tekrion` command for readability. When running from source, replace `tekrion` with `npm run tekrion --`.
 
 ## Run as a standalone proxy
 
@@ -525,24 +530,140 @@ Results are machine-specific smoke measurements—not browser-render, Internet, 
 
 ## CLI reference
 
-| Command                                                   | Purpose                                                          |
-| --------------------------------------------------------- | ---------------------------------------------------------------- |
-| `tekrion init [--home PATH]`                              | Create the private local data area                               |
-| `tekrion doctor [--upstream URL] [--json]`                | Check runtime, database, storage, upstream, and transport health |
-| `tekrion start [--upstream URL]`                          | Start the detached proxy and control server                      |
-| `tekrion run [--agent NAME] [--cwd PATH] -- <command...>` | Run one agent/process with API, process, and workspace evidence  |
-| `tekrion status [--json]`                                 | Show daemon and recorder health                                  |
-| `tekrion open [session-id]`                               | Start/reuse the daemon and open the authenticated cockpit        |
-| `tekrion sessions [--limit N] [--json]`                   | List recorded sessions                                           |
-| `tekrion inspect <session-id> [--type TYPE] [--json]`     | Read canonical events from the terminal                          |
-| `tekrion report <session-id> [--ai] [--json]`             | Generate an offline report or explicitly opt into AI enrichment  |
-| `tekrion export <session-id> --output FILE`               | Create a redacted or explicit forensic `.tkr` archive            |
-| `tekrion import <archive.tkr> [--json]`                   | Verify and install a read-only investigation                     |
-| `tekrion delete <session-id> [--yes]`                     | Preview or apply deletion of one investigation                   |
-| `tekrion prune [--older-than-days N] [--max-bytes N]`     | Preview or apply an age/size retention plan                      |
-| `tekrion stop [--timeout-ms MS]`                          | Stop the daemon with bounded cleanup                             |
+The public [`@tekrion/cli`](https://www.npmjs.com/package/@tekrion/cli)
+package installs the `tekrion` executable. Install, update, or remove it with:
 
-See the complete option list with:
+```bash
+npm install --global @tekrion/cli@latest
+npm update --global @tekrion/cli
+npm uninstall --global @tekrion/cli
+```
+
+Use `--flag value` or `--flag=value` for valued options. Boolean options do not
+take a value. Every subcommand accepts `--help`/`-h`; it prints the complete
+CLI help. `--version`/`-v` is a global option. Arguments for `tekrion run` must
+come after `--` so Tekrion options cannot be confused with child-process
+options.
+
+### Commands
+
+| Command                                                                                                    | Purpose                                                                        |
+| ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| `tekrion init [--home PATH]`                                                                               | Create or verify the private data directory, token, and evidence store         |
+| `tekrion start [daemon options]`                                                                           | Start the detached localhost proxy and authenticated control server            |
+| `tekrion run [daemon options] [run options] -- <command> [arguments...]`                                   | Record one process, provider traffic, output, and workspace effects            |
+| `tekrion open [session-id] [daemon options]`                                                               | Start or reuse the daemon and open the authenticated browser cockpit           |
+| `tekrion status [--home PATH] [--timeout-ms MS] [--json]`                                                  | Show daemon, proxy, and recorder health                                        |
+| `tekrion stop [--home PATH] [--timeout-ms MS] [--json]`                                                    | Stop the daemon with bounded final cleanup                                     |
+| `tekrion doctor [doctor options] [--websocket] [--json]`                                                   | Check runtime, storage, database, ports, upstream, and transport health        |
+| `tekrion sessions [--home PATH] [--limit N] [--include-internal] [--json]`                                 | List recorded sessions                                                         |
+| `tekrion inspect <session-id> [--home PATH] [--limit N] [--type TYPE] [--cursor CURSOR] [--json]`          | Read a page of canonical events                                                |
+| `tekrion report <session-id> [--home PATH] [--target-event EVENT_ID] [--ai] [--json]`                      | Generate a deterministic report or explicitly request AI enrichment            |
+| `tekrion export <session-id> --output PATH [--profile share\|forensic] [--max-bytes N] [--force] [--json]` | Create a verified portable `.tkr` archive                                      |
+| `tekrion import <archive.tkr> [--home PATH] [--max-bytes N] [--json]`                                      | Verify and install a read-only investigation                                   |
+| `tekrion delete <session-id> [--home PATH] [--yes] [--json]`                                               | Preview or apply deletion of one investigation                                 |
+| `tekrion prune [--home PATH] [--older-than-days N] [--max-bytes N] [--yes] [--json]`                       | Preview or apply an age/size retention plan; at least one selector is required |
+
+### Common options
+
+| Option            | Commands                                                                                           | Meaning                                                                                    |
+| ----------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `--home PATH`     | All commands                                                                                       | Override the private data directory; equivalent to `TEKRION_HOME`                          |
+| `--json`          | `status`, `stop`, `doctor`, `sessions`, `inspect`, `report`, `export`, `import`, `delete`, `prune` | Emit one machine-readable JSON result                                                      |
+| `--help`, `-h`    | Global or any command                                                                              | Print complete help and exit                                                               |
+| `--version`, `-v` | Global only                                                                                        | Print the installed CLI version and exit                                                   |
+| `--timeout-ms N`  | `start`, `open`, `run`, `status`, `stop`                                                           | Bound readiness or control requests; defaults are 10,000 ms, except `status` uses 2,000 ms |
+
+When `start`, `open`, or `run` finds an existing daemon, that daemon keeps its
+listener and storage configuration. Stop it before changing daemon-wide
+settings.
+
+### Daemon and capture options
+
+These options are accepted by `start`, `open`, and `run`. `doctor` accepts all
+of them except `--shutdown-grace-ms` and `--timeout-ms`.
+
+| Option                           | Default               | Meaning                                                                                 |
+| -------------------------------- | --------------------- | --------------------------------------------------------------------------------------- |
+| `--upstream URL`                 | Agent route or OpenAI | Provider origin; overrides `TEKRION_UPSTREAM_URL` and automatic agent routing           |
+| `--proxy-host HOST`              | `127.0.0.1`           | Recorder proxy listener                                                                 |
+| `--proxy-port PORT`              | `4141`                | Recorder port; `0` asks the OS to select a free port                                    |
+| `--control-host HOST`            | `127.0.0.1`           | Authenticated control/cockpit listener; must be loopback                                |
+| `--control-port PORT`            | `4142`                | Control port; `0` asks the OS to select a free port                                     |
+| `--allow-non-loopback`           | Off                   | Explicitly allow a non-loopback proxy listener; the control service stays loopback-only |
+| `--capture-queue-max-bytes N`    | `100663296` (96 MiB)  | Maximum total in-memory capture queue                                                   |
+| `--max-request-body-bytes N`     | `16777216` (16 MiB)   | Maximum captured bytes per request                                                      |
+| `--max-response-body-bytes N`    | `67108864` (64 MiB)   | Maximum captured bytes per response                                                     |
+| `--max-chunk-manifest-entries N` | `100000`              | Maximum response-chunk provenance entries per exchange                                  |
+| `--max-stored-bytes N`           | Unbounded             | Refuse new payload blobs after the logical store reaches this quota                     |
+| `--upstream-timeout-ms N`        | No explicit timeout   | Bound one upstream provider request                                                     |
+| `--shutdown-grace-ms N`          | `5000`                | Daemon shutdown grace; available on `start`, `open`, and `run`                          |
+
+### Query, report, archive, and retention options
+
+| Option                      | Commands              | Meaning                                                                                      |
+| --------------------------- | --------------------- | -------------------------------------------------------------------------------------------- |
+| `--limit N`                 | `sessions`, `inspect` | Return 1–1,000 items; default `100`                                                          |
+| `--include-internal`        | `sessions`            | Include isolated internal AI-analysis sessions                                               |
+| `--type EVENT_TYPE`         | `inspect`             | Return only one canonical event type                                                         |
+| `--cursor CURSOR`           | `inspect`             | Continue from the opaque `nextCursor` returned by a prior page                               |
+| `--target-event EVENT_ID`   | `report`              | Focus analysis on one tool or filesystem action                                              |
+| `--ai`                      | `report`              | Explicitly send the printed minimized/redacted preflight to the configured analysis provider |
+| `--output PATH`             | `export`              | Required destination for the `.tkr` archive                                                  |
+| `--profile share\|forensic` | `export`              | Use redacted `share` evidence (default) or sensitive full-fidelity `forensic` evidence       |
+| `--max-bytes N`             | `export`, `import`    | Archive safety ceiling; default `536870912` (512 MiB)                                        |
+| `--force`                   | `export`              | Replace an existing destination                                                              |
+| `--older-than-days N`       | `prune`               | Select terminal sessions at least this old                                                   |
+| `--max-bytes N`             | `prune`               | Target logical evidence size after pruning                                                   |
+| `--yes`                     | `delete`, `prune`     | Apply the displayed plan; without it, both commands are dry runs                             |
+| `--websocket`               | `doctor`              | Require WebSocket/Realtime support; currently reports unsupported                            |
+
+`--ai` is never implied by `report`; deterministic reporting is the default.
+Review the preflight before consenting. A `forensic` export can contain prompts,
+source code, paths, command output, and secrets found in captured payloads.
+
+### Run options
+
+| Option                         | Default           | Meaning                                                 |
+| ------------------------------ | ----------------- | ------------------------------------------------------- |
+| `--agent NAME`                 | `auto`            | `auto`, `codex`, `claude`, or `openai-compatible`       |
+| `--cwd PATH`                   | Current directory | Child working directory and workspace-observation root  |
+| `--max-output-frame-bytes N`   | `262144`          | Maximum stored bytes in one stdout/stderr frame         |
+| `--max-untracked-file-bytes N` | `1048576`         | Maximum retained content for one changed untracked file |
+| `--watcher-debounce-ms N`      | `100`             | Debounce for approximate live filesystem timing         |
+| `--cleanup-timeout-ms N`       | `10000`           | Bound final workspace capture and recorder settlement   |
+
+`run` mirrors the child output and normally returns the child's exit status. A
+spawn failure returns `127`. Ctrl-C and SIGTERM are forwarded using the host
+platform's child-process behavior, followed by bounded evidence cleanup.
+
+### Environment variables
+
+| Variable                    | Purpose                                                  |
+| --------------------------- | -------------------------------------------------------- |
+| `TEKRION_HOME`              | Default private data directory when `--home` is absent   |
+| `TEKRION_UPSTREAM_URL`      | Default provider origin when `--upstream` is absent      |
+| `TEKRION_ANALYSIS_API_KEY`  | Dedicated credential for explicit `report --ai` requests |
+| `TEKRION_ANALYSIS_MODEL`    | Model used for explicit AI report enrichment             |
+| `TEKRION_ANALYSIS_BASE_URL` | Optional OpenAI-compatible Responses endpoint            |
+| `TEKRION_ANALYSIS_PROVIDER` | Provider label recorded in the AI disclosure             |
+
+Do not set `OPENAI_BASE_URL` or `ANTHROPIC_BASE_URL` as Tekrion's upstream.
+Those variables are used by compatible clients to reach the local recorder.
+Pre-rebrand `BLACKBOX_*` aliases remain migration-only compatibility inputs;
+new configuration should use `TEKRION_*`.
+
+### Exit status
+
+| Status | Meaning                                                                                         |
+| ------ | ----------------------------------------------------------------------------------------------- |
+| `0`    | Command completed successfully                                                                  |
+| `1`    | Operational or health failure, stopped/stale `status`, or an unsatisfied prune target           |
+| `2`    | Invalid command, option, or positional argument                                                 |
+| `127`  | `run` could not spawn the requested child                                                       |
+| Other  | `run` preserves the child exit status; signal exits use the conventional `128 + signal` mapping |
+
+Verify the installed surface directly with:
 
 ```bash
 tekrion --help

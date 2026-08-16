@@ -1,6 +1,6 @@
 {
   "name": "@tekrion/storage",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Crash-safe SQLite evidence journal and blob store for Tekrion",
   "license": "Apache-2.0",
   "repository": {
@@ -23,7 +23,7 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@tekrion/protocol": "0.1.0",
+    "@tekrion/protocol": "0.1.1",
     "better-sqlite3": "13.0.3",
     "zod": "4.4.3"
   }

@@ -79,26 +79,27 @@ const HELP = `Tekrion — the flight recorder for AI coding agents
 
 Usage:
   tekrion init [--home PATH]
-  tekrion start [--upstream URL] [--proxy-port PORT] [--control-port PORT]
-  tekrion open [session-id] [--upstream URL] [--control-port PORT]
-  tekrion stop [--timeout-ms MS]
-  tekrion status [--json]
-  tekrion doctor [--upstream URL] [--websocket] [--json]
-  tekrion sessions [--limit N] [--json]
-  tekrion inspect <session-id> [--limit N] [--type EVENT_TYPE] [--json]
-  tekrion report <session-id> [--target-event EVENT_ID] [--ai] [--json]
-  tekrion export <session-id> --output PATH [--profile share|forensic]
-  tekrion import <archive.tkr> [--json]
-  tekrion delete <session-id> [--yes] [--json]
-  tekrion prune [--older-than-days N] [--max-bytes N] [--yes] [--json]
-  tekrion run [--agent auto|codex|claude|openai-compatible] [--cwd PATH] -- <command...>
+  tekrion start [options]
+  tekrion open [session-id] [options]
+  tekrion stop [--home PATH] [--timeout-ms MS] [--json]
+  tekrion status [--home PATH] [--timeout-ms MS] [--json]
+  tekrion doctor [options] [--websocket] [--json]
+  tekrion sessions [--home PATH] [--limit N] [--include-internal] [--json]
+  tekrion inspect <session-id> [--home PATH] [--limit N] [--type EVENT_TYPE] [--cursor CURSOR] [--json]
+  tekrion report <session-id> [--home PATH] [--target-event EVENT_ID] [--ai] [--json]
+  tekrion export <session-id> --output PATH [--profile share|forensic] [--max-bytes N] [--force] [--json]
+  tekrion import <archive.tkr> [--home PATH] [--max-bytes N] [--json]
+  tekrion delete <session-id> [--home PATH] [--yes] [--json]
+  tekrion prune [--home PATH] [--older-than-days N] [--max-bytes N] [--yes] [--json]
+  tekrion run [options] [--agent auto|codex|claude|openai-compatible] [--cwd PATH] -- <command...>
 
 Common options:
   --home PATH                     Override the private Tekrion data directory
+  --json                          Emit machine-readable JSON where supported
   --help, -h                      Show this help
   --version, -v                   Show the Tekrion version
 
-Start and doctor options:
+Daemon and capture options (start, open, run, and doctor):
   --upstream URL                  Provider origin (or TEKRION_UPSTREAM_URL)
   --proxy-host HOST               Proxy listener (default 127.0.0.1)
   --proxy-port PORT               Proxy port (default 4141; 0 selects one)
@@ -112,6 +113,13 @@ Start and doctor options:
   --max-stored-bytes N            Refuse new blobs above this stored-byte quota
   --upstream-timeout-ms MS        Optional provider timeout
 
+Lifecycle options (start, open, and run; timeout also applies to status/stop):
+  --shutdown-grace-ms MS          Daemon shutdown grace (default 5000)
+  --timeout-ms MS                 Readiness/control timeout (command-specific)
+
+Doctor options:
+  --websocket                     Require WebSocket/Realtime transport support
+
 Inspection options:
   --limit N                       Bound sessions/events returned (default 100)
   --type EVENT_TYPE               Filter inspect output by canonical event type
@@ -121,12 +129,11 @@ Inspection options:
 Report options:
   --target-event EVENT_ID         Analyze a specific tool or filesystem action
   --ai                            Explicitly send the previewed redacted snapshot
-  --json                          Emit the versioned report result as JSON
 
 Archive and retention options:
   --output PATH                   Destination for a .tkr export
-  --profile share|forensic       Redacted share archive (default) or full evidence
-  --max-bytes N                  Archive safety limit or retained evidence target
+  --profile share|forensic        Redacted share archive (default) or full evidence
+  --max-bytes N                   Archive safety limit or retained evidence target
   --older-than-days N            Select terminal sessions older than N days
   --force                         Replace an existing export destination
   --yes                           Apply a displayed delete/prune plan

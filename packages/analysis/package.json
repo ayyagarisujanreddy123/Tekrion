@@ -1,6 +1,6 @@
 {
   "name": "@tekrion/analysis",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Deterministic evidence ranking and incident reports for Tekrion",
   "license": "Apache-2.0",
   "repository": {
@@ -23,9 +23,9 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@tekrion/protocol": "0.1.0"
+    "@tekrion/protocol": "0.1.1"
   },
   "devDependencies": {
-    "@tekrion/test-fixtures": "0.1.0"
+    "@tekrion/test-fixtures": "0.1.1"
   }
 }

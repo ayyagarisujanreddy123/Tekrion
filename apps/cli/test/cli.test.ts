@@ -130,12 +130,12 @@ describe("CLI initialization and configuration", () => {
     const stderr = new CapturedOutput();
 
     expect(await runCli(["--version"], runtime(stdout, stderr))).toBe(0);
-    expect(stdout.value).toBe("0.1.0\n");
+    expect(stdout.value).toBe("0.1.1\n");
     expect(stderr.value).toBe("");
 
     stdout.clear();
     expect(await runCli(["-v"], runtime(stdout, stderr))).toBe(0);
-    expect(stdout.value).toBe("0.1.0\n");
+    expect(stdout.value).toBe("0.1.1\n");
     expect(stderr.value).toBe("");
   });
 
@@ -190,16 +190,81 @@ describe("CLI initialization and configuration", () => {
     expect(stderr.value).toContain("tekrion --help");
   });
 
-  it("makes quota and dry-run retention controls visible in help", async () => {
+  it("documents every command and option in help and public READMEs", async () => {
     const stdout = new CapturedOutput();
     const stderr = new CapturedOutput();
 
     expect(await runCli(["--help"], runtime(stdout, stderr))).toBe(0);
     expect(stderr.value).toBe("");
-    expect(stdout.value).toContain("--max-stored-bytes N");
-    expect(stdout.value).toContain("tekrion delete <session-id> [--yes]");
-    expect(stdout.value).toContain("tekrion prune [--older-than-days N]");
-    expect(stdout.value).toContain("Apply a displayed delete/prune plan");
+    const surfaces = [
+      stdout.value,
+      await readFile(new URL("../../../README.md", import.meta.url), "utf8"),
+      await readFile(new URL("../README.md", import.meta.url), "utf8"),
+    ];
+    const commands = [
+      "init",
+      "start",
+      "open",
+      "stop",
+      "status",
+      "doctor",
+      "sessions",
+      "inspect",
+      "report",
+      "export",
+      "import",
+      "delete",
+      "prune",
+      "run",
+    ];
+    const options = [
+      "--home",
+      "--upstream",
+      "--proxy-host",
+      "--proxy-port",
+      "--control-host",
+      "--control-port",
+      "--capture-queue-max-bytes",
+      "--max-request-body-bytes",
+      "--max-response-body-bytes",
+      "--max-chunk-manifest-entries",
+      "--upstream-timeout-ms",
+      "--shutdown-grace-ms",
+      "--timeout-ms",
+      "--limit",
+      "--type",
+      "--cursor",
+      "--cwd",
+      "--max-output-frame-bytes",
+      "--max-untracked-file-bytes",
+      "--watcher-debounce-ms",
+      "--cleanup-timeout-ms",
+      "--target-event",
+      "--output",
+      "--profile",
+      "--max-bytes",
+      "--older-than-days",
+      "--max-stored-bytes",
+      "--agent",
+      "--allow-non-loopback",
+      "--json",
+      "--websocket",
+      "--include-internal",
+      "--ai",
+      "--force",
+      "--yes",
+      "--help",
+      "--version",
+    ];
+
+    for (const surface of surfaces) {
+      for (const command of commands) {
+        expect(surface).toContain(`tekrion ${command}`);
+      }
+      for (const option of options) {
+        expect(surface).toContain(option);
+      }
+    }
   });
 });
 
