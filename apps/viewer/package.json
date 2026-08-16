@@ -1,6 +1,6 @@
 {
   "name": "@tekrion/viewer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "license": "Apache-2.0",
   "type": "module",
@@ -10,7 +10,7 @@
     "build:assets": "vite build && node ./scripts/package-assets.mjs"
   },
   "dependencies": {
-    "@tekrion/protocol": "0.1.0",
+    "@tekrion/protocol": "0.1.1",
     "react": "19.2.7",
     "react-dom": "19.2.7"
   },

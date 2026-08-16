@@ -1,6 +1,6 @@
 {
   "name": "@tekrion/daemon",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Local capture, query, archive, and analysis service for Tekrion",
   "contentPolicy": {
     "class": "dual-use"
@@ -27,11 +27,11 @@
     "dist/**/*.d.ts"
   ],
   "dependencies": {
-    "@tekrion/analysis": "0.1.0",
-    "@tekrion/context": "0.1.0",
-    "@tekrion/normalizers": "0.1.0",
-    "@tekrion/protocol": "0.1.0",
-    "@tekrion/storage": "0.1.0",
+    "@tekrion/analysis": "0.1.1",
+    "@tekrion/context": "0.1.1",
+    "@tekrion/normalizers": "0.1.1",
+    "@tekrion/protocol": "0.1.1",
+    "@tekrion/storage": "0.1.1",
     "zod": "4.4.3"
   }
 }
