@@ -143,37 +143,6 @@ jobs:
             exit 1
           fi
 
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            CONTROL_TOKEN_PATH="$data_dir/control.token" node -e '
-              const { closeSync, fstatSync, lstatSync, openSync, statSync } = require("node:fs");
-              const descriptor = openSync(process.env.CONTROL_TOKEN_PATH, "r");
-              try {
-                const summarize = (information) => ({
-                  isFile: information.isFile(),
-                  isSymbolicLink: information.isSymbolicLink(),
-                  dev: information.dev.toString(),
-                  ino: information.ino.toString(),
-                  nlink: information.nlink.toString(),
-                  size: information.size.toString(),
-                });
-                console.log(
-                  JSON.stringify({
-                    node: process.version,
-                    handle: summarize(fstatSync(descriptor, { bigint: true })),
-                    resolvedTarget: summarize(
-                      statSync(process.env.CONTROL_TOKEN_PATH, { bigint: true }),
-                    ),
-                    target: summarize(
-                      lstatSync(process.env.CONTROL_TOKEN_PATH, { bigint: true }),
-                    ),
-                  }),
-                );
-              } finally {
-                closeSync(descriptor);
-              }
-            '
-          fi
-
           set +e
           doctor_json="$("$cli" doctor \
             --home "$data_dir" \

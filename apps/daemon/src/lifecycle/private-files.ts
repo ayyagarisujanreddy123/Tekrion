@@ -80,19 +80,31 @@ export async function readPrivateTextFile(path: string): Promise<string> {
   const handle = await open(path, "r");
   try {
     const [information, target] = await Promise.all([
-      handle.stat(),
-      lstat(path),
+      handle.stat({ bigint: true }),
+      lstat(path, { bigint: true }),
     ]);
-    if (
-      !information.isFile() ||
-      !target.isFile() ||
-      target.isSymbolicLink() ||
-      information.dev !== target.dev ||
-      information.ino !== target.ino
-    ) {
+    if (!information.isFile() || !target.isFile() || target.isSymbolicLink()) {
       throw new Error(`Sensitive path is not a regular file: ${path}`);
     }
-    if (information.size > MAX_PRIVATE_TEXT_BYTES) {
+
+    // Node 22.15 reports dev=0 for path stats on Windows while handle stats
+    // contain the volume identifier. Compare two independently opened handles
+    // so the identity check remains exact without weakening symlink defenses.
+    const verificationHandle = await open(path, "r");
+    try {
+      const verification = await verificationHandle.stat({ bigint: true });
+      if (
+        !verification.isFile() ||
+        information.dev !== verification.dev ||
+        information.ino !== verification.ino
+      ) {
+        throw new Error(`Sensitive path changed while opening: ${path}`);
+      }
+    } finally {
+      await verificationHandle.close();
+    }
+
+    if (information.size > BigInt(MAX_PRIVATE_TEXT_BYTES)) {
       throw new Error(
         `Sensitive file exceeds ${MAX_PRIVATE_TEXT_BYTES} bytes: ${path}`,
       );
