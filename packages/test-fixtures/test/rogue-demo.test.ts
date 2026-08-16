@@ -72,7 +72,7 @@ describe("deterministic rogue demo fixture", () => {
     const deletion = events.find(
       (event) => event.id === transcript.expectedInvestigation.targetEventId,
     );
-    const readmeLines = (await readFile(readmeUrl, "utf8")).split("\n");
+    const readmeLines = (await readFile(readmeUrl, "utf8")).split(/\r?\n/u);
 
     expect(readResult).toBeDefined();
     expect(deletion).toBeDefined();

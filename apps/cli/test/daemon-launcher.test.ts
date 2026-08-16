@@ -21,6 +21,13 @@ async function temporaryRoot(): Promise<string> {
   return root;
 }
 
+async function expectPosixMode(path: string, expected: number): Promise<void> {
+  const information = await stat(path);
+  if (process.platform !== "win32") {
+    expect(information.mode & 0o777).toBe(expected);
+  }
+}
+
 afterEach(async () => {
   await Promise.all(
     roots.splice(0).map((root) => rm(root, { recursive: true, force: true })),
@@ -37,7 +44,7 @@ describe("daemon log preparation", () => {
     await prepareDaemonLog(logPath, 16);
 
     expect(await readFile(logPath, "utf8")).toBe("healthy\n");
-    expect((await stat(logPath)).mode & 0o777).toBe(0o600);
+    await expectPosixMode(logPath, 0o600);
   });
 
   it("retains one private backup when the log reaches its bound", async () => {
@@ -51,8 +58,8 @@ describe("daemon log preparation", () => {
 
     expect(await readFile(logPath, "utf8")).toBe("");
     expect(await readFile(backupPath, "utf8")).toBe("12345678");
-    expect((await stat(logPath)).mode & 0o777).toBe(0o600);
-    expect((await stat(backupPath)).mode & 0o777).toBe(0o600);
+    await expectPosixMode(logPath, 0o600);
+    await expectPosixMode(backupPath, 0o600);
   });
 
   it("refuses symlinked and non-file log targets", async () => {

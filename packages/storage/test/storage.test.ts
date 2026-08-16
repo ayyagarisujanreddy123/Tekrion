@@ -189,8 +189,10 @@ describe("database lifecycle and migrations", () => {
       storage.unsafeDatabase.pragma("foreign_keys", { simple: true }),
     ).toBe(1);
     expect(storage.integrityCheck()).toBe("ok");
-    expect(databaseMode).toBe(0o600);
-    expect(dataMode).toBe(0o700);
+    if (process.platform !== "win32") {
+      expect(databaseMode).toBe(0o600);
+      expect(dataMode).toBe(0o700);
+    }
   });
 
   it("allows a reader while a writer holds an uncommitted WAL transaction", async () => {

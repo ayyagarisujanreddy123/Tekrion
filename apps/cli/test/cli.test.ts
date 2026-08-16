@@ -59,6 +59,13 @@ async function temporaryRoot(): Promise<string> {
   return root;
 }
 
+async function expectPosixMode(path: string, expected: number): Promise<void> {
+  const information = await stat(path);
+  if (process.platform !== "win32") {
+    expect(information.mode & 0o777).toBe(expected);
+  }
+}
+
 async function listen(server: Server): Promise<string> {
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
@@ -148,9 +155,9 @@ describe("CLI initialization and configuration", () => {
 
     expect(stdout.value).not.toContain(token);
     expect(stderr.value).toBe("");
-    expect((await stat(paths.homeDirectory)).mode & 0o777).toBe(0o700);
-    expect((await stat(paths.tokenPath)).mode & 0o777).toBe(0o600);
-    expect((await stat(paths.databasePath)).mode & 0o777).toBe(0o600);
+    await expectPosixMode(paths.homeDirectory, 0o700);
+    await expectPosixMode(paths.tokenPath, 0o600);
+    await expectPosixMode(paths.databasePath, 0o600);
   });
 
   it("uses Tekrion upstream configuration and accepts the legacy alias", () => {
@@ -768,7 +775,7 @@ describe("CLI daemon lifecycle", () => {
     }
   }, 15_000);
 
-  it("forwards Ctrl-C and preserves the child's final filesystem effect", async () => {
+  it("forwards Ctrl-C using the platform's child-process semantics", async () => {
     const root = await temporaryRoot();
     const workspace = await temporaryRoot();
     const stdout = new CapturedOutput();
@@ -826,7 +833,8 @@ describe("CLI daemon lifecycle", () => {
     await eventually(() => stdout.value.includes("ready\n"), 10_000);
     signalSource.emit("SIGINT");
 
-    expect(await running).toBe(42);
+    const windows = process.platform === "win32";
+    expect(await running).toBe(windows ? 130 : 42);
     expect(stderr.value).toBe("");
     expect(signalSource.listenerCount("SIGINT")).toBe(0);
     expect(signalSource.listenerCount("SIGTERM")).toBe(0);
@@ -848,8 +856,17 @@ describe("CLI daemon lifecycle", () => {
         expect.arrayContaining([
           expect.objectContaining({
             type: "process.exited",
-            summary: expect.objectContaining({ exitCode: 42 }),
+            summary: expect.objectContaining(
+              windows
+                ? { exitCode: null, signal: "SIGINT" }
+                : { exitCode: 42, signal: null },
+            ),
           }),
+          expect.objectContaining({ type: "workspace.snapshot" }),
+        ]),
+      );
+      if (!windows) {
+        expect(events).toContainEqual(
           expect.objectContaining({
             type: "file.create",
             summary: expect.objectContaining({
@@ -857,9 +874,8 @@ describe("CLI daemon lifecycle", () => {
               timingPrecision: "exact-final-diff",
             }),
           }),
-          expect.objectContaining({ type: "workspace.snapshot" }),
-        ]),
-      );
+        );
+      }
     } finally {
       storage.close();
     }
@@ -1396,7 +1412,7 @@ describe("CLI canonical inspection", () => {
       profile: "share",
       path: archivePath,
     });
-    expect((await stat(archivePath)).mode & 0o777).toBe(0o600);
+    await expectPosixMode(archivePath, 0o600);
     expect(
       await runCli(
         [
@@ -1576,7 +1592,10 @@ describe("CLI doctor", () => {
     expect(conflicted.checks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ id: "node-runtime", status: "pass" }),
-        expect.objectContaining({ id: "storage", status: "pass" }),
+        expect.objectContaining({
+          id: "storage",
+          status: process.platform === "win32" ? "warn" : "pass",
+        }),
         expect.objectContaining({ id: "database", status: "pass" }),
         expect.objectContaining({ id: "upstream", status: "pass" }),
         expect.objectContaining({ id: "proxy-port", status: "fail" }),
