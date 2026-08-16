@@ -33,7 +33,7 @@ jobs:
         with:
           node-version: 22.15.0
           package-manager-cache: false
-      - name: Install and exercise the public CLI
+      - name: Validate the requested version
         shell: bash
         run: |
           set -euo pipefail
@@ -42,9 +42,12 @@ jobs:
             echo "Invalid release version: $TEKRION_VERSION" >&2
             exit 1
           fi
+      - name: Install the public CLI
+        shell: bash
+        run: |
+          set -euo pipefail
 
           install_dir="$RUNNER_TEMP/tekrion-registry-install"
-          data_dir="$RUNNER_TEMP/tekrion-registry-home"
           npm install \
             --prefix "$install_dir" \
             --no-audit \
@@ -52,14 +55,50 @@ jobs:
             --prefer-online \
             "@tekrion/cli@$TEKRION_VERSION"
 
+      - name: Verify version, help, and initialization
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          install_dir="$RUNNER_TEMP/tekrion-registry-install"
+          data_dir="$RUNNER_TEMP/tekrion-registry-home"
           cli="$install_dir/node_modules/.bin/tekrion"
           actual_version="$("$cli" --version)"
-          test "$actual_version" = "$TEKRION_VERSION"
+          if [ "$actual_version" != "$TEKRION_VERSION" ]; then
+            echo "Expected Tekrion $TEKRION_VERSION, received $actual_version" >&2
+            exit 1
+          fi
           "$cli" --help >/dev/null
           "$cli" init --home "$data_dir"
 
-          sessions="$("$cli" sessions --home "$data_dir" --json)"
-          test "$sessions" = "[]"
+      - name: Verify the empty session store
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          install_dir="$RUNNER_TEMP/tekrion-registry-install"
+          data_dir="$RUNNER_TEMP/tekrion-registry-home"
+          cli="$install_dir/node_modules/.bin/tekrion"
+          sessions_json="$("$cli" sessions --home "$data_dir" --json)"
+          SESSIONS_JSON="$sessions_json" node -e '
+            const sessions = JSON.parse(process.env.SESSIONS_JSON);
+            if (!Array.isArray(sessions) || sessions.length !== 0) {
+              throw new Error(
+                `Expected an empty session list, received ${JSON.stringify(sessions)}`,
+              );
+            }
+          '
+
+      - name: Verify doctor against a local upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          install_dir="$RUNNER_TEMP/tekrion-registry-install"
+          data_dir="$RUNNER_TEMP/tekrion-registry-home"
+          cli="$install_dir/node_modules/.bin/tekrion"
+          upstream_log="tekrion-registry-upstream-${RANDOM}-${RANDOM}.txt"
+          rm -f "$upstream_log"
 
           node -e '
             const http = require("node:http");
@@ -67,21 +106,71 @@ jobs:
               response.writeHead(200, { "content-type": "application/json" });
               response.end("{}");
             });
-            server.listen(46531, "127.0.0.1");
-          ' &
+            server.listen(0, "127.0.0.1", () => {
+              const address = server.address();
+              if (address === null || typeof address === "string") {
+                throw new Error("Local upstream did not expose a TCP address");
+              }
+              console.log(`http://127.0.0.1:${address.port}`);
+            });
+          ' >"$upstream_log" &
           upstream_pid=$!
-          trap 'kill "$upstream_pid" 2>/dev/null || true' EXIT
-          sleep 1
+          cleanup() {
+            kill "$upstream_pid" 2>/dev/null || true
+            wait "$upstream_pid" 2>/dev/null || true
+            rm -f "$upstream_log"
+          }
+          trap cleanup EXIT
 
-          doctor="$("$cli" doctor \
+          for ((attempt = 0; attempt < 100; attempt += 1)); do
+            if [ -s "$upstream_log" ]; then
+              break
+            fi
+            if ! kill -0 "$upstream_pid" 2>/dev/null; then
+              wait "$upstream_pid" 2>/dev/null || true
+              echo "Local upstream exited before becoming ready" >&2
+              exit 1
+            fi
+            sleep 0.1
+          done
+          if [ ! -s "$upstream_log" ]; then
+            echo "Timed out waiting for the local upstream" >&2
+            exit 1
+          fi
+          upstream_origin="$(tr -d '\r\n' <"$upstream_log")"
+          if [[ ! "$upstream_origin" =~ ^http://127\.0\.0\.1:[0-9]+$ ]]; then
+            echo "Local upstream returned an invalid origin: $upstream_origin" >&2
+            exit 1
+          fi
+
+          set +e
+          doctor_json="$("$cli" doctor \
             --home "$data_dir" \
-            --upstream http://127.0.0.1:46531 \
+            --upstream "$upstream_origin" \
+            --proxy-port 0 \
+            --control-port 0 \
             --json)"
-          node -e '
-            const report = JSON.parse(process.argv[1]);
-            if (report.ok !== true) {
-              throw new Error("tekrion doctor did not return ok=true");
+          doctor_status=$?
+          set -e
+          DOCTOR_JSON="$doctor_json" DOCTOR_STATUS="$doctor_status" node -e '
+            const report = JSON.parse(process.env.DOCTOR_JSON);
+            const failures = report.checks.filter((check) => check.status === "fail");
+            if (
+              Number(process.env.DOCTOR_STATUS) !== 0 ||
+              report.ok !== true ||
+              failures.length !== 0
+            ) {
+              console.error(JSON.stringify(report, null, 2));
+              throw new Error(
+                `tekrion doctor failed: ${failures.map((check) => check.id).join(", ") || "nonzero exit"}`,
+              );
             }
-          ' "$doctor"
+          '
 
+      - name: Verify registry signatures
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          install_dir="$RUNNER_TEMP/tekrion-registry-install"
           npm audit signatures --prefix "$install_dir"
