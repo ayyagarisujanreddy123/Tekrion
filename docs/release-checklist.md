@@ -10,9 +10,9 @@ The ordered interactive first-publication procedure, registry checks, and staged
 trusted-publishing transition are documented in the [npm release
 runbook](npm-release-runbook.md).
 
-The completed local source, tarball, privacy, license, and clean-install review
-for the current 0.1.0 runtime candidate is recorded in the [0.1.0 release
-review](release-review-0.1.0.md).
+The completed source, tarball, privacy, license, exact-commit CI, npm
+publication, and public clean-install review for 0.1.0 is recorded in the
+[0.1.0 release review](release-review-0.1.0.md).
 
 ## Automated source gates
 
@@ -54,12 +54,15 @@ It runs the source gate, clean-installs the packed runtime set, audits dependenc
 
 ## Explicit release operations
 
-The 0.1.0 candidate version and Apache-2.0 license are already applied. These remaining steps require separate authorization and configured signing/publishing identity:
+The 0.1.0 npm publication and registry acceptance are complete. Both `next` and
+`latest` resolve to the verified release. These remaining operations retain
+their separate authorization boundaries:
 
 - create a signed tag;
-- push the candidate commit and tag;
-- publish the first npm release interactively with 2FA, then use staged trusted publishing with provenance for later versions;
-- verify installation from the public registry on every claimed platform;
-- publish release notes and immutable checksums.
+- push the signed tag;
+- publish the GitHub release and immutable checksums;
+- configure staged trusted publishing with provenance for later versions; and
+- verify installation from the public registry on each additional platform
+  before making a platform-specific registry-install claim.
 
 Never infer permission to perform these operations from permission to build or commit locally.

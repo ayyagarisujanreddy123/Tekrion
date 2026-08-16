@@ -1,16 +1,16 @@
 # Tekrion 0.1.0 release review
 
-Status: **local source and package artifact review passed**
+Status: **public npm publication and registry acceptance passed**
 
 - Review date: 2026-08-15 CDT / 2026-08-15 UTC
 - Reviewed runtime source commit: `c6e215c1202b032897149e80fe1394160819579e`
+- CI-approved publication commit: `1e06079efa5d361897489c08fe971df82ff7a825`
 - Version: `0.1.0`
 - Runtime: Node.js 22.20.0 on macOS 25.5.0 x64
 
-This record closes the manual tarball and privacy review required before release
-preparation. It does not authorize a push, npm publication, tag, or GitHub
-release. Registry verification and exact-final-SHA CI remain external release
-operations.
+This record closes the manual tarball and privacy review, exact-commit CI gate,
+interactive npm publication, and public-registry acceptance for 0.1.0. A signed
+Git tag and GitHub release remain separate operations.
 
 ## Source and dependency gates
 
@@ -86,16 +86,34 @@ The installed CLI then passed:
 unsupported standalone WebSocket/Realtime transport; HTTP JSON and SSE remain
 supported.
 
-## External release boundary
+## Public registry acceptance
+
+- CI and CodeQL passed on the exact publication commit:
+  [CI run 31915665582](https://github.com/ayyagarisujanreddy123/Tekrion/actions/runs/31915665582)
+  and
+  [CodeQL run 31915665597](https://github.com/ayyagarisujanreddy123/Tekrion/actions/runs/31915665597).
+- All seven packages are public at `0.1.0`. Both `next` and `latest` resolve to
+  that version for every package; the registry exposed `latest` during the
+  first publication, so no separate promotion was required.
+- Fresh registry downloads of all seven tarballs exactly matched every SHA-256
+  value in the reviewed-artifact table above. The daemon and CLI downloads
+  retained their `DISCLOSURE` files and `dual-use` declarations.
+- A clean `@tekrion/cli@next` install passed version, help, initialization,
+  empty-session, native SQLite, and `doctor --json` checks. The subsequent
+  registry-signature audit verified all 10 installed packages and three
+  available attestations.
+- A second clean global install using the unqualified public command
+  `npm install --global @tekrion/cli` resolved `latest`, installed successfully,
+  and returned version `0.1.0` with working help output.
+
+## Remaining external release boundary
 
 The npm identity, `@tekrion` ownership, auth-and-writes 2FA, and the
-main-restricted `npm-production` GitHub environment have been confirmed. These
-external release operations remain:
+main-restricted `npm-production` GitHub environment have been confirmed. npm
+publication is complete. These separate operations remain:
 
-1. Push the final review-only commit and require cross-platform CI and CodeQL
-   to pass on its exact SHA.
-2. Publish all seven packages to `next` through the guarded local interactive
-   2FA path, then verify registry contents and clean installs on every claimed
-   platform.
-3. Create the signed tag, promote to `latest`, and publish the GitHub release
-   only under their separate authorization boundary.
+1. Create and push a signed `v0.1.0` tag only with explicit authorization.
+2. Publish a GitHub release only with explicit authorization.
+3. Configure staged trusted publishing for later versions and validate the
+   public install on any additional platform before making a platform-specific
+   registry-install claim.

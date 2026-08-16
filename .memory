@@ -19,13 +19,12 @@ The user selected **Tekrion** as the permanent brand and confirmed on
 - Configuration prefix: `TEKRION_*`
 - Archive extension and format: `.tkr` / `tekrion-tkr`
 - New default evidence home: a platform-specific `Tekrion`/`tekrion` directory
-- Version: 0.1.0, still an unreleased source candidate
+- Version: 0.1.0, publicly available from npm
 
-Public registry lookups on 2026-08-07 returned no published version for any of
-the seven intended runtime package names. The local npm session returned E401
-for `npm whoami`, so npm authentication must be refreshed before a future
-release. An E404 does not prove scope ownership; ownership is recorded from the
-user's explicit confirmation.
+All seven runtime packages were published publicly on 2026-08-15. Both `next`
+and `latest` resolve to `0.1.0` for each package. Fresh registry downloads match
+the reviewed SHA-256 values in `docs/release-review-0.1.0.md`, and a clean
+unqualified global installation of `@tekrion/cli` passed.
 
 The user explicitly authorized the GitHub repository rename on 2026-07-29.
 GitHub now hosts the public repository at
@@ -33,29 +32,24 @@ GitHub now hosts the public repository at
 `https://github.com/ayyagarisujanreddy123/Tekrion.git`. The local workspace is
 still `/Applications/Projects/BlackBox`; it was intentionally not renamed.
 
-No npm package has been published. The user explicitly authorized committing
-and pushing the complete Tekrion rebrand to `origin/main` on 2026-07-29. That
-authorization does not extend to future pushes, npm publication, tags, GitHub
-releases, another repository rename, or a local-directory rename.
+The user explicitly authorized committing and pushing the release work to
+`origin/main` and publishing the seven npm packages. That completed
+authorization does not extend to a signed Git tag, GitHub release, future npm
+versions, another repository rename, or a local-directory rename.
 
 ## Repository state at this handoff
 
 - Branch: `main`
-- `origin/main` remains at `4e486fd7988bbd467c5581c25717aa01d28eabbf`
-  (`docs: refresh cockpit walkthrough`)
-- Local `main` contains three reviewed release-preparation commits after
-  `origin/main`: `b7672f9` updates the patched development dependency,
-  `d745da8` upgrades the SQLite runtime, and `60b17e9` records the exact
-  benchmark and completed manual release review. This handoff update is
-  documentation-only and does not change package contents.
+- The CI-approved npm publication commit is
+  `1e06079efa5d361897489c08fe971df82ff7a825`.
+- Local `main` and `origin/main` were synchronized at that commit before this
+  publication-record follow-up.
 - GitHub repository rename to `ayyagarisujanreddy123/Tekrion` is complete
 - The tracked working tree was clean before this handoff update
-- Nothing was tagged, released, or published to npm
-- The GitHub repository has no release tag, GitHub release, ruleset, or
-  `npm-production` environment
-- CI and CodeQL passed on exact pushed commit `4e486fd`; the unpushed final
-  candidate still requires those checks on its exact SHA after an authorized
-  push
+- All seven npm runtime packages are public at 0.1.0
+- The GitHub repository has no release tag or GitHub release
+- The main-restricted `npm-production` environment exists
+- CI and CodeQL passed on exact publication commit `1e06079e`
 - Existing user work was not discarded or reset
 - `AGENTS.md` remains ignored, local instruction context
 - Node used for verification: 22.20.0
@@ -248,16 +242,35 @@ configuration.
   `docs/release-review-0.1.0.md`; the final source/documentation candidate is
   `60b17e908fc27389022632180e5b96535407196e`.
 
-The final clean-tree aggregate preflight must run after this handoff commit.
-The exact final pushed SHA must then pass cross-platform CI and CodeQL before
-publication.
+## npm 0.1.0 publication on 2026-08-15
+
+- The final reviewed main commit
+  `1e06079efa5d361897489c08fe971df82ff7a825` passed both cross-platform CI and
+  CodeQL before publication.
+- The account's auth-and-writes 2FA and `@tekrion` organization ownership were
+  confirmed without storing any credential in the repository.
+- Protocol, storage, normalizers, context, analysis, daemon, and CLI were
+  published interactively in dependency order. A registry-propagation 404
+  stopped the guard after protocol even though publication had succeeded; the
+  existing artifact was verified before only the six missing packages were
+  published.
+- Fresh downloads of every registry tarball exactly matched the seven reviewed
+  SHA-256 values. The CLI and daemon retained their required npm dual-use
+  metadata and root-level disclosures.
+- Both `next` and `latest` resolve to 0.1.0 for every runtime package. No
+  separate tag promotion was needed.
+- A clean `@tekrion/cli@next` install passed version, help, initialization,
+  empty-session, SQLite, and doctor checks. npm verified registry signatures
+  for all 10 installed packages and three available attestations.
+- A separate unqualified global install of `@tekrion/cli` passed and returned
+  0.1.0. There is still no signed Git tag or GitHub release.
 
 Disposable `/tmp` homes and workspaces are not persistent user data.
 
 ## Release boundary
 
-The code is prepared for `@tekrion`, but preparation is not publication
-authorization.
+The 0.1.0 npm release completed under explicit publication authorization. That
+does not authorize later versions or other release mutations.
 
 Before any future release:
 
@@ -265,10 +278,10 @@ Before any future release:
 2. inspect all seven package names and registry state;
 3. run the complete release preflight on a clean tree;
 4. push only with explicit authorization and wait for CI on the exact SHA;
-5. configure the protected `npm-production` environment only under explicit
-   release-preparation authorization;
-6. publish to `next` only after a separate explicit instruction;
-7. verify clean registry installation before tagging or promoting release tags.
+5. recheck the protected `npm-production` environment and trusted-publisher
+   configuration;
+6. publish or stage only after a separate explicit instruction; and
+7. verify clean registry installation before tagging or changing release tags.
 
 Never infer:
 
@@ -282,17 +295,14 @@ Never infer:
 
 ## Recommended next moves
 
-1. Run the final clean-tree release preflight, then push the local commits only
-   if the user explicitly authorizes that push.
-2. Wait for cross-platform CI and CodeQL on the exact pushed SHA.
-3. Have the user authenticate npm directly and reconfirm `@tekrion` write
-   access; never ask them to paste a token or 2FA code into project files or
-   chat.
-4. Configure the protected GitHub environment only under fresh release
-   preparation authorization, then publish 0.1.0 to `next` only under separate
-   publication authorization.
-5. Tag, promote to `latest`, and create the GitHub release only under their
-   separate authorization boundary.
-6. Subscription/OAuth Claude acceptance remains deferred until native login is
+1. Configure staged trusted publishing separately for all seven npm packages
+   before a later release; keep dual-use publication approval interactive.
+2. Create a signed `v0.1.0` tag and GitHub release only under their separate
+   authorization boundary.
+3. Repeat the public-registry install on Linux or Windows before making a
+   platform-specific registry-install claim for that platform.
+4. Start a later npm version only through a new reviewed candidate and explicit
+   publication instruction; npm versions are immutable.
+5. Subscription/OAuth Claude acceptance remains deferred until native login is
    available; the user previously chose to skip that test for now.
-7. Rename the local directory only if the user separately requests it.
+6. Rename the local directory only if the user separately requests it.

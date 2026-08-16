@@ -14,6 +14,8 @@ const npmCliPath = process.env.npm_execpath;
 const [operation, expectedSha, ...unexpectedArguments] = process.argv.slice(2);
 const supportedOperations = new Set(["publish-next", "promote-latest"]);
 const maximumOutputBytes = 20 * 1024 * 1024;
+const registryVerificationAttempts = 60;
+const registryVerificationDelayMs = 5_000;
 
 if (
   !supportedOperations.has(operation) ||
@@ -171,7 +173,13 @@ async function promoteLatest(version) {
 
 async function requireVersionAbsent(name, version) {
   try {
-    await executeNpm(["view", `${name}@${version}`, "version", "--json"]);
+    await executeNpm([
+      "view",
+      `${name}@${version}`,
+      "version",
+      "--json",
+      "--prefer-online",
+    ]);
   } catch (error) {
     const output = `${String(error.stdout ?? "")}\n${String(error.stderr ?? "")}`;
     if (output.includes("E404")) {
@@ -188,13 +196,14 @@ async function requireVersionAbsent(name, version) {
 
 async function requireTagVersion(name, version, tag) {
   let lastError;
-  for (let attempt = 1; attempt <= 10; attempt += 1) {
+  for (let attempt = 1; attempt <= registryVerificationAttempts; attempt += 1) {
     try {
       const { stdout } = await executeNpm([
         "view",
         `${name}@${tag}`,
         "version",
         "--json",
+        "--prefer-online",
       ]);
       if (JSON.parse(stdout) === version) {
         return;
@@ -203,8 +212,13 @@ async function requireTagVersion(name, version, tag) {
     } catch (error) {
       lastError = error;
     }
-    if (attempt < 10) {
-      await delay(3_000);
+    if (attempt === 1) {
+      process.stdout.write(
+        `Waiting for npm registry propagation of ${name}@${tag}...\n`,
+      );
+    }
+    if (attempt < registryVerificationAttempts) {
+      await delay(registryVerificationDelayMs);
     }
   }
   throw new Error(

@@ -118,6 +118,12 @@ From a real terminal on the exact clean and CI-approved `main` commit:
    version exists, publishes the seven packages in dependency order under `next`,
    and verifies each registry tag before continuing.
 
+The registry may take several minutes to expose a newly created scoped package.
+The guard uses online revalidation and waits up to five minutes for each tag
+before stopping. A successful `npm publish` followed by a temporary verification
+404 is a partial publication; inspect the registry rather than rerunning the
+guard.
+
 The refusal is deliberate: blindly rerunning after a partial publication can make
 an incident worse. Follow the partial-publication policy below if the command stops
 after any package has been created.
@@ -150,11 +156,14 @@ After registry and platform verification, and only with explicit authorization:
 
 1. Create and verify a signed `v0.1.0` tag on the exact tested SHA.
 2. Push that tag.
-3. From the same exact clean commit, run
+3. Inspect `latest` for all seven packages. A first stable publication may
+   already expose `latest` even when `--tag next` was requested. If every
+   `latest` tag already resolves to the verified version, do not mutate it. If
+   promotion is still required, run
    `npm run release:promote:interactive -- <approved-commit-sha>`, enter its exact
    confirmation, and respond to npm's own 2FA prompts. It promotes protocol,
-   storage, normalizers, context, analysis, daemon, and finally CLI from `next` to
-   `latest`, verifying each tag as it proceeds.
+   storage, normalizers, context, analysis, daemon, and finally CLI from `next`
+   to `latest`, verifying each tag as it proceeds.
 4. Install `@tekrion/cli@latest` in another clean directory and repeat the CLI
    checks.
 5. Publish the GitHub release with the supported protocols, capture levels, privacy
