@@ -1,0 +1,163 @@
+name: Stage npm release
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Exact reviewed commit on main to stage
+        required: true
+        type: string
+      version:
+        description: Exact package version at that commit
+        required: true
+        type: string
+      tag:
+        description: Immutable npm tag attached to the staged packages
+        required: true
+        default: next
+        type: string
+      confirmation:
+        description: Type stage-VERSION-from-COMMIT-to-TAG using the full commit
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: npm-stage-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    name: Stage seven npm packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: npm-production
+    env:
+      RELEASE_SHA: ${{ inputs.commit_sha }}
+      RELEASE_VERSION: ${{ inputs.version }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - name: Check out the exact candidate
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.commit_sha }}
+          fetch-depth: 0
+      - name: Use Node.js 22.20
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: 22.20.0
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Validate the immutable release inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$RELEASE_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "commit_sha must be a full lowercase commit SHA" >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "version is not a supported npm version" >&2
+            exit 1
+          fi
+          if [[ ! "$RELEASE_TAG" =~ ^[a-z][0-9a-z._-]*$ ]]; then
+            echo "tag is not a safe npm dist-tag" >&2
+            exit 1
+          fi
+
+          expected="stage-$RELEASE_VERSION-from-$RELEASE_SHA-to-$RELEASE_TAG"
+          if [ "$RELEASE_CONFIRMATION" != "$expected" ]; then
+            echo "confirmation did not match $expected" >&2
+            exit 1
+          fi
+          test "$(git rev-parse HEAD)" = "$RELEASE_SHA"
+
+          git fetch --quiet origin main
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" origin/main; then
+            echo "$RELEASE_SHA is not on origin/main" >&2
+            exit 1
+          fi
+
+          node --input-type=module -e '
+            import { readFile } from "node:fs/promises";
+            import { runtimePackages } from "./scripts/runtime-packages.mjs";
+
+            const expected = process.env.RELEASE_VERSION;
+            for (const { name, directory } of runtimePackages) {
+              const manifest = JSON.parse(
+                await readFile(`${directory}/package.json`, "utf8"),
+              );
+              if (manifest.name !== name || manifest.version !== expected) {
+                throw new Error(`${name} is not aligned at ${expected}`);
+              }
+            }
+          '
+      - name: Use an npm CLI with staged publishing
+        run: npm install --global npm@11.19.0
+      - name: Reject long-lived publish credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${NODE_AUTH_TOKEN:-}" ] || [ -n "${NPM_TOKEN:-}" ]; then
+            echo "The staging job must authenticate only through OIDC" >&2
+            exit 1
+          fi
+          npm --version
+      - name: Run the complete release preflight
+        run: |
+          npm ci
+          npm run release:preflight
+      - name: Require every version to be absent
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS=$'\t' read -r package_name package_directory; do
+            set +e
+            view_output="$(npm view \
+              "$package_name@$RELEASE_VERSION" \
+              version \
+              --json \
+              --prefer-online 2>&1)"
+            view_status=$?
+            set -e
+            if [ "$view_status" -eq 0 ]; then
+              echo "$package_name@$RELEASE_VERSION already exists" >&2
+              exit 1
+            fi
+            if [[ "$view_output" != *E404* ]]; then
+              echo "Could not prove $package_name@$RELEASE_VERSION is absent" >&2
+              exit 1
+            fi
+            test -f "$package_directory/package.json"
+          done < <(node --input-type=module -e '
+            import { runtimePackages } from "./scripts/runtime-packages.mjs";
+            for (const { name, directory } of runtimePackages) {
+              console.log(`${name}\t${directory}`);
+            }
+          ')
+      - name: Stage packages through trusted publishing
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS=$'\t' read -r package_name package_directory; do
+            echo "Staging $package_name@$RELEASE_VERSION with tag $RELEASE_TAG"
+            (
+              cd "$package_directory"
+              npm stage publish --access public --tag "$RELEASE_TAG"
+            )
+          done < <(node --input-type=module -e '
+            import { runtimePackages } from "./scripts/runtime-packages.mjs";
+            for (const { name, directory } of runtimePackages) {
+              console.log(`${name}\t${directory}`);
+            }
+          ')
+
+          {
+            echo "Seven Tekrion packages were submitted to npm staging."
+            echo "They are not public until a maintainer reviews and approves each stage with 2FA."
+          } >> "$GITHUB_STEP_SUMMARY"
