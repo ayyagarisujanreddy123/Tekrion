@@ -50,8 +50,7 @@ jobs:
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 22.20.0
-          # Do not configure registry-url here. setup-node wires it through
-          # NODE_AUTH_TOKEN, while staged trusted publishing must use OIDC only.
+          registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - name: Validate the immutable release inputs
         shell: bash
@@ -104,8 +103,21 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [ -n "${NODE_AUTH_TOKEN:-}" ] || [ -n "${NPM_TOKEN:-}" ]; then
-            echo "The staging job must authenticate only through OIDC" >&2
+
+          # setup-node's registry wiring deliberately exports this non-secret
+          # placeholder so npm can resolve the _authToken entry in its temporary
+          # npmrc. npm replaces it through the OIDC exchange for publish commands.
+          setup_node_placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+          if [ -n "${NPM_TOKEN:-}" ] || \
+             [ "${NODE_AUTH_TOKEN:-}" != "$setup_node_placeholder" ]; then
+            echo "The staging job must not receive a real npm publish credential" >&2
+            exit 1
+          fi
+          if [ -z "${NPM_CONFIG_USERCONFIG:-}" ] || \
+             [ ! -f "$NPM_CONFIG_USERCONFIG" ] || \
+             ! grep -Fqx '//registry.npmjs.org/:_authToken=${NODE_AUTH_TOKEN}' \
+               "$NPM_CONFIG_USERCONFIG"; then
+            echo "setup-node did not create the expected npm registry wiring" >&2
             exit 1
           fi
           npm --version
