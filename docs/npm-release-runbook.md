@@ -191,10 +191,10 @@ Immediately after the first successful publication:
 4. Use a GitHub-hosted runner, `id-token: write`, Node.js 22.15 or newer, and a
    current npm release that supports both trusted and staged publishing. The
    permanent publishing job must not receive a real `NODE_AUTH_TOKEN` or another
-   write credential. `actions/setup-node` must configure `registry-url`; its
-   temporary npm registry wiring exports the documented
-   `XXXXX-XXXXX-XXXXX-XXXXX` non-secret placeholder as `NODE_AUTH_TOKEN`. Keep
-   that placeholder for npm's OIDC exchange, and reject any replacement value.
+   write credential. `actions/setup-node` v7 or newer must configure
+   `registry-url` while leaving `NODE_AUTH_TOKEN` unset, so npm detects GitHub's
+   OIDC environment instead of treating the placeholder exported by older action
+   versions as a registry credential.
 5. Have a maintainer inspect the staged tarballs and approve them interactively
    with 2FA. Do not configure the trust relationship for direct `npm publish` on
    the daemon or CLI.
