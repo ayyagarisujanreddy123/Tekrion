@@ -25,6 +25,6 @@
   "dependencies": {
     "@tekrion/protocol": "0.1.1",
     "better-sqlite3": "13.0.3",
-    "zod": "4.4.3"
+    "zod": "4.6.7"
   }
 }
